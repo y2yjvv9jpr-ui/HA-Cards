@@ -109,6 +109,125 @@ export interface DesStorageCardConfig {
   items?: ThermalItemConfig[];
 }
 
+// ===========================================================================
+// des-inverter-card
+// ===========================================================================
+
+/**
+ * Which set of static demo values the card renders. Phase 1 has no entity
+ * binding at all - the whole readout comes from a canned dataset so every
+ * visual state can be checked from YAML alone.
+ *
+ * - `normal` - producing, everything OK.
+ * - `alarm`  - grid overvoltage alarm plus an imbalanced string (amber bar).
+ * - `night`  - all powers zero, device in standby.
+ */
+export type InverterDemoState = 'normal' | 'alarm' | 'night';
+
+/** One MPPT string (PV1 / PV2). */
+export interface InverterString {
+  /** Current DC power in W. */
+  power: number;
+  /** DC voltage in V. */
+  voltage: number;
+  /** DC current in A. */
+  current: number;
+}
+
+/** One AC phase (L1 / L2 / L3). */
+export interface InverterPhase {
+  /** Grid power in W: negative = feed-in, positive = import (before invert). */
+  grid: number;
+  /** Inverter AC output on this phase in W. */
+  inverter: number;
+  /** Grid voltage on this phase in V. */
+  voltage: number;
+}
+
+/**
+ * The full readout the card draws. In Phase 1 this is produced entirely from
+ * static demo data; Phase 2 fills the same shape from `hass.states`.
+ */
+export interface InverterData {
+  model: string;
+  /** Energy produced today in kWh. */
+  todayProduction: number;
+  /** Lifetime energy in kWh. */
+  totalProduction: number;
+  /** Fault text; `"OK"` means no fault. */
+  fault: string;
+  /** Alarm text; `"OK"` means no alarm. */
+  alarm: string;
+  /** Human-readable device state, shown when neither fault nor alarm is set. */
+  deviceState: string;
+  /** Total PV power in W. */
+  pvPower: number;
+  /** Inverter (AC board) temperature in °C. */
+  inverterTemp: number;
+  /** DC-side temperature in °C. */
+  dcTemp: number;
+  /** Grid frequency in Hz. */
+  gridFrequency: number;
+  /** PV1, PV2. */
+  strings: [InverterString, InverterString];
+  /** L1, L2, L3. */
+  phases: [InverterPhase, InverterPhase, InverterPhase];
+}
+
+/**
+ * Phase 1 card. The `*_entity` slots are reserved for Phase 2 and are read by
+ * nothing yet - the card renders the demo dataset picked by `demo_state`.
+ */
+export interface DesInverterCardConfig {
+  type: string;
+  name: string;
+
+  /** Which static dataset to render. Default `normal`. */
+  demo_state?: InverterDemoState;
+
+  /** Shown in the meta line; falls back to the demo model when unset. */
+  model?: string;
+
+  /** Total installed peak power in kWp - drives the utilisation percentage. */
+  kwp_total?: number;
+  /** Peak power of string PV1 in kWp - full-scale for its bar. */
+  kwp_pv1?: number;
+  /** Peak power of string PV2 in kWp - full-scale for its bar. */
+  kwp_pv2?: number;
+
+  /** Flip the grid-power sign convention. Default `false`. */
+  invert_grid?: boolean;
+  /** Show the DC-temperature field in the expanded footer. Default `true`. */
+  show_dc_temp?: boolean;
+
+  /** Highlight a badly imbalanced string with an amber bar. Default `true`. */
+  imbalance_warn?: boolean;
+  /** A string counts as imbalanced below this fraction of the other. Default `0.5`. */
+  imbalance_ratio?: number;
+  /** ...but only while the other string exceeds this many watts. Default `500`. */
+  imbalance_min_w?: number;
+
+  // --- reserved for Phase 2 (entity binding) - unused in Phase 1 -----------
+  pv_power_entity?: string;
+  today_production_entity?: string;
+  total_production_entity?: string;
+  fault_entity?: string;
+  alarm_entity?: string;
+  device_state_entity?: string;
+  inverter_temp_entity?: string;
+  dc_temp_entity?: string;
+  grid_frequency_entity?: string;
+  pv1_power_entity?: string;
+  pv1_voltage_entity?: string;
+  pv1_current_entity?: string;
+  pv2_power_entity?: string;
+  pv2_voltage_entity?: string;
+  pv2_current_entity?: string;
+  grid_power_entities?: string[];
+  inverter_power_entities?: string[];
+  grid_voltage_entities?: string[];
+}
+
 /** Minimal shape of the Home Assistant object handed to a card. */
 export interface HomeAssistant {
   states: Record<

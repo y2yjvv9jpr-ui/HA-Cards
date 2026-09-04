@@ -13,6 +13,19 @@ export function formatSignedInt(value: number): string {
   }).format(value);
 }
 
+/**
+ * "+1.234" / "−567" / "0" - signed integer using a real minus sign (U+2212,
+ * not the hyphen-minus). Zero is unsigned. Used for the grid-flow column, where
+ * the typographic minus reads cleaner next to the euro-style thousands dot.
+ */
+export function formatSignedMinus(value: number): string {
+  const rounded = Math.round(value);
+  const magnitude = formatInt(Math.abs(rounded));
+  if (rounded > 0) return `+${magnitude}`;
+  if (rounded < 0) return `−${magnitude}`;
+  return magnitude;
+}
+
 /** "12,4" - up to `digits` decimals, thousands separator. */
 export function formatDecimal(value: number, digits = 1): string {
   return new Intl.NumberFormat(LOCALE, {

@@ -5,9 +5,10 @@ gebaut mit Vite zu **einer einzelnen** JS-Datei ohne externe Laufzeit-Abhängigk
 
 Aktuell enthalten:
 
-| Karte                     | Zweck                                                     |
-| ------------------------- | --------------------------------------------------------- |
-| `custom:des-storage-card` | Speicherkarte — Varianten `battery` und `thermal_group`    |
+| Karte                      | Zweck                                                     |
+| -------------------------- | --------------------------------------------------------- |
+| `custom:des-storage-card`  | Speicherkarte — Varianten `battery` und `thermal_group`    |
+| `custom:des-inverter-card` | Wechselrichter-Übersicht — PV-Leistung, Strings, Phasen    |
 
 > **Phase 2 — lesend.** Jedes Wertfeld nimmt einen statischen Wert **oder** eine
 > Entity-ID. Die Karte liest aus `hass.states` und rendert bei jedem
@@ -24,7 +25,8 @@ npm install
 npm run build
 ```
 
-Ergebnis: `dist/daniels-energy-cards.js` (~49 kB, Lit ist mit eingebettet).
+Ergebnis: `dist/daniels-energy-cards.js` (~65 kB, gzip ~17 kB; Lit und **beide**
+Karten sind mit eingebettet).
 
 Weitere Skripte:
 
@@ -93,8 +95,9 @@ hinzufügen (**Einstellungen → Dashboards → ⋮ → Ressourcen**):
 3. Browser-Cache leeren bzw. Hard-Reload (Strg+Shift+R). Bei jedem Update der
    Datei hilft ein Versions-Query wie `/local/daniels-energy-cards.js?v=2`.
 
-Die Karte erscheint danach auch im Karten-Picker als „Daniels Speicherkarte“.
-Einen visuellen Editor gibt es bewusst nicht — die Konfiguration erfolgt in YAML.
+Die Karten erscheinen danach auch im Karten-Picker als „Daniels Speicherkarte“
+und „Daniels Wechselrichterkarte“. Einen visuellen Editor gibt es bewusst nicht —
+die Konfiguration erfolgt in YAML.
 
 ---
 
@@ -415,6 +418,97 @@ eines Layouts, bevor die Entitäten feststehen:
 
 ---
 
+## Wechselrichterkarte (`des-inverter-card`)
+
+> **Phase 1 — statische Demo-Werte.** Diese Karte hat noch **keine
+> Entity-Anbindung**. Der gesamte Messwert-Satz stammt aus einem festen
+> Demo-Datensatz, den `demo_state` auswählt — so lassen sich alle Darstellungen
+> allein aus dem YAML prüfen. Die für Phase 2 vorgesehenen `*_entity`-Felder
+> existieren im Schema bereits, werden aber von nichts gelesen (siehe
+> [unten](#offen-für-phase-2)).
+
+Kompakte Übersicht für einen PV-Wechselrichter: Gesamtleistung, zwei Strings und
+drei Phasen. Wie beim Akku ist die Detailansicht **standardmäßig eingeklappt** —
+ein Klick auf das Chevron klappt sie auf.
+
+| Option            | Typ                             | Beschreibung                                                                    |
+| ----------------- | ------------------------------- | ------------------------------------------------------------------------------- |
+| `name`            | string                          | **Pflicht.** Titel in der Kopfzeile.                                            |
+| `demo_state`      | `normal` \| `alarm` \| `night`  | Welcher Demo-Datensatz gezeigt wird. Standard `normal`.                          |
+| `model`           | string                          | Modellname in der Meta-Zeile. Ohne Angabe der Demo-Modellname.                   |
+| `kwp_total`       | number (kWp)                    | Installierte Gesamtleistung — Bezug für die Auslastung in %. Standard `12.5`.    |
+| `kwp_pv1`         | number (kWp)                    | Spitzenleistung String PV1 — Vollausschlag seines Balkens. Standard `6.5`.       |
+| `kwp_pv2`         | number (kWp)                    | Spitzenleistung String PV2 — Vollausschlag seines Balkens. Standard `6.0`.       |
+| `invert_grid`     | boolean                         | Dreht das Vorzeichen der Netzleistung. Standard `false`.                          |
+| `show_dc_temp`    | boolean                         | Zeigt die DC-Temperatur in der Fußzeile (aufgeklappt). Standard `true`.           |
+| `imbalance_warn`  | boolean                         | Markiert einen stark unsymmetrischen String amber. Standard `true`.               |
+| `imbalance_ratio` | number (0–1)                    | Ein String gilt als schwach unter diesem Anteil des anderen. Standard `0.5`.      |
+| `imbalance_min_w` | number (W)                      | …aber nur, wenn der andere String diese Leistung übersteigt. Standard `500`.      |
+
+**Demo-Zustände** — mit `demo_state` durchschaltbar, damit jede Darstellung
+geprüft werden kann:
+
+| Wert     | Zeigt                                                                            |
+| -------- | ------------------------------------------------------------------------------- |
+| `normal` | Einspeisebetrieb, alles OK — grüne Status-Pille.                                 |
+| `alarm`  | „Grid overvoltage“ (amber-Pille) **und** ein unsymmetrischer String (amber-Balken). |
+| `night`  | Alle Leistungen 0, Gerät im Standby — große Zahl gedämpft statt grün.            |
+
+**Aufbau — eingeklappt**
+
+- **Kopfzeile** — Name links, darunter gedämpft
+  `Modell · … kWh heute · … kWh gesamt`. Rechts **eine** Status-Pille: rot
+  `Fault: …`, sonst amber `Alarm: …`, sonst grün der Gerätestatus. Farbtokens wie
+  bei der Speicherkarte (grün = ok, amber = Alarm, rot = Fault).
+- **Leistungszeile** — PV-Leistung groß und grün (bei 0 W gedämpft), daneben klein
+  `… % von … kWp`; rechts Thermometer-Icon und die WR-Temperatur.
+- **String-Zeilen** — `PV1`/`PV2` mit schmalem Balken (Füllung = Leistung /
+  `kwp_pvX`, grün, bei Unsymmetrie amber) und Leistung in W.
+
+**Aufbau — aufgeklappt** (unter dem Chevron, durch eine Haarlinie getrennt)
+
+- **Strings** — Spannung (V) und Strom (A) je String.
+- **Phasen** — je Phase L1/L2/L3 die Netzleistung (mit Vorzeichen und echtem
+  Minuszeichen: Einspeisung grün, Bezug rot, 0 gedämpft), der WR-Ausgang und die
+  Spannung, plus eine hervorgehobene Summenzeile `Σ`.
+- **Fußzeile** — DC-Temperatur (nur bei `show_dc_temp`) und Netzfrequenz (Hz).
+
+**Beispiel-YAML** — Phase 1, alle Werte kommen aus dem Demo-Datensatz:
+
+```yaml
+type: custom:des-inverter-card
+name: Wechselrichter
+demo_state: normal        # normal | alarm | night
+model: Growatt MOD 10KTL3-X
+kwp_total: 12.5
+kwp_pv1: 6.5
+kwp_pv2: 6.0
+invert_grid: false
+show_dc_temp: true
+imbalance_warn: true
+```
+
+### Offen für Phase 2
+
+Für die Entity-Anbindung ist das Schema in
+[`src/types.ts`](src/types.ts) bereits vorbereitet. Vorgesehene Felder (heute
+ungenutzt):
+
+| Feld                                                              | Ziel                          |
+| ----------------------------------------------------------------- | ----------------------------- |
+| `pv_power_entity`                                                 | PV-Gesamtleistung             |
+| `today_production_entity`, `total_production_entity`              | Tages-/Gesamtertrag           |
+| `fault_entity`, `alarm_entity`, `device_state_entity`             | Status-Pille                  |
+| `inverter_temp_entity`, `dc_temp_entity`, `grid_frequency_entity` | Temperaturen, Netzfrequenz    |
+| `pv1_*_entity`, `pv2_*_entity`                                    | Strings (Leistung/Spannung/Strom) |
+| `grid_power_entities`, `inverter_power_entities`, `grid_voltage_entities` | Phasen L1–L3 (je Liste) |
+
+Der Demo-Datensatz aus Phase 1 hat dieselbe Form wie das, was Phase 2 aus
+`hass.states` befüllt (`InverterData` in [`src/types.ts`](src/types.ts)) — das
+Rendering bleibt dabei unverändert.
+
+---
+
 ## Entity-Anbindung
 
 Jedes Wertfeld nimmt einen statischen Wert oder eine Entity-ID am selben
@@ -457,8 +551,9 @@ von „folgt der Entität“, was dafür die Grundlage ist.
 
 ```
 src/
-  index.ts             Registrierung des Custom Elements + Karten-Picker-Eintrag
-  des-storage-card.ts  Die Karte selbst (Rendering + Styles)
+  index.ts             Registrierung beider Custom Elements + Karten-Picker-Einträge
+  des-storage-card.ts  Speicherkarte (Rendering + Styles)
+  des-inverter-card.ts Wechselrichterkarte (Phase 1: Demo-Werte)
   types.ts             Config-Schema und HA-Typen
   resolve.ts           Statischer Wert ↔ Entity: Auflösung über hass.states
   format.ts            Zahlenformatierung (de-DE)

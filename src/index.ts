@@ -1,22 +1,47 @@
 import { DesStorageCard } from './des-storage-card';
+import { DesInverterCard } from './des-inverter-card';
 
-const CARD_TYPE = 'des-storage-card';
 const VERSION = '0.1.0';
 
-if (!customElements.get(CARD_TYPE)) {
-  customElements.define(CARD_TYPE, DesStorageCard);
+interface CardRegistration {
+  type: string;
+  element: CustomElementConstructor;
+  name: string;
+  description: string;
 }
 
-// Makes the card show up in the "Add card" picker.
-window.customCards = window.customCards ?? [];
-if (!window.customCards.some((card) => card.type === CARD_TYPE)) {
-  window.customCards.push({
-    type: CARD_TYPE,
+const CARDS: ReadonlyArray<CardRegistration> = [
+  {
+    type: 'des-storage-card',
+    element: DesStorageCard,
     name: 'Daniels Speicherkarte',
     description:
       'Speicherkarte für Hausakkus (battery) und Wärmespeicher-Gruppen (thermal_group).',
-    preview: false,
-  });
+  },
+  {
+    type: 'des-inverter-card',
+    element: DesInverterCard,
+    name: 'Daniels Wechselrichterkarte',
+    description:
+      'Wechselrichter-Übersicht: PV-Leistung, Strings und Phasen (Phase 1: Demo-Werte).',
+  },
+];
+
+window.customCards = window.customCards ?? [];
+
+for (const card of CARDS) {
+  if (!customElements.get(card.type)) {
+    customElements.define(card.type, card.element);
+  }
+  // Makes the card show up in the "Add card" picker.
+  if (!window.customCards.some((entry) => entry.type === card.type)) {
+    window.customCards.push({
+      type: card.type,
+      name: card.name,
+      description: card.description,
+      preview: false,
+    });
+  }
 }
 
 // eslint-disable-next-line no-console
@@ -26,4 +51,4 @@ console.info(
   'background:#555;color:#fff;border-radius:0 3px 3px 0;padding:2px 4px',
 );
 
-export { DesStorageCard };
+export { DesStorageCard, DesInverterCard };
