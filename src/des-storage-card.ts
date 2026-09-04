@@ -1,6 +1,12 @@
 import { LitElement, html, css, nothing, type TemplateResult } from 'lit';
 import { formatFixed, formatInt, formatSignedInt, clamp } from './format';
-import { isEntityId, resolveNumber, resolveText, type Resolved } from './resolve';
+import {
+  entityNumberAttribute,
+  isEntityId,
+  resolveNumber,
+  resolveText,
+  type Resolved,
+} from './resolve';
 import {
   isChargeState,
   isWritableChargeMode,
@@ -31,13 +37,15 @@ const STATUS_LABEL: Record<StorageStatus, string> = {
   off: 'Aus',
 };
 
-const THRESHOLD_MIN = 10;
-const THRESHOLD_MAX = 80;
-const THRESHOLD_STEP = 5;
+/** Slider bounds. A bound number entity overrides these with its own. */
+interface SliderRange {
+  min: number;
+  max: number;
+  step: number;
+}
 
-const TARGET_MIN = 50;
-const TARGET_MAX = 100;
-const TARGET_STEP = 5;
+const THRESHOLD_RANGE: SliderRange = { min: 10, max: 80, step: 5 };
+const TARGET_RANGE: SliderRange = { min: 50, max: 100, step: 5 };
 
 const MAX_ITEMS = 5;
 
@@ -95,9 +103,33 @@ function normaliseItemMode(raw: string): ItemMode {
   return 'auto';
 }
 
-/** Snaps a percentage onto the slider's own scale. */
-function snap(value: number, min: number, max: number, step: number): number {
-  return clamp(Math.round(value / step) * step, min, max);
+/**
+ * Snaps a value onto the slider's own scale.
+ *
+ * Counted from `min`, not from zero: an entity may well start at 22 with a
+ * step of 5, and rounding to a multiple of 5 would land off its own grid.
+ */
+function snap(value: number, range: SliderRange): number {
+  const { min, max, step } = range;
+  if (!(step > 0)) return clamp(value, min, max);
+  const steps = Math.round((value - min) / step);
+  // Trims the float noise that min + steps * step can produce.
+  const snapped = Number((min + steps * step).toFixed(6));
+  return clamp(snapped, min, max);
+}
+
+/** Decimals a step implies, so the readout matches the slider's precision. */
+function decimalsForStep(step: number): number {
+  if (!Number.isFinite(step) || Number.isInteger(step)) return 0;
+  const text = String(step);
+  const dot = text.indexOf('.');
+  return dot === -1 ? 0 : Math.min(3, text.length - dot - 1);
+}
+
+/** Formats a slider value with just as many decimals as its step needs. */
+function formatForStep(value: number, step: number): string {
+  const decimals = decimalsForStep(step);
+  return decimals === 0 ? formatInt(value) : formatFixed(value, decimals);
 }
 
 /**
@@ -236,9 +268,7 @@ export class DesStorageCard extends LitElement {
         this._entityMatches(
           config.threshold_pct,
           this._thresholdLocal,
-          THRESHOLD_MIN,
-          THRESHOLD_MAX,
-          THRESHOLD_STEP,
+          this._rangeFor(config.threshold_pct, THRESHOLD_RANGE),
         )
       ) {
         this._thresholdLocal = null;
@@ -250,9 +280,7 @@ export class DesStorageCard extends LitElement {
         this._entityMatches(
           config.charge_target_pct,
           this._targetLocal,
-          TARGET_MIN,
-          TARGET_MAX,
-          TARGET_STEP,
+          this._rangeFor(config.charge_target_pct, TARGET_RANGE),
         )
       ) {
         this._targetLocal = null;
@@ -296,14 +324,36 @@ export class DesStorageCard extends LitElement {
   private _entityMatches(
     slot: NumberValue | undefined,
     local: number,
-    min: number,
-    max: number,
-    step: number,
+    range: SliderRange,
   ): boolean {
     // Static values are never "confirmed" by an entity - they stay local.
     if (typeof slot !== 'string' || !isEntityId(slot)) return false;
     const resolved = resolveNumber(slot, this.hass);
-    return resolved.kind === 'value' && snap(resolved.value, min, max, step) === local;
+    return resolved.kind === 'value' && snap(resolved.value, range) === local;
+  }
+
+  /**
+   * The bounds a slider actually uses.
+   *
+   * A bound `number`/`input_number` publishes its own min/max/step, and those
+   * are authoritative - writing a value outside them would just be rejected.
+   * Each attribute falls back on its own, so a partially described entity
+   * still yields a usable range.
+   */
+  private _rangeFor(
+    slot: NumberValue | undefined,
+    fallback: SliderRange,
+  ): SliderRange {
+    if (!isWritableNumber(slot)) return fallback;
+    const entityId = slot as string;
+
+    const min = entityNumberAttribute(entityId, this.hass, 'min') ?? fallback.min;
+    const max = entityNumberAttribute(entityId, this.hass, 'max') ?? fallback.max;
+    const step = entityNumberAttribute(entityId, this.hass, 'step') ?? fallback.step;
+
+    // A nonsensical range would freeze the slider, so ignore it.
+    if (!(min < max) || !(step > 0)) return fallback;
+    return { min, max, step };
   }
 
   getCardSize(): number {
@@ -449,7 +499,7 @@ export class DesStorageCard extends LitElement {
     if (this._thresholdLocal !== null) return this._thresholdLocal;
     const resolved = resolveNumber(config.threshold_pct, this.hass);
     return resolved.kind === 'value'
-      ? snap(resolved.value, THRESHOLD_MIN, THRESHOLD_MAX, THRESHOLD_STEP)
+      ? snap(resolved.value, this._rangeFor(config.threshold_pct, THRESHOLD_RANGE))
       : null;
   }
 
@@ -457,7 +507,7 @@ export class DesStorageCard extends LitElement {
     if (this._targetLocal !== null) return this._targetLocal;
     const resolved = resolveNumber(config.charge_target_pct, this.hass);
     return resolved.kind === 'value'
-      ? snap(resolved.value, TARGET_MIN, TARGET_MAX, TARGET_STEP)
+      ? snap(resolved.value, this._rangeFor(config.charge_target_pct, TARGET_RANGE))
       : null;
   }
 
@@ -591,6 +641,8 @@ export class DesStorageCard extends LitElement {
     const targetActive = mode === 'charge';
     const target = this._chargeTarget(config);
     const threshold = this._threshold(config);
+    const targetRange = this._rangeFor(config.charge_target_pct, TARGET_RANGE);
+    const thresholdRange = this._rangeFor(config.threshold_pct, THRESHOLD_RANGE);
 
     return html`
       <div class="controls">
@@ -599,33 +651,37 @@ export class DesStorageCard extends LitElement {
           <input
             class="slider"
             type="range"
-            min=${TARGET_MIN}
-            max=${TARGET_MAX}
-            step=${TARGET_STEP}
-            .value=${String(target ?? TARGET_MIN)}
+            min=${targetRange.min}
+            max=${targetRange.max}
+            step=${targetRange.step}
+            .value=${String(target ?? targetRange.min)}
             ?disabled=${!targetActive}
             aria-label="Ladeziel"
             @input=${this._onTargetInput}
             @change=${this._onTargetChange}
           />
           <span class="ctl-value ${targetActive ? '' : 'disabled'}">
-            ${target === null ? this._dash() : `${formatInt(target)} %`}
+            ${target === null
+              ? this._dash()
+              : `${formatForStep(target, targetRange.step)} %`}
           </span>
 
           <span class="ctl-label">min. SoC</span>
           <input
             class="slider"
             type="range"
-            min=${THRESHOLD_MIN}
-            max=${THRESHOLD_MAX}
-            step=${THRESHOLD_STEP}
-            .value=${String(threshold ?? THRESHOLD_MIN)}
+            min=${thresholdRange.min}
+            max=${thresholdRange.max}
+            step=${thresholdRange.step}
+            .value=${String(threshold ?? thresholdRange.min)}
             aria-label="Minimaler Ladestand"
             @input=${this._onThresholdInput}
             @change=${this._onThresholdChange}
           />
           <span class="ctl-value">
-            ${threshold === null ? this._dash() : `${formatInt(threshold)} %`}
+            ${threshold === null
+              ? this._dash()
+              : `${formatForStep(threshold, thresholdRange.step)} %`}
           </span>
         </div>
         ${this._renderSegmented(
@@ -666,7 +722,10 @@ export class DesStorageCard extends LitElement {
     parts.push(
       threshold === null
         ? html`min. ${this._dash()} SoC`
-        : `min. ${formatInt(threshold)} % SoC`,
+        : `min. ${formatForStep(
+            threshold,
+            this._rangeFor(config.threshold_pct, THRESHOLD_RANGE).step,
+          )} % SoC`,
     );
 
     return html`${parts.map((part, index) =>

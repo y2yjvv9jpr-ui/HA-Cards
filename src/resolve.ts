@@ -47,6 +47,24 @@ export function entityState(
   return NO_VALUE.has(state.toLowerCase()) ? null : state;
 }
 
+/**
+ * A numeric attribute of an entity, e.g. the `min`/`max`/`step` a
+ * `number`/`input_number` publishes. `null` when it is absent or unusable.
+ */
+export function entityNumberAttribute(
+  entityId: string,
+  hass: HomeAssistant | undefined,
+  name: string,
+): number | null {
+  const raw = hass?.states?.[entityId]?.attributes?.[name];
+  if (typeof raw === 'number') return Number.isFinite(raw) ? raw : null;
+  if (typeof raw === 'string') {
+    const parsed = Number.parseFloat(raw);
+    return Number.isFinite(parsed) ? parsed : null;
+  }
+  return null;
+}
+
 /** Static number, numeric string, or an entity whose state parses as a number. */
 export function resolveNumber(
   raw: number | string | boolean | null | undefined,

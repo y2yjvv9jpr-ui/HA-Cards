@@ -25,7 +25,7 @@ npm install
 npm run build
 ```
 
-Ergebnis: `dist/daniels-energy-cards.js` (~74 kB, gzip ~19 kB; Lit und **beide**
+Ergebnis: `dist/daniels-energy-cards.js` (~75 kB, gzip ~20 kB; Lit und **beide**
 Karten sind mit eingebettet).
 
 Weitere Skripte:
@@ -133,8 +133,8 @@ eine Entity-ID.
 | `status`                     | Status \| Entity             | **Optional** — ohne Angabe aus der Leistung abgeleitet.                            |
 | `energy_kwh`                 | number \| Entity             | **Optional** — ohne Angabe aus `soc × capacity_kwh / 100` berechnet.               |
 | `temp_c`                     | number \| Entity \| `null`   | Akkutemperatur. Bei `null` entfällt das Segment in der Meta-Zeile.                 |
-| `threshold_pct`              | number \| Entity             | Minimaler Ladestand; Slider 10–80, Schritt 5.                                     |
-| `charge_target_pct`          | number \| Entity             | Ladeziel für erzwungenes Laden; Slider 50–100, Schritt 5.                          |
+| `threshold_pct`              | number \| Entity             | Minimaler Ladestand; Slider 10–80/5 oder aus der Entität, siehe unten.             |
+| `charge_target_pct`          | number \| Entity             | Ladeziel für erzwungenes Laden; Slider 50–100/5 oder aus der Entität.               |
 | `charge_mode`                | `auto` \| `charge` \| Entity | Anzeige des Lademodus, wenn kein `charge_mode_control` gesetzt ist.                |
 | `charge_mode_control`        | Objekt                       | Bindet **Laden \| Auto** an eine Entität, siehe unten. Ohne dieses Feld bleibt der Umschalter lokal. |
 | `time_remaining`             | string \| Entity             | Restzeit. Hat Vorrang vor den beiden folgenden.                                   |
@@ -226,6 +226,15 @@ statt als selbstbewusstes „Laden“ durchzugehen.
   | ----- | ---------- | ------------------- | ---------------- |
   | 1     | „Ladeziel“ | `charge_target_pct` | 50–100, Schritt 5 |
   | 2     | „min. SoC“ | `threshold_pct`     | 10–80, Schritt 5  |
+
+  **Slider-Grenzen** — hängt der Slider an einer `number`- oder
+  `input_number`-Entität, übernimmt er deren `min`, `max` und `step` aus den
+  Entitätsattributen. Das ist nicht nur Kosmetik: ein Wert außerhalb dieser
+  Grenzen würde beim Schreiben ohnehin abgelehnt. Fehlt ein Attribut, greift
+  dafür einzeln der Kartendefault (Ladeziel 50–100/5, min. SoC 10–80/5); bei
+  statischer Konfiguration gelten die Defaults komplett. Das Raster zählt ab
+  `min`, nicht ab null, und die Wertanzeige bekommt so viele Nachkommastellen,
+  wie `step` verlangt.
 
   Der Ladeziel-Slider ist **nur im Modus `charge` aktiv** und sonst ausgegraut —
   ein Ladeziel ohne erzwungenes Laden hat keine Wirkung. Der `min. SoC`-Slider
