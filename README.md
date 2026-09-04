@@ -25,7 +25,7 @@ npm install
 npm run build
 ```
 
-Ergebnis: `dist/daniels-energy-cards.js` (~77 kB, gzip ~20 kB; Lit und **beide**
+Ergebnis: `dist/daniels-energy-cards.js` (~83 kB, gzip ~22 kB; Lit und **beide**
 Karten sind mit eingebettet).
 
 Weitere Skripte:
@@ -494,22 +494,22 @@ eines Layouts, bevor die Entitäten feststehen:
 
 ## Wechselrichterkarte (`des-inverter-card`)
 
-> **Phase 1 — statische Demo-Werte.** Diese Karte hat noch **keine
-> Entity-Anbindung**. Der gesamte Messwert-Satz stammt aus einem festen
-> Demo-Datensatz, den `demo_state` auswählt — so lassen sich alle Darstellungen
-> allein aus dem YAML prüfen. Die für Phase 2 vorgesehenen `*_entity`-Felder
-> existieren im Schema bereits, werden aber von nichts gelesen (siehe
-> [unten](#offen-für-phase-2)).
+> **Phase 2 — lesend.** Sobald **mindestens ein** `*_entity`-Feld gesetzt ist,
+> liest die Karte den kompletten Messwert-Satz aus `hass.states` und
+> `demo_state` wird ignoriert. Ohne Entity-Feld bleibt der **Demo-Modus** —
+> nützlich als Editor-Vorschau. Geschrieben wird nichts.
 
 Kompakte Übersicht für einen PV-Wechselrichter: Gesamtleistung, zwei Strings und
 drei Phasen. Wie beim Akku ist die Detailansicht **standardmäßig eingeklappt** —
 ein Klick auf das Chevron klappt sie auf.
 
+**Statische Optionen** (gelten in beiden Modi):
+
 | Option            | Typ                             | Beschreibung                                                                    |
 | ----------------- | ------------------------------- | ------------------------------------------------------------------------------- |
 | `name`            | string                          | **Pflicht.** Titel in der Kopfzeile.                                            |
-| `demo_state`      | `normal` \| `alarm` \| `night`  | Welcher Demo-Datensatz gezeigt wird. Standard `normal`.                          |
-| `model`           | string                          | Modellname in der Meta-Zeile. Ohne Angabe der Demo-Modellname.                   |
+| `model`           | string                          | Modellname in der Meta-Zeile. Im Demo-Modus sonst der Demo-Modellname.           |
+| `demo_state`      | `normal` \| `alarm` \| `night`  | Demo-Datensatz — **nur** wirksam, wenn kein `*_entity`-Feld gesetzt ist. Standard `normal`. |
 | `kwp_total`       | number (kWp)                    | Installierte Gesamtleistung — Bezug für die Auslastung in %. Standard `12.5`.    |
 | `kwp_pv1`         | number (kWp)                    | Spitzenleistung String PV1 — Vollausschlag seines Balkens. Standard `6.5`.       |
 | `kwp_pv2`         | number (kWp)                    | Spitzenleistung String PV2 — Vollausschlag seines Balkens. Standard `6.0`.       |
@@ -519,8 +519,40 @@ ein Klick auf das Chevron klappt sie auf.
 | `imbalance_ratio` | number (0–1)                    | Ein String gilt als schwach unter diesem Anteil des anderen. Standard `0.5`.      |
 | `imbalance_min_w` | number (W)                      | …aber nur, wenn der andere String diese Leistung übersteigt. Standard `500`.      |
 
-**Demo-Zustände** — mit `demo_state` durchschaltbar, damit jede Darstellung
-geprüft werden kann:
+**Entity-Felder** (lesend). Jedes ist optional; ein fehlendes Feld erscheint als
+gedämpftes „–", ein ganzer Block wird ausgeblendet, wenn **keines** seiner Felder
+gesetzt ist. Die erwartete Einheit ist die Basiseinheit — abweichende Einheiten
+werden über `unit_of_measurement` umgerechnet (`kW`/`MW` → W, `Wh`/`MWh` → kWh).
+
+| Feld                        | Erwartet    | Ziel                                                        |
+| --------------------------- | ----------- | ----------------------------------------------------------- |
+| `pv_power_entity`           | W           | PV-Gesamtleistung. Fehlt sie, wird PV1 + PV2 summiert.       |
+| `today_production_entity`   | kWh         | Tagesertrag (Meta-Zeile).                                   |
+| `total_production_entity`   | kWh         | Gesamtertrag (Meta-Zeile).                                  |
+| `fault_entity`              | Text        | Fehlertext; `OK`/nicht verfügbar = kein Fehler.             |
+| `alarm_entity`              | Text        | Alarmtext; `OK`/nicht verfügbar = kein Alarm.               |
+| `device_state_entity`       | Text        | Gerätestatus (grüne Pille). Fehlt er, „Normal".             |
+| `inverter_temp_entity`      | °C          | WR-Temperatur (Leistungszeile).                            |
+| `dc_temp_entity`            | °C          | DC-Temperatur (Fußzeile, nur bei `show_dc_temp`).           |
+| `grid_frequency_entity`     | Hz          | Netzfrequenz (Fußzeile).                                    |
+| `pv1_power_entity` … `pv1_current_entity` | W / V / A | String PV1: Leistung, Spannung, Strom.        |
+| `pv2_power_entity` … `pv2_current_entity` | W / V / A | String PV2: Leistung, Spannung, Strom.        |
+| `grid_power_entities`       | `[L1,L2,L3]` W | Netzleistung je Phase (Vorzeichen, siehe `invert_grid`). |
+| `inverter_power_entities`   | `[L1,L2,L3]` W | WR-Ausgang je Phase.                                     |
+| `grid_voltage_entities`     | `[L1,L2,L3]` V | Netzspannung je Phase.                                   |
+
+**Blöcke** — im Entity-Modus wird ausgeblendet, was gar nicht konfiguriert ist:
+
+- **Strings** (Balken eingeklappt + Tabelle aufgeklappt): keines der `pv1_*`/`pv2_*`.
+- **Phasen** (Tabelle aufgeklappt): keine der drei Phasen-Listen.
+- **Fußzeile**: weder `dc_temp_entity` noch `grid_frequency_entity`.
+
+Kopfzeile, Status-Pille und Leistungszeile stehen immer; nicht lesbare Einzelwerte
+darin zeigen „–". Ein `unavailable`/`unknown` verhält sich wie ein fehlender Wert
+(gedämpftes „–", die Karte färbt sich **nicht** rot).
+
+**Demo-Zustände** (nur ohne Entity-Feld) — mit `demo_state` durchschaltbar, damit
+jede Darstellung geprüft werden kann:
 
 | Wert     | Zeigt                                                                            |
 | -------- | ------------------------------------------------------------------------------- |
@@ -547,39 +579,57 @@ geprüft werden kann:
   Spannung, plus eine hervorgehobene Summenzeile `Σ`.
 - **Fußzeile** — DC-Temperatur (nur bei `show_dc_temp`) und Netzfrequenz (Hz).
 
-**Beispiel-YAML** — Phase 1, alle Werte kommen aus dem Demo-Datensatz:
+**Beispiel-YAML** — Entities (Statik `kwp_*`, alles andere aus `hass.states`):
 
 ```yaml
 type: custom:des-inverter-card
 name: Wechselrichter
-demo_state: normal        # normal | alarm | night
 model: Growatt MOD 10KTL3-X
 kwp_total: 12.5
 kwp_pv1: 6.5
 kwp_pv2: 6.0
 invert_grid: false
 show_dc_temp: true
-imbalance_warn: true
+
+pv_power_entity: sensor.inverter_pv_power
+today_production_entity: sensor.inverter_today_production
+total_production_entity: sensor.inverter_total_production
+device_state_entity: sensor.inverter_device_state
+alarm_entity: sensor.inverter_alarm
+fault_entity: sensor.inverter_fault
+inverter_temp_entity: sensor.inverter_temperature
+dc_temp_entity: sensor.inverter_dc_temperature
+grid_frequency_entity: sensor.inverter_grid_frequency
+
+pv1_power_entity: sensor.inverter_pv1_power
+pv1_voltage_entity: sensor.inverter_pv1_voltage
+pv1_current_entity: sensor.inverter_pv1_current
+pv2_power_entity: sensor.inverter_pv2_power
+pv2_voltage_entity: sensor.inverter_pv2_voltage
+pv2_current_entity: sensor.inverter_pv2_current
+
+grid_power_entities:
+  - sensor.inverter_grid_power_l1
+  - sensor.inverter_grid_power_l2
+  - sensor.inverter_grid_power_l3
+inverter_power_entities:
+  - sensor.inverter_output_power_l1
+  - sensor.inverter_output_power_l2
+  - sensor.inverter_output_power_l3
+grid_voltage_entities:
+  - sensor.inverter_grid_voltage_l1
+  - sensor.inverter_grid_voltage_l2
+  - sensor.inverter_grid_voltage_l3
 ```
 
-### Offen für Phase 2
+Ohne jedes Entity-Feld läuft dieselbe Karte im Demo-Modus — nützlich, um das
+Layout vor dem Verdrahten der Entitäten zu sehen:
 
-Für die Entity-Anbindung ist das Schema in
-[`src/types.ts`](src/types.ts) bereits vorbereitet. Vorgesehene Felder (heute
-ungenutzt):
-
-| Feld                                                              | Ziel                          |
-| ----------------------------------------------------------------- | ----------------------------- |
-| `pv_power_entity`                                                 | PV-Gesamtleistung             |
-| `today_production_entity`, `total_production_entity`              | Tages-/Gesamtertrag           |
-| `fault_entity`, `alarm_entity`, `device_state_entity`             | Status-Pille                  |
-| `inverter_temp_entity`, `dc_temp_entity`, `grid_frequency_entity` | Temperaturen, Netzfrequenz    |
-| `pv1_*_entity`, `pv2_*_entity`                                    | Strings (Leistung/Spannung/Strom) |
-| `grid_power_entities`, `inverter_power_entities`, `grid_voltage_entities` | Phasen L1–L3 (je Liste) |
-
-Der Demo-Datensatz aus Phase 1 hat dieselbe Form wie das, was Phase 2 aus
-`hass.states` befüllt (`InverterData` in [`src/types.ts`](src/types.ts)) — das
-Rendering bleibt dabei unverändert.
+```yaml
+type: custom:des-inverter-card
+name: Wechselrichter
+demo_state: normal        # normal | alarm | night
+```
 
 ---
 
@@ -663,8 +713,11 @@ Offen für die Speicherkarte:
   Heizer bildet alle drei Zustände ab, und die Überschuss-Automation liest ihn
   aus. Ohne `mode_entity` bleibt `Auto` weiterhin nur lokal wählbar.
 
-Die Wechselrichterkarte steht davon unabhängig noch auf Phase 1, siehe
-[Offen für Phase 2](#offen-für-phase-2).
+Offen für die Wechselrichterkarte:
+
+- **Schreibpfad (Phase 3)** — die Karte ist bislang rein lesend. Sobald es
+  bedienbare Entitäten gibt (z. B. Leistungsbegrenzung, Ein/Aus), käme dort — wie
+  bei der Speicherkarte — ein gebundenes Bedienelement mit Service-Call dazu.
 
 ## Projektstruktur
 
@@ -672,7 +725,7 @@ Die Wechselrichterkarte steht davon unabhängig noch auf Phase 1, siehe
 src/
   index.ts             Registrierung beider Custom Elements + Karten-Picker-Einträge
   des-storage-card.ts  Speicherkarte (Rendering + Styles)
-  des-inverter-card.ts Wechselrichterkarte (Phase 1: Demo-Werte)
+  des-inverter-card.ts Wechselrichterkarte (Entity-Binding + Demo-Fallback)
   types.ts             Config-Schema und HA-Typen
   resolve.ts           Statischer Wert ↔ Entity: Auflösung über hass.states
   service.ts           Schreibpfad: Domain → Service-Call

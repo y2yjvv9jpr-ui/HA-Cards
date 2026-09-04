@@ -65,6 +65,20 @@ export function entityNumberAttribute(
   return null;
 }
 
+/**
+ * The `unit_of_measurement` of an entity, trimmed and lower-cased, or null.
+ * Lets a caller rescale e.g. a `kW` power onto the `W` the card expects.
+ */
+export function entityUnit(
+  entityId: string,
+  hass?: HomeAssistant,
+): string | null {
+  const raw = hass?.states?.[entityId]?.attributes?.unit_of_measurement;
+  if (typeof raw !== 'string') return null;
+  const unit = raw.trim().toLowerCase();
+  return unit.length > 0 ? unit : null;
+}
+
 /** Static number, numeric string, or an entity whose state parses as a number. */
 export function resolveNumber(
   raw: number | string | boolean | null | undefined,

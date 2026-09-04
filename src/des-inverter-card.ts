@@ -6,8 +6,10 @@ import {
   formatSignedMinus,
   clamp,
 } from './format';
+import { entityUnit, isEntityId, resolveNumber, resolveText } from './resolve';
 import type {
   DesInverterCardConfig,
+  HomeAssistant,
   InverterData,
   InverterDemoState,
 } from './types';
@@ -26,10 +28,14 @@ const DEFAULT_IMBALANCE_MIN_W = 500;
 
 const PHASE_LABELS = ['L1', 'L2', 'L3'] as const;
 
+/** How a resolved entity value is rescaled onto the unit the card expects. */
+type Scale = 'power' | 'energy' | 'plain';
+
 /**
  * Phase 1 has no entity binding: the entire readout is one of these canned
  * datasets, picked with `demo_state`, so every visual state (producing, alarm,
- * night) can be exercised straight from YAML.
+ * night) can be exercised straight from YAML. Phase 2 keeps them as the
+ * fallback whenever no `*_entity` field is configured.
  */
 const DEMO_DATA: Record<InverterDemoState, InverterData> = {
   normal: {
@@ -99,14 +105,70 @@ const DEMO_DATA: Record<InverterDemoState, InverterData> = {
   },
 };
 
+// --- resolved view model ---------------------------------------------------
+//
+// The render layer draws from this shape whether the values came from the demo
+// dataset or from `hass.states`. In entity mode a field the card could not read
+// is `null` and shows a muted "–"; in demo mode nothing is ever null, so the
+// output stays pixel-identical to Phase 1.
+
+interface StringView {
+  power: number | null;
+  voltage: number | null;
+  current: number | null;
+}
+
+interface PhaseView {
+  grid: number | null;
+  inverter: number | null;
+  voltage: number | null;
+}
+
+interface InverterView {
+  model: string;
+  todayProduction: number | null;
+  totalProduction: number | null;
+  fault: string | null;
+  alarm: string | null;
+  deviceState: string;
+  pvPower: number | null;
+  inverterTemp: number | null;
+  dcTemp: number | null;
+  gridFrequency: number | null;
+  strings: [StringView, StringView];
+  phases: [PhaseView, PhaseView, PhaseView];
+  imbalance: [boolean, boolean];
+  /** Which optional blocks have at least one configured field. */
+  showStrings: boolean;
+  showPhases: boolean;
+  showDcItem: boolean;
+  showFreqItem: boolean;
+}
+
+/** True for a config slot that actually names an entity/value. */
+function present(value: unknown): boolean {
+  return typeof value === 'string' && value.trim().length > 0;
+}
+
+function nonEmptyArray(value: unknown): boolean {
+  return Array.isArray(value) && value.some(present);
+}
+
+function sumNonNull(values: ReadonlyArray<number | null>): number | null {
+  const usable = values.filter((v): v is number => v !== null);
+  return usable.length > 0 ? usable.reduce((a, b) => a + b, 0) : null;
+}
+
 export class DesInverterCard extends LitElement {
   static override properties = {
+    // Assigning `hass` is a reactive property write, so Home Assistant's state
+    // updates re-render the card (same mechanism as the storage card).
     hass: { attribute: false },
     _config: { state: true },
     _expanded: { state: true },
   };
 
-  declare hass?: unknown;
+  declare hass?: HomeAssistant;
   declare _config?: DesInverterCardConfig;
   declare _expanded: boolean;
 
@@ -132,10 +194,19 @@ export class DesInverterCard extends LitElement {
   }
 
   getCardSize(): number {
-    return this._expanded ? 6 : 3;
+    const blocks = this._blocks();
+    let rows = 2; // header + power row
+    if (blocks.strings) rows += 1; // string bars
+    if (this._expanded) {
+      if (blocks.strings) rows += 1;
+      if (blocks.phases) rows += 2;
+      if (blocks.dc || blocks.freq) rows += 1;
+    }
+    return rows;
   }
 
   static getStubConfig(): DesInverterCardConfig {
+    // No entities, so the picker preview shows the populated demo readout.
     return {
       type: 'custom:des-inverter-card',
       name: 'Wechselrichter',
@@ -146,11 +217,69 @@ export class DesInverterCard extends LitElement {
     };
   }
 
-  private get _data(): InverterData {
-    return DEMO_DATA[this._config?.demo_state ?? 'normal'];
+  // =========================================================================
+  // mode + config-derived scalars
+  // =========================================================================
+
+  /** Any configured `*_entity` field switches the card from demo to reading. */
+  private get _entityMode(): boolean {
+    const c = this._config;
+    if (!c) return false;
+    return (
+      present(c.pv_power_entity) ||
+      present(c.today_production_entity) ||
+      present(c.total_production_entity) ||
+      present(c.fault_entity) ||
+      present(c.alarm_entity) ||
+      present(c.device_state_entity) ||
+      present(c.inverter_temp_entity) ||
+      present(c.dc_temp_entity) ||
+      present(c.grid_frequency_entity) ||
+      present(c.pv1_power_entity) ||
+      present(c.pv1_voltage_entity) ||
+      present(c.pv1_current_entity) ||
+      present(c.pv2_power_entity) ||
+      present(c.pv2_voltage_entity) ||
+      present(c.pv2_current_entity) ||
+      nonEmptyArray(c.grid_power_entities) ||
+      nonEmptyArray(c.inverter_power_entities) ||
+      nonEmptyArray(c.grid_voltage_entities)
+    );
   }
 
-  // --- config-derived scalars ----------------------------------------------
+  /** Which optional blocks are present, from config alone (no hass needed). */
+  private _blocks(): {
+    strings: boolean;
+    phases: boolean;
+    dc: boolean;
+    freq: boolean;
+  } {
+    const c = this._config;
+    if (!c || !this._entityMode) {
+      // Demo mode shows every block (DC item still honours show_dc_temp).
+      return {
+        strings: true,
+        phases: true,
+        dc: c?.show_dc_temp !== false,
+        freq: true,
+      };
+    }
+    return {
+      strings:
+        present(c.pv1_power_entity) ||
+        present(c.pv1_voltage_entity) ||
+        present(c.pv1_current_entity) ||
+        present(c.pv2_power_entity) ||
+        present(c.pv2_voltage_entity) ||
+        present(c.pv2_current_entity),
+      phases:
+        nonEmptyArray(c.grid_power_entities) ||
+        nonEmptyArray(c.inverter_power_entities) ||
+        nonEmptyArray(c.grid_voltage_entities),
+      dc: c.show_dc_temp !== false && present(c.dc_temp_entity),
+      freq: present(c.grid_frequency_entity),
+    };
+  }
 
   private get _kwpTotal(): number {
     return this._config?.kwp_total ?? DEFAULT_KWP_TOTAL;
@@ -163,120 +292,277 @@ export class DesInverterCard extends LitElement {
     ];
   }
 
-  /** Per-string amber flags for a badly imbalanced array. */
-  private get _imbalance(): [boolean, boolean] {
+  // =========================================================================
+  // resolution: entities → view model
+  // =========================================================================
+
+  /**
+   * A configured entity's numeric value, rescaled onto the card's base unit
+   * (W for power, kWh for energy). `null` for an unset, unavailable or
+   * non-numeric slot - all of which render as a muted "–".
+   */
+  private _num(entity: string | undefined, scale: Scale): number | null {
+    if (!present(entity)) return null;
+    const resolved = resolveNumber(entity, this.hass);
+    if (resolved.kind !== 'value') return null;
+
+    let value = resolved.value;
+    // Only entities carry a unit; a static number is taken as already-scaled.
+    if (isEntityId(entity!)) {
+      const unit = entityUnit(entity!, this.hass);
+      if (scale === 'power') {
+        if (unit === 'kw') value *= 1000;
+        else if (unit === 'mw') value *= 1_000_000;
+      } else if (scale === 'energy') {
+        if (unit === 'wh') value /= 1000;
+        else if (unit === 'mwh') value *= 1000;
+      }
+    }
+    return Number.isFinite(value) ? value : null;
+  }
+
+  /** A configured entity's text, or null when unset/unavailable. */
+  private _text(entity: string | undefined): string | null {
+    if (!present(entity)) return null;
+    const resolved = resolveText(entity, this.hass);
+    return resolved.kind === 'value' ? resolved.value : null;
+  }
+
+  private _view(): InverterView {
+    return this._entityMode ? this._entityView() : this._demoView();
+  }
+
+  /** Wraps the static demo dataset in the (non-null) view shape. */
+  private _demoView(): InverterView {
+    const config = this._config!;
+    const data = DEMO_DATA[config.demo_state ?? 'normal'];
+    return {
+      model: config.model ?? data.model,
+      todayProduction: data.todayProduction,
+      totalProduction: data.totalProduction,
+      fault: data.fault,
+      alarm: data.alarm,
+      deviceState: data.deviceState,
+      pvPower: data.pvPower,
+      inverterTemp: data.inverterTemp,
+      dcTemp: data.dcTemp,
+      gridFrequency: data.gridFrequency,
+      strings: [data.strings[0], data.strings[1]],
+      phases: [data.phases[0], data.phases[1], data.phases[2]],
+      imbalance: this._imbalance(data.strings[0].power, data.strings[1].power),
+      showStrings: true,
+      showPhases: true,
+      showDcItem: config.show_dc_temp !== false,
+      showFreqItem: true,
+    };
+  }
+
+  private _entityView(): InverterView {
+    const c = this._config!;
+
+    const pv1Power = this._num(c.pv1_power_entity, 'power');
+    const pv2Power = this._num(c.pv2_power_entity, 'power');
+
+    // Total PV power: the dedicated entity, else the sum of the strings.
+    let pvPower: number | null;
+    if (present(c.pv_power_entity)) {
+      pvPower = this._num(c.pv_power_entity, 'power');
+    } else {
+      pvPower = sumNonNull([pv1Power, pv2Power]);
+    }
+
+    const strings: [StringView, StringView] = [
+      {
+        power: pv1Power,
+        voltage: this._num(c.pv1_voltage_entity, 'plain'),
+        current: this._num(c.pv1_current_entity, 'plain'),
+      },
+      {
+        power: pv2Power,
+        voltage: this._num(c.pv2_voltage_entity, 'plain'),
+        current: this._num(c.pv2_current_entity, 'plain'),
+      },
+    ];
+
+    const phase = (i: number): PhaseView => ({
+      grid: this._num(c.grid_power_entities?.[i], 'power'),
+      inverter: this._num(c.inverter_power_entities?.[i], 'power'),
+      voltage: this._num(c.grid_voltage_entities?.[i], 'plain'),
+    });
+
+    const blocks = this._blocks();
+
+    return {
+      model: c.model ?? '',
+      todayProduction: this._num(c.today_production_entity, 'energy'),
+      totalProduction: this._num(c.total_production_entity, 'energy'),
+      fault: this._text(c.fault_entity),
+      alarm: this._text(c.alarm_entity),
+      deviceState: this._text(c.device_state_entity) ?? 'Normal',
+      pvPower,
+      inverterTemp: this._num(c.inverter_temp_entity, 'plain'),
+      dcTemp: this._num(c.dc_temp_entity, 'plain'),
+      gridFrequency: this._num(c.grid_frequency_entity, 'plain'),
+      strings,
+      phases: [phase(0), phase(1), phase(2)],
+      imbalance: this._imbalance(pv1Power, pv2Power),
+      showStrings: blocks.strings,
+      showPhases: blocks.phases,
+      showDcItem: blocks.dc,
+      showFreqItem: blocks.freq,
+    };
+  }
+
+  /** Per-string amber flags; skipped when a power is missing (would be NaN). */
+  private _imbalance(
+    p0: number | null,
+    p1: number | null,
+  ): [boolean, boolean] {
     const config = this._config;
     if (config?.imbalance_warn === false) return [false, false];
+    if (p0 === null || p1 === null) return [false, false];
 
     const ratio = config?.imbalance_ratio ?? DEFAULT_IMBALANCE_RATIO;
     const minW = config?.imbalance_min_w ?? DEFAULT_IMBALANCE_MIN_W;
-    const [a, b] = this._data.strings.map((s) => s.power);
     const lags = (self: number, other: number): boolean =>
       self < ratio * other && other > minW;
-    return [lags(a!, b!), lags(b!, a!)];
+    return [lags(p0, p1), lags(p1, p0)];
   }
+
+  // =========================================================================
+  // render
+  // =========================================================================
 
   override render(): TemplateResult | typeof nothing {
     const config = this._config;
     if (!config) return nothing;
 
+    const view = this._view();
+    const hasDetails = view.showStrings || view.showPhases || this._hasFooter(view);
+
     return html`
       <ha-card>
         <div class="card">
-          ${this._renderCollapsed()}
-          ${this._expanded ? this._renderExpanded() : nothing}
+          ${this._renderCollapsed(view, hasDetails)}
+          ${this._expanded && hasDetails ? this._renderExpanded(view) : nothing}
         </div>
       </ha-card>
     `;
   }
 
-  // =========================================================================
-  // collapsed (always visible)
-  // =========================================================================
+  private _hasFooter(view: InverterView): boolean {
+    return view.showDcItem || view.showFreqItem;
+  }
 
-  private _renderCollapsed(): TemplateResult {
+  // --- collapsed (always visible) ------------------------------------------
+
+  private _renderCollapsed(view: InverterView, hasDetails: boolean): TemplateResult {
     const config = this._config!;
-    const data = this._data;
-    const model = config.model ?? data.model;
 
     return html`
       <div class="header">
         <div class="head-left">
           <span class="name">${config.name}</span>
-          <span class="meta">
-            ${model} · ${formatFixed(data.todayProduction)} kWh heute ·
-            ${formatInt(data.totalProduction)} kWh gesamt
-          </span>
+          <span class="meta">${this._renderMeta(view)}</span>
         </div>
-        ${this._renderPill(data)}
+        ${this._renderPill(view)}
       </div>
 
-      ${this._renderPowerRow(data)} ${this._renderStringBars(data)}
+      ${this._renderPowerRow(view)}
+      ${view.showStrings ? this._renderStringBars(view) : nothing}
 
-      <div
-        class="chevron-row clickable"
-        role="button"
-        tabindex="0"
-        aria-expanded=${String(this._expanded)}
-        aria-label="Details"
-        @click=${this._toggleExpanded}
-        @keydown=${this._onKeydown}
-      >
-        <ha-icon
-          class="chevron ${this._expanded ? 'open' : ''}"
-          icon="mdi:chevron-down"
-        ></ha-icon>
-      </div>
+      ${hasDetails
+        ? html`<div
+            class="chevron-row clickable"
+            role="button"
+            tabindex="0"
+            aria-expanded=${String(this._expanded)}
+            aria-label="Details"
+            @click=${this._toggleExpanded}
+            @keydown=${this._onKeydown}
+          >
+            <ha-icon
+              class="chevron ${this._expanded ? 'open' : ''}"
+              icon="mdi:chevron-down"
+            ></ha-icon>
+          </div>`
+        : nothing}
     `;
   }
 
-  /** fault beats alarm beats device state. */
-  private _renderPill(data: InverterData): TemplateResult {
-    const [text, modifier] =
-      data.fault !== 'OK'
-        ? [`Fault: ${data.fault}`, 'pill-fault']
-        : data.alarm !== 'OK'
-          ? [`Alarm: ${data.alarm}`, 'pill-alarm']
-          : [data.deviceState, 'pill-ok'];
+  /** "{model} · {today} kWh heute · {total} kWh gesamt"; model dropped if empty. */
+  private _renderMeta(view: InverterView): TemplateResult {
+    const parts: Array<TemplateResult> = [];
+    if (view.model) parts.push(html`${view.model}`);
+    parts.push(html`${this._unit(view.todayProduction, formatFixed, 'kWh')} heute`);
+    parts.push(
+      html`${this._unit(view.totalProduction, formatInt, 'kWh')} gesamt`,
+    );
+    return html`${parts.map((part, i) => (i === 0 ? part : html` · ${part}`))}`;
+  }
+
+  /** fault beats alarm beats device state; "OK"/absent means no fault. */
+  private _renderPill(view: InverterView): TemplateResult {
+    const raised = (value: string | null): string | null => {
+      if (value === null) return null;
+      const text = value.trim();
+      return text.length > 0 && text.toLowerCase() !== 'ok' ? text : null;
+    };
+
+    const fault = raised(view.fault);
+    const alarm = raised(view.alarm);
+
+    const [text, modifier] = fault
+      ? [`Fault: ${fault}`, 'pill-fault']
+      : alarm
+        ? [`Alarm: ${alarm}`, 'pill-alarm']
+        : [view.deviceState, 'pill-ok'];
 
     return html`<span class="pill ${modifier}">
       <span class="pill-label">${text}</span>
     </span>`;
   }
 
-  private _renderPowerRow(data: InverterData): TemplateResult {
-    const producing = data.pvPower > 0;
+  private _renderPowerRow(view: InverterView): TemplateResult {
+    const producing = view.pvPower !== null && view.pvPower > 0;
     const kwpTotal = this._kwpTotal;
     const share =
-      kwpTotal > 0 ? clamp((data.pvPower / (kwpTotal * 1000)) * 100, 0, 999) : 0;
+      view.pvPower !== null && kwpTotal > 0
+        ? clamp((view.pvPower / (kwpTotal * 1000)) * 100, 0, 999)
+        : null;
 
     return html`
       <div class="power-row">
         <div class="pv">
           <span class="pv-value ${producing ? 'producing' : 'idle'}">
-            ${formatInt(data.pvPower)} W
+            ${this._unit(view.pvPower, formatInt, 'W')}
           </span>
-          <span class="pv-share">
-            ${formatInt(share)} % von ${formatDecimal(kwpTotal)} kWp
-          </span>
+          ${share === null
+            ? nothing
+            : html`<span class="pv-share">
+                ${formatInt(share)} % von ${formatDecimal(kwpTotal)} kWp
+              </span>`}
         </div>
         <div class="temp">
-          ${this._thermometer()} ${formatFixed(data.inverterTemp)} °C
+          ${this._thermometer()}
+          ${this._unit(view.inverterTemp, formatFixed, '°C')}
         </div>
       </div>
     `;
   }
 
-  private _renderStringBars(data: InverterData): TemplateResult {
+  private _renderStringBars(view: InverterView): TemplateResult {
     const kwp = this._kwpString;
-    const imbalance = this._imbalance;
 
     return html`
       <div class="strings">
-        ${data.strings.map((s, i) => {
+        ${view.strings.map((s, i) => {
           const full = (kwp[i] ?? 0) * 1000;
-          const pct = full > 0 ? clamp((s.power / full) * 100, 0, 100) : 0;
-          const warn = imbalance[i];
+          const pct =
+            s.power !== null && full > 0
+              ? clamp((s.power / full) * 100, 0, 100)
+              : 0;
+          const warn = view.imbalance[i];
           return html`
             <div class="string-row">
               <span class="string-label">PV${i + 1}</span>
@@ -286,7 +572,9 @@ export class DesInverterCard extends LitElement {
                   style="width: ${pct}%"
                 ></div>
               </div>
-              <span class="string-power">${formatInt(s.power)} W</span>
+              <span class="string-power">
+                ${this._unit(s.power, formatInt, 'W')}
+              </span>
             </div>
           `;
         })}
@@ -294,32 +582,30 @@ export class DesInverterCard extends LitElement {
     `;
   }
 
-  // =========================================================================
-  // expanded
-  // =========================================================================
+  // --- expanded ------------------------------------------------------------
 
-  private _renderExpanded(): TemplateResult {
+  private _renderExpanded(view: InverterView): TemplateResult {
     return html`
       <div class="details">
-        ${this._renderStringsTable()} ${this._renderPhasesTable()}
-        ${this._renderFooter()}
+        ${view.showStrings ? this._renderStringsTable(view) : nothing}
+        ${view.showPhases ? this._renderPhasesTable(view) : nothing}
+        ${this._hasFooter(view) ? this._renderFooter(view) : nothing}
       </div>
     `;
   }
 
   // A. Strings — voltage / current per MPPT input.
-  private _renderStringsTable(): TemplateResult {
-    const data = this._data;
+  private _renderStringsTable(view: InverterView): TemplateResult {
     return html`
       <div class="grid strings-grid">
         <span class="col-head">Strings</span>
         <span class="col-head num">Spannung</span>
         <span class="col-head num">Strom</span>
-        ${data.strings.map(
+        ${view.strings.map(
           (s, i) => html`
             <span class="row-label">PV${i + 1}</span>
-            <span class="num">${formatFixed(s.voltage)} V</span>
-            <span class="num">${formatFixed(s.current)} A</span>
+            <span class="num">${this._unit(s.voltage, formatFixed, 'V')}</span>
+            <span class="num">${this._unit(s.current, formatFixed, 'A')}</span>
           `,
         )}
       </div>
@@ -327,13 +613,14 @@ export class DesInverterCard extends LitElement {
   }
 
   // B. Phases — grid flow, inverter output, voltage per phase, plus a Σ row.
-  private _renderPhasesTable(): TemplateResult {
-    const data = this._data;
+  private _renderPhasesTable(view: InverterView): TemplateResult {
     const invert = this._config?.invert_grid ? -1 : 1;
 
-    const gridValues = data.phases.map((p) => p.grid * invert);
-    const gridSum = gridValues.reduce((a, b) => a + b, 0);
-    const inverterSum = data.phases.reduce((a, p) => a + p.inverter, 0);
+    const gridValues = view.phases.map((p) =>
+      p.grid === null ? null : p.grid * invert,
+    );
+    const gridSum = sumNonNull(gridValues);
+    const inverterSum = sumNonNull(view.phases.map((p) => p.inverter));
 
     return html`
       <div class="grid phases-grid">
@@ -342,44 +629,48 @@ export class DesInverterCard extends LitElement {
         <span class="col-head num">WR-Ausgang</span>
         <span class="col-head num">Spannung</span>
 
-        ${data.phases.map(
-          (p, i) => html`
+        ${view.phases.map((p, i) => {
+          const grid = gridValues[i]!;
+          return html`
             <span class="row-label">${PHASE_LABELS[i]}</span>
-            <span class="num ${this._gridClass(gridValues[i]!)}">
-              ${formatSignedMinus(gridValues[i]!)} W
+            <span class="num ${this._gridClass(grid)}">
+              ${this._unit(grid, formatSignedMinus, 'W')}
             </span>
-            <span class="num">${formatInt(p.inverter)} W</span>
-            <span class="num">${formatFixed(p.voltage)} V</span>
-          `,
-        )}
+            <span class="num">${this._unit(p.inverter, formatInt, 'W')}</span>
+            <span class="num">${this._unit(p.voltage, formatFixed, 'V')}</span>
+          `;
+        })}
 
         <span class="row-label sum">Σ</span>
         <span class="num sum ${this._gridClass(gridSum)}">
-          ${formatSignedMinus(gridSum)} W
+          ${this._unit(gridSum, formatSignedMinus, 'W')}
         </span>
-        <span class="num sum">${formatInt(inverterSum)} W</span>
+        <span class="num sum">${this._unit(inverterSum, formatInt, 'W')}</span>
         <span class="num sum muted">–</span>
       </div>
     `;
   }
 
   // C. Footer — DC temperature (optional) and grid frequency.
-  private _renderFooter(): TemplateResult {
-    const data = this._data;
-    const showDc = this._config?.show_dc_temp !== false;
-
+  private _renderFooter(view: InverterView): TemplateResult {
     return html`
       <div class="footer">
-        ${showDc
+        ${view.showDcItem
           ? html`<div class="foot-item">
               <span class="foot-label">DC-Temperatur</span>
-              <span class="foot-value">${formatFixed(data.dcTemp)} °C</span>
+              <span class="foot-value">
+                ${this._unit(view.dcTemp, formatFixed, '°C')}
+              </span>
             </div>`
           : nothing}
-        <div class="foot-item">
-          <span class="foot-label">Netzfrequenz</span>
-          <span class="foot-value">${formatFixed(data.gridFrequency, 2)} Hz</span>
-        </div>
+        ${view.showFreqItem
+          ? html`<div class="foot-item">
+              <span class="foot-label">Netzfrequenz</span>
+              <span class="foot-value">
+                ${this._unit(view.gridFrequency, (n) => formatFixed(n, 2), 'Hz')}
+              </span>
+            </div>`
+          : nothing}
       </div>
     `;
   }
@@ -388,11 +679,21 @@ export class DesInverterCard extends LitElement {
   // shared
   // =========================================================================
 
-  /** negative = feed-in (green), positive = import (red), zero = muted. */
-  private _gridClass(value: number): string {
-    if (value < 0) return 'grid-feed';
-    if (value > 0) return 'grid-draw';
-    return 'muted';
+  /** Formatted "value unit", or a muted "–" when the value is missing. */
+  private _unit(
+    value: number | null,
+    format: (n: number) => string,
+    unit: string,
+  ): TemplateResult {
+    return value === null
+      ? html`<span class="unavail">–</span>`
+      : html`${format(value)} ${unit}`;
+  }
+
+  /** negative = feed-in (green), positive = import (red), zero/null = muted. */
+  private _gridClass(value: number | null): string {
+    if (value === null || value === 0) return 'muted';
+    return value < 0 ? 'grid-feed' : 'grid-draw';
   }
 
   /** Inline thermometer glyph, so the card needs no external icon set. */
@@ -474,6 +775,12 @@ export class DesInverterCard extends LitElement {
       overflow: hidden;
       text-overflow: ellipsis;
       white-space: nowrap;
+    }
+
+    /* Placeholder for values the card could not read. */
+    .unavail {
+      color: var(--secondary-text-color);
+      opacity: 0.7;
     }
 
     /* --- status pill (shared look with the storage card badges) --- */

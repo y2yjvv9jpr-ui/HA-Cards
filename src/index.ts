@@ -23,7 +23,7 @@ const CARDS: ReadonlyArray<CardRegistration> = [
     element: DesInverterCard,
     name: 'Daniels Wechselrichterkarte',
     description:
-      'Wechselrichter-Übersicht: PV-Leistung, Strings und Phasen (Phase 1: Demo-Werte).',
+      'Wechselrichter-Übersicht: PV-Leistung, Strings und Phasen (Entities oder Demo-Werte).',
   },
 ];
 

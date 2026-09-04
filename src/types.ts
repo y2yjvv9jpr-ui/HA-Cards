@@ -173,8 +173,9 @@ export interface InverterPhase {
 }
 
 /**
- * The full readout the card draws. In Phase 1 this is produced entirely from
- * static demo data; Phase 2 fills the same shape from `hass.states`.
+ * The static demo dataset (`demo_state`). Phase 2 reads the live readout from
+ * entities into a nullable view model of the same shape; this stays the
+ * fallback whenever no `*_entity` field is configured.
  */
 export interface InverterData {
   model: string;
@@ -203,14 +204,16 @@ export interface InverterData {
 }
 
 /**
- * Phase 1 card. The `*_entity` slots are reserved for Phase 2 and are read by
- * nothing yet - the card renders the demo dataset picked by `demo_state`.
+ * Phase 2, read-only. As soon as any `*_entity` field is set the card reads the
+ * whole readout from `hass.states` and `demo_state` is ignored; with no entity
+ * field it falls back to the static demo dataset. Values scale onto the card's
+ * base units by the entity's `unit_of_measurement` (kW/MW → W, Wh/MWh → kWh).
  */
 export interface DesInverterCardConfig {
   type: string;
   name: string;
 
-  /** Which static dataset to render. Default `normal`. */
+  /** Static demo dataset, used only when no `*_entity` field is set. Default `normal`. */
   demo_state?: InverterDemoState;
 
   /** Shown in the meta line; falls back to the demo model when unset. */
@@ -235,24 +238,39 @@ export interface DesInverterCardConfig {
   /** ...but only while the other string exceeds this many watts. Default `500`. */
   imbalance_min_w?: number;
 
-  // --- reserved for Phase 2 (entity binding) - unused in Phase 1 -----------
+  // --- entity binding (read-only) -----------------------------------------
+
+  /** Total PV power. Falls back to the sum of the two strings when unset. */
   pv_power_entity?: string;
+  /** Energy produced today (kWh). */
   today_production_entity?: string;
+  /** Lifetime energy (kWh). */
   total_production_entity?: string;
+  /** Fault text; `OK`/unavailable means no fault (red pill otherwise). */
   fault_entity?: string;
+  /** Alarm text; `OK`/unavailable means no alarm (amber pill otherwise). */
   alarm_entity?: string;
+  /** Device state shown when neither fault nor alarm is raised. Default "Normal". */
   device_state_entity?: string;
+  /** Inverter (AC board) temperature (°C). */
   inverter_temp_entity?: string;
+  /** DC-side temperature (°C), footer. */
   dc_temp_entity?: string;
+  /** Grid frequency (Hz), footer. */
   grid_frequency_entity?: string;
+  /** String PV1 power / voltage / current. */
   pv1_power_entity?: string;
   pv1_voltage_entity?: string;
   pv1_current_entity?: string;
+  /** String PV2 power / voltage / current. */
   pv2_power_entity?: string;
   pv2_voltage_entity?: string;
   pv2_current_entity?: string;
+  /** Grid power per phase `[L1, L2, L3]` (signed; see `invert_grid`). */
   grid_power_entities?: string[];
+  /** Inverter AC output per phase `[L1, L2, L3]`. */
   inverter_power_entities?: string[];
+  /** Grid voltage per phase `[L1, L2, L3]`. */
   grid_voltage_entities?: string[];
 }
 
