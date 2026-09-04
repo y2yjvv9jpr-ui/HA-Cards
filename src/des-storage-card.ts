@@ -25,12 +25,21 @@ const THRESHOLD_MIN = 10;
 const THRESHOLD_MAX = 80;
 const THRESHOLD_STEP = 5;
 
+const TARGET_MIN = 50;
+const TARGET_MAX = 100;
+const TARGET_STEP = 5;
+
 const MAX_ITEMS = 5;
 
-const ITEM_MODES: ReadonlyArray<{ mode: ItemMode; label: string }> = [
-  { mode: 'on', label: 'An' },
-  { mode: 'auto', label: 'Auto' },
-  { mode: 'off', label: 'Aus' },
+const CHARGE_MODES: ReadonlyArray<{ value: ChargeMode; label: string }> = [
+  { value: 'charge', label: 'Laden' },
+  { value: 'auto', label: 'Auto' },
+];
+
+const ITEM_MODES: ReadonlyArray<{ value: ItemMode; label: string }> = [
+  { value: 'on', label: 'An' },
+  { value: 'auto', label: 'Auto' },
+  { value: 'off', label: 'Aus' },
 ];
 
 /**
@@ -56,11 +65,28 @@ function normaliseItemMode(raw: ItemModeConfigValue | undefined): ItemMode {
   return 'auto';
 }
 
+/** Snaps a configured percentage onto the slider's own scale. */
+function snap(value: number, min: number, max: number, step: number): number {
+  return clamp(Math.round(value / step) * step, min, max);
+}
+
+/**
+ * Traffic-light class for the battery temperature.
+ *
+ *   < 4 °C  red · 4-8 °C  yellow · 8-40 °C  neutral · 40-50 °C  yellow · > 50 °C  red
+ */
+function temperatureClass(temp: number): string {
+  if (temp < 4 || temp > 50) return 'temp-alert';
+  if (temp < 8 || temp > 40) return 'temp-warn';
+  return '';
+}
+
 export class DesStorageCard extends LitElement {
   static override properties = {
     hass: { attribute: false },
     _config: { state: true },
     _threshold: { state: true },
+    _chargeTarget: { state: true },
     _chargeMode: { state: true },
     _expanded: { state: true },
     _itemModes: { state: true },
@@ -69,6 +95,7 @@ export class DesStorageCard extends LitElement {
   declare hass?: HomeAssistant;
   declare _config?: DesStorageCardConfig;
   declare _threshold: number;
+  declare _chargeTarget: number;
   declare _chargeMode: ChargeMode;
   declare _expanded: boolean;
   declare _itemModes: ItemMode[];
@@ -78,6 +105,7 @@ export class DesStorageCard extends LitElement {
   constructor() {
     super();
     this._threshold = THRESHOLD_MIN;
+    this._chargeTarget = TARGET_MAX;
     this._chargeMode = 'auto';
     this._expanded = false;
     this._itemModes = [];
@@ -109,11 +137,11 @@ export class DesStorageCard extends LitElement {
       this._threshold =
         threshold === null
           ? THRESHOLD_MIN
-          : clamp(
-              Math.round(threshold / THRESHOLD_STEP) * THRESHOLD_STEP,
-              THRESHOLD_MIN,
-              THRESHOLD_MAX,
-            );
+          : snap(threshold, THRESHOLD_MIN, THRESHOLD_MAX, THRESHOLD_STEP);
+
+      const target = resolveNumber(config.charge_target_pct, this.hass);
+      this._chargeTarget =
+        target === null ? TARGET_MAX : snap(target, TARGET_MIN, TARGET_MAX, TARGET_STEP);
 
       this._chargeMode = config.charge_mode === 'charge' ? 'charge' : 'auto';
     } else {
@@ -157,6 +185,7 @@ export class DesStorageCard extends LitElement {
       power_w: -1240,
       temp_c: 23.5,
       threshold_pct: 20,
+      charge_target_pct: 90,
       charge_mode: 'auto',
       time_remaining: '4:36 h bis 20 %',
       time_at: 'um 00:12',
@@ -194,7 +223,7 @@ export class DesStorageCard extends LitElement {
       <div class="header">
         <div class="head-left">
           <span class="name">${config.name}</span>
-          <span class="meta">${this._batteryMeta(config)}</span>
+          <span class="meta">${this._renderBatteryMeta(config)}</span>
         </div>
         <div class="badges">
           ${backup === 'none' ? nothing : this._renderBackupBadge(backup)}
@@ -233,44 +262,78 @@ export class DesStorageCard extends LitElement {
         ></ha-icon>
       </div>
 
-      ${this._expanded
-        ? html`<div class="controls">
-            <button
-              class="action ${this._chargeMode === 'charge' ? 'active' : ''}"
-              type="button"
-              @click=${this._toggleChargeMode}
-            >
-              ${this._chargeMode === 'charge' ? 'Auto' : 'Jetzt laden'}
-            </button>
-            <div class="slider-wrap">
-              <input
-                class="slider"
-                type="range"
-                min=${THRESHOLD_MIN}
-                max=${THRESHOLD_MAX}
-                step=${THRESHOLD_STEP}
-                .value=${String(this._threshold)}
-                aria-label="Entladeschwelle"
-                @input=${this._onThresholdInput}
-              />
-              <span class="slider-value">${formatInt(this._threshold)} %</span>
-            </div>
-          </div>`
-        : nothing}
+      ${this._expanded ? this._renderBatteryControls() : nothing}
     `;
   }
 
-  /** "10,2 kWh · 23,5 °C · Schwelle 20 %" - temp segment dropped when null. */
-  private _batteryMeta(config: DesStorageCardConfig): string {
+  /**
+   * Two labelled slider rows on one grid, so labels, tracks and values line
+   * up. The charge-mode control sits in the first column of the first row;
+   * the second row leaves that column empty.
+   */
+  private _renderBatteryControls(): TemplateResult {
+    const targetActive = this._chargeMode === 'charge';
+
+    return html`
+      <div class="controls">
+        ${this._renderSegmented(
+          CHARGE_MODES,
+          this._chargeMode,
+          (value) => this._setChargeMode(value),
+          'Lademodus',
+        )}
+        <span class="ctl-label ${targetActive ? '' : 'disabled'}">Ladeziel</span>
+        <input
+          class="slider"
+          type="range"
+          min=${TARGET_MIN}
+          max=${TARGET_MAX}
+          step=${TARGET_STEP}
+          .value=${String(this._chargeTarget)}
+          ?disabled=${!targetActive}
+          aria-label="Ladeziel"
+          @input=${this._onTargetInput}
+        />
+        <span class="ctl-value ${targetActive ? '' : 'disabled'}">
+          ${formatInt(this._chargeTarget)} %
+        </span>
+
+        <span></span>
+        <span class="ctl-label">min. SoC</span>
+        <input
+          class="slider"
+          type="range"
+          min=${THRESHOLD_MIN}
+          max=${THRESHOLD_MAX}
+          step=${THRESHOLD_STEP}
+          .value=${String(this._threshold)}
+          aria-label="Minimaler Ladestand"
+          @input=${this._onThresholdInput}
+        />
+        <span class="ctl-value">${formatInt(this._threshold)} %</span>
+      </div>
+    `;
+  }
+
+  /** "10,2 kWh · 23,5 °C · min. 20 % SoC" - temp segment dropped when null. */
+  private _renderBatteryMeta(config: DesStorageCardConfig): TemplateResult {
     const capacity = resolveNumber(config.capacity_kwh, this.hass);
     const temp = resolveNumber(config.temp_c, this.hass);
-    const parts: string[] = [];
+    const parts: Array<TemplateResult | string> = [];
 
     if (capacity !== null) parts.push(`${formatDecimal(capacity)} kWh`);
-    if (temp !== null) parts.push(`${formatDecimal(temp)} °C`);
-    parts.push(`Schwelle ${formatInt(this._threshold)} %`);
+    if (temp !== null) {
+      parts.push(
+        html`<span class=${temperatureClass(temp)}>
+          ${formatDecimal(temp)} °C
+        </span>`,
+      );
+    }
+    parts.push(`min. ${formatInt(this._threshold)} % SoC`);
 
-    return parts.join(' · ');
+    return html`${parts.map((part, index) =>
+      index === 0 ? part : html` · ${part}`,
+    )}`;
   }
 
   /** "4:36 h bis 20 % · um 00:12" - null when neither is set. */
@@ -359,7 +422,10 @@ export class DesStorageCard extends LitElement {
           <span class="name">${config.name}</span>
         </div>
         <div class="badges">
-          <span class="badge ${heatingCount > 0 ? 'status-heating' : 'status-off'}">
+          <!-- Heating charges the heat store, so it reads as "charging". -->
+          <span
+            class="badge ${heatingCount > 0 ? 'status-charging' : 'status-off'}"
+          >
             ${heatingCount > 0 ? `${formatInt(heatingCount)} heizen` : 'Aus'}
           </span>
         </div>
@@ -372,7 +438,7 @@ export class DesStorageCard extends LitElement {
           <span class="energy">heute eingespeichert</span>
         </div>
         <div class="timing">
-          <div class=${totalPower > 0 ? 'power heat' : 'power neutral'}>
+          <div class=${this._powerClass(totalPower)}>
             ${this._formatPower(totalPower)}
           </div>
         </div>
@@ -390,7 +456,6 @@ export class DesStorageCard extends LitElement {
     power: number,
   ): TemplateResult {
     const energy = resolveNumber(item.energy_kwh, this.hass);
-    const active = this._itemModes[index] ?? 'auto';
 
     return html`
       <div class="item">
@@ -398,23 +463,15 @@ export class DesStorageCard extends LitElement {
         <span class="item-energy">
           ${energy === null ? '' : `${formatDecimal(energy)} kWh`}
         </span>
-        <span class=${power > 0 ? 'item-power heat' : 'item-power'}>
+        <span class=${power > 0 ? 'item-power positive' : 'item-power'}>
           ${this._formatPower(power)}
         </span>
-        <div class="seg" role="group" aria-label="Modus ${item.name}">
-          ${ITEM_MODES.map(
-            ({ mode, label }) => html`
-              <button
-                type="button"
-                class=${active === mode ? 'active' : ''}
-                aria-pressed=${active === mode ? 'true' : 'false'}
-                @click=${() => this._setItemMode(index, mode)}
-              >
-                ${label}
-              </button>
-            `,
-          )}
-        </div>
+        ${this._renderSegmented(
+          ITEM_MODES,
+          this._itemModes[index] ?? 'auto',
+          (value) => this._setItemMode(index, value),
+          `Modus ${item.name}`,
+        )}
       </div>
     `;
   }
@@ -422,6 +479,34 @@ export class DesStorageCard extends LitElement {
   // =========================================================================
   // shared
   // =========================================================================
+
+  /** One segmented control, used for both charge mode and item modes. */
+  private _renderSegmented<T extends string>(
+    options: ReadonlyArray<{ value: T; label: string }>,
+    active: T,
+    onSelect: (value: T) => void,
+    ariaLabel: string,
+  ): TemplateResult {
+    return html`
+      <div class="seg" role="group" aria-label=${ariaLabel}>
+        ${options.map(
+          ({ value, label }) => html`
+            <button
+              type="button"
+              class=${active === value ? 'active' : ''}
+              aria-pressed=${active === value ? 'true' : 'false'}
+              @click=${(ev: Event) => {
+                ev.stopPropagation();
+                onSelect(value);
+              }}
+            >
+              ${label}
+            </button>
+          `,
+        )}
+      </div>
+    `;
+  }
 
   private _renderBackupBadge(backup: BackupState): TemplateResult {
     return backup === 'active'
@@ -451,11 +536,13 @@ export class DesStorageCard extends LitElement {
     }
   }
 
-  private _toggleChargeMode(ev: Event): void {
-    // Guard in case the controls ever move inside the expandable row, which
-    // would otherwise collapse the card on every mode change.
-    ev.stopPropagation();
-    this._chargeMode = this._chargeMode === 'charge' ? 'auto' : 'charge';
+  private _setChargeMode(mode: ChargeMode): void {
+    this._chargeMode = mode;
+  }
+
+  private _onTargetInput(ev: Event): void {
+    const target = ev.target as HTMLInputElement;
+    this._chargeTarget = Number(target.value);
   }
 
   private _onThresholdInput(ev: Event): void {
@@ -516,6 +603,14 @@ export class DesStorageCard extends LitElement {
       white-space: nowrap;
     }
 
+    .temp-warn {
+      color: var(--warning-color, #ff9800);
+    }
+
+    .temp-alert {
+      color: var(--error-color, #d32f2f);
+    }
+
     .badges {
       display: flex;
       align-items: center;
@@ -523,13 +618,18 @@ export class DesStorageCard extends LitElement {
       flex-shrink: 0;
     }
 
+    /* inline-flex + line-height:1 centres the label optically, which a bare
+       line-height on an inline box does not. */
     .badge {
-      display: inline-block;
-      padding: 2px 9px;
-      border-radius: 11px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 20px;
+      padding: 0 9px;
+      border-radius: 10px;
       font-size: 11px;
       font-weight: 500;
-      line-height: 1.5;
+      line-height: 1;
       white-space: nowrap;
       /* Fallback for browsers without color-mix(); overridden below. */
       background: rgba(127, 127, 127, 0.15);
@@ -610,7 +710,7 @@ export class DesStorageCard extends LitElement {
       --mdc-icon-size: 30px;
       width: 30px;
       height: 30px;
-      color: var(--warning-color, #ff9800);
+      color: var(--secondary-text-color);
       flex-shrink: 0;
     }
 
@@ -667,10 +767,6 @@ export class DesStorageCard extends LitElement {
       color: var(--success-color, #2e7d32);
     }
 
-    .power.heat {
-      color: var(--warning-color, #ff9800);
-    }
-
     .power.neutral {
       color: var(--secondary-text-color);
     }
@@ -691,63 +787,87 @@ export class DesStorageCard extends LitElement {
     /* --- battery controls (collapsed by default) --- */
 
     .controls {
-      display: flex;
+      display: grid;
+      grid-template-columns: auto auto 1fr auto;
       align-items: center;
-      gap: 12px;
+      gap: 8px 10px;
       margin-top: 10px;
       padding-top: 10px;
-      border-top: 1px solid var(--divider-color, rgba(127, 127, 127, 0.25));
+      border-top: 1px solid var(--divider-color, rgba(127, 127, 127, 0.22));
     }
 
-    .action {
-      font-family: inherit;
-      font-size: 13px;
-      font-weight: 500;
-      color: var(--primary-color, #03a9f4);
-      background: none;
-      border: 1px solid var(--divider-color, rgba(127, 127, 127, 0.35));
-      border-radius: 6px;
-      padding: 5px 13px;
-      cursor: pointer;
+    .ctl-label {
+      font-size: 12px;
+      color: var(--secondary-text-color);
       white-space: nowrap;
     }
 
-    .action:hover {
-      background: color-mix(in srgb, var(--primary-color, #03a9f4) 8%, transparent);
-    }
-
-    .action.active {
-      background: var(--primary-color, #03a9f4);
-      border-color: var(--primary-color, #03a9f4);
-      color: var(--text-primary-color, #fff);
-    }
-
-    .action:focus-visible {
-      outline: 2px solid var(--primary-color, #03a9f4);
-      outline-offset: 2px;
-    }
-
-    .slider-wrap {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      flex: 1;
-      min-width: 0;
-    }
-
-    .slider {
-      flex: 1;
-      min-width: 0;
-      accent-color: var(--primary-color, #03a9f4);
-      cursor: pointer;
-    }
-
-    .slider-value {
-      font-size: 13px;
+    .ctl-value {
+      font-size: 12px;
       color: var(--secondary-text-color);
-      min-width: 42px;
+      min-width: 38px;
       text-align: right;
       white-space: nowrap;
+    }
+
+    .ctl-label.disabled,
+    .ctl-value.disabled {
+      opacity: 0.4;
+    }
+
+    /* --- sliders: thin track, small muted thumb --- */
+
+    .slider {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 100%;
+      min-width: 0;
+      height: 12px;
+      background: none;
+      cursor: pointer;
+    }
+
+    .slider:disabled {
+      opacity: 0.35;
+      cursor: not-allowed;
+    }
+
+    .slider::-webkit-slider-runnable-track {
+      height: 3px;
+      border-radius: 2px;
+      background: var(--divider-color, rgba(127, 127, 127, 0.3));
+    }
+
+    .slider::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 12px;
+      height: 12px;
+      border: none;
+      border-radius: 50%;
+      background: var(--secondary-text-color);
+      /* Centres the thumb on the 3px track. */
+      margin-top: -4.5px;
+    }
+
+    .slider::-moz-range-track {
+      height: 3px;
+      border-radius: 2px;
+      background: var(--divider-color, rgba(127, 127, 127, 0.3));
+    }
+
+    .slider::-moz-range-thumb {
+      width: 12px;
+      height: 12px;
+      border: none;
+      border-radius: 50%;
+      background: var(--secondary-text-color);
+    }
+
+    .slider:focus-visible {
+      outline: 2px solid var(--primary-color, #03a9f4);
+      outline-offset: 2px;
+      border-radius: 3px;
     }
 
     /* --- thermal group item rows --- */
@@ -762,7 +882,7 @@ export class DesStorageCard extends LitElement {
       align-items: center;
       gap: 10px;
       padding: 6px 0;
-      border-top: 1px solid var(--divider-color, rgba(127, 127, 127, 0.2));
+      border-top: 1px solid var(--divider-color, rgba(127, 127, 127, 0.18));
     }
 
     .item-name {
@@ -786,26 +906,28 @@ export class DesStorageCard extends LitElement {
       white-space: nowrap;
     }
 
-    .item-power.heat {
-      color: var(--warning-color, #ff9800);
+    .item-power.positive {
+      color: var(--success-color, #2e7d32);
       font-weight: 500;
     }
 
+    /* --- segmented control --- */
+
     .seg {
       display: inline-flex;
-      border: 1px solid var(--divider-color, rgba(127, 127, 127, 0.35));
-      border-radius: 6px;
+      border: 1px solid var(--divider-color, rgba(127, 127, 127, 0.28));
+      border-radius: 5px;
       overflow: hidden;
     }
 
     .seg button {
       font-family: inherit;
       font-size: 11px;
-      line-height: 1.5;
-      padding: 3px 8px;
+      line-height: 1;
+      padding: 4px 7px;
       background: none;
       border: none;
-      border-left: 1px solid var(--divider-color, rgba(127, 127, 127, 0.35));
+      border-left: 1px solid var(--divider-color, rgba(127, 127, 127, 0.28));
       color: var(--secondary-text-color);
       cursor: pointer;
     }
@@ -815,12 +937,14 @@ export class DesStorageCard extends LitElement {
     }
 
     .seg button:hover {
-      background: color-mix(in srgb, var(--primary-color, #03a9f4) 8%, transparent);
+      color: var(--primary-text-color);
     }
 
     .seg button.active {
-      background: var(--primary-color, #03a9f4);
-      color: var(--text-primary-color, #fff);
+      background: rgba(3, 169, 244, 0.12);
+      background: color-mix(in srgb, var(--primary-color, #03a9f4) 12%, transparent);
+      color: var(--primary-color, #03a9f4);
+      font-weight: 500;
     }
 
     .seg button:focus-visible {

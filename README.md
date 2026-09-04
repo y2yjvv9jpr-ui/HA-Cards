@@ -24,7 +24,7 @@ npm install
 npm run build
 ```
 
-Ergebnis: `dist/daniels-energy-cards.js` (~40 kB, Lit ist mit eingebettet).
+Ergebnis: `dist/daniels-energy-cards.js` (~42 kB, Lit ist mit eingebettet).
 
 Weitere Skripte:
 
@@ -124,16 +124,18 @@ eingeklappt** — ein Klick auf die Hauptzeile oder das Chevron klappt sie auf.
 | `energy_kwh`     | number                                                                  | Restenergie, klein neben dem Ladestand.                           |
 | `power_w`        | number                                                                  | Vorzeichen: **negativ = Entladen**, **positiv = Laden**.          |
 | `temp_c`         | number \| `null`                                                        | Akkutemperatur. Bei `null` entfällt das Segment in der Meta-Zeile. |
-| `threshold_pct`  | number                                                                  | Entladeschwelle; Startwert des Sliders (10–80, Schritt 5).        |
-| `charge_mode`    | `auto` \| `charge`                                                      | Startzustand des Modus-Buttons. Standard: `auto`.                 |
+| `threshold_pct`  | number                                                                  | Minimaler Ladestand; Startwert des Sliders (10–80, Schritt 5).    |
+| `charge_target_pct` | number                                                               | Ladeziel für erzwungenes Laden; Slider 50–100, Schritt 5. Standard: `100`. |
+| `charge_mode`    | `auto` \| `charge`                                                      | Startzustand des Lademodus. Standard: `auto`.                     |
 | `time_remaining` | string \| `null`                                                        | Freitext, z. B. `"4:36 h bis 20 %"`.                              |
 | `time_at`        | string \| `null`                                                        | Freitext, z. B. `"um 00:12"`.                                     |
 | `backup`         | `none` \| `ready` \| `active`                                           | Notstrom-Badge. Bei `none` (Standard) ausgeblendet.               |
 
 **Aufbau**
 
-- **Kopfzeile** — Name, direkt daneben gedämpft `Kapazität · Temperatur · Schwelle`
-  (Temperatur-Segment entfällt bei `temp_c: null`). Rechts die Badges: bei
+- **Kopfzeile** — Name, direkt daneben gedämpft
+  `Kapazität · Temperatur · min. SoC` (Temperatur-Segment entfällt bei
+  `temp_c: null`). Rechts die Badges: bei
   `backup: ready` grün „Notstrom bereit“, bei `backup: active` rot
   „NOTSTROM AKTIV“, danach das Status-Badge.
 - **Hauptzeile** — aufrechtes SVG-Batteriesymbol (Füllstand von unten, grün über
@@ -141,17 +143,35 @@ eingeklappt** — ein Klick auf die Hauptzeile oder das Chevron klappt sie auf.
   Basislinie. Rechts die Leistung farbig, darunter gedämpft
   `time_remaining · time_at` (entfällt, wenn beide `null` sind), ganz rechts das
   Chevron.
-- **Bedienzeile** (aufgeklappt) — Modus-Button, Slider für die Entladeschwelle
-  und der aktuelle Wert. Der Slider aktualisiert auch das `Schwelle`-Segment in
-  der Kopfzeile.
+- **Bedienbereich** (aufgeklappt) — zwei beschriftete Slider-Zeilen auf einem
+  gemeinsamen Raster, damit Labels, Regler und Werte fluchten:
 
-**Modus-Button** — die Beschriftung nennt die *nächste* Aktion, die Füllung zeigt
-den *aktuellen* Zustand:
+  | Zeile | Steuerung                        | Label      | Slider              |
+  | ----- | -------------------------------- | ---------- | ------------------- |
+  | 1     | Umschalter **Laden \| Auto**     | „Ladeziel“ | `charge_target_pct` |
+  | 2     | —                                | „min. SoC“ | `threshold_pct`     |
 
-| `charge_mode` | Button        | Stil     | Bedeutung                          |
-| ------------- | ------------- | -------- | ---------------------------------- |
-| `auto`        | „Jetzt laden“ | Umriss   | Normalbetrieb                      |
-| `charge`      | „Auto“        | gefüllt  | Laden erzwungen, Klick geht zurück |
+  Der Ladeziel-Slider ist **nur im Modus `charge` aktiv** und sonst ausgegraut —
+  ein Ladeziel ohne erzwungenes Laden hat keine Wirkung. Der `min. SoC`-Slider
+  ist immer aktiv und aktualisiert auch das Segment in der Kopfzeile.
+
+**Lademodus** — der Umschalter zeigt den *aktuellen* Modus als aktives Segment
+(gleiche Optik wie bei `thermal_group`):
+
+| `charge_mode` | Aktives Segment | Bedeutung                                  |
+| ------------- | --------------- | ------------------------------------------ |
+| `auto`        | „Auto“          | Normalbetrieb, Ladeziel-Slider ausgegraut  |
+| `charge`      | „Laden“         | Laden erzwungen, ggf. aus dem Netz         |
+
+**Temperatur-Ampel** — das °C-Segment in der Kopfzeile färbt sich nach Wert:
+
+| Bereich          | Farbe    |
+| ---------------- | -------- |
+| unter 4 °C       | rot      |
+| 4 bis unter 8 °C | gelb     |
+| 8 bis 40 °C      | neutral  |
+| über 40 bis 50 °C| gelb     |
+| über 50 °C       | rot      |
 
 ### `variant: thermal_group`
 
@@ -172,10 +192,11 @@ Je Eintrag in `items`:
 
 **Aufbau**
 
-- **Kopfzeile** — Name links, rechts das Badge: amber „N heizen“ (N = Einträge
-  mit `power_w > 0`) bzw. grau „Aus“, wenn keiner heizt.
+- **Kopfzeile** — Name links, rechts das Badge: blau „N heizen“ (N = Einträge
+  mit `power_w > 0`) bzw. grau „Aus“, wenn keiner heizt. Blau wie „Lädt“ beim
+  Akku — Heizen lädt den Wärmespeicher.
 - **Summenzeile** — Fisch-Icon, Summe aller `energy_kwh` groß mit „heute
-  eingespeichert“, rechts die Gesamtleistung (amber, wenn > 0).
+  eingespeichert“, rechts die Gesamtleistung (grün, wenn > 0).
 - **Eine Zeile je Eintrag** — Name, Energie, Leistung und ein Umschalter
   **An | Auto | Aus**. `Auto` überlässt die Entscheidung der Überschusslogik,
   `An`/`Aus` erzwingen den Zustand.
@@ -185,12 +206,14 @@ Je Eintrag in `items`:
 - **Zahlenformat** — deutsches Format (`de-DE`): Komma als Dezimaltrenner, Punkt
   als Tausendertrenner. Leistungen mit Vorzeichen (`-1.240 W`, `+2.450 W`,
   `0 W`).
+- **Leistungsfarben** — durchgängig gleich: **grün** bei positiver Leistung
+  (Laden bzw. Heizen), **rot** bei negativer (Entladen), gedämpft bei `0 W`.
 - **Theme** — ausschließlich HA-Theme-Variablen (`--card-background-color`,
   `--primary-text-color`, `--secondary-text-color`, `--info-color`,
   `--warning-color`, `--success-color`, `--error-color`), hell wie dunkel.
   `card-mod` wird nicht benötigt.
 - **Phase 1** — alle Bedienelemente ändern **nur den lokalen Anzeigezustand**:
-  Aufklappzustand, Modus-Button, Slider und Umschalter. Nichts wird gespeichert,
+  Aufklappzustand, Lademodus, Slider und Umschalter. Nichts wird gespeichert,
   ein Reload stellt die Konfigurationswerte wieder her.
 
 ### YAML-Fallstricke
@@ -229,6 +252,7 @@ cards:
     power_w: -1240
     temp_c: 23.5
     threshold_pct: 20
+    charge_target_pct: 90
     charge_mode: auto
     time_remaining: 4:36 h bis 20 %
     time_at: um 00:12
@@ -244,6 +268,7 @@ cards:
     power_w: 2450
     temp_c: 21.0
     threshold_pct: 15
+    charge_target_pct: 80
     charge_mode: charge
     time_remaining: 2:10 h bis 15 %
     time_at: um 14:45
@@ -261,6 +286,7 @@ cards:
     power_w: 0
     temp_c: null
     threshold_pct: 30
+    charge_target_pct: 100
     charge_mode: auto
     time_remaining: null
     time_at: null

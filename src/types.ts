@@ -69,9 +69,11 @@ export interface DesStorageCardConfig {
   power_w?: number;
   /** Cell temperature in °C. `null` drops the segment from the meta line. */
   temp_c?: number | null;
-  /** Discharge threshold in percent; start value of the slider. */
+  /** Minimum state of charge in percent; start value of the slider. */
   threshold_pct?: number;
-  /** Start value of the mode button. */
+  /** Target state of charge for forced charging; start value of the slider. */
+  charge_target_pct?: number;
+  /** Start value of the charge-mode control. */
   charge_mode?: ChargeMode;
   /** Free text, e.g. "4:36 h bis 20 %". */
   time_remaining?: string | null;
