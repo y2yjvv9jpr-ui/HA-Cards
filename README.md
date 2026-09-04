@@ -143,13 +143,15 @@ eingeklappt** — ein Klick auf die Hauptzeile oder das Chevron klappt sie auf.
   Basislinie. Rechts die Leistung farbig, darunter gedämpft
   `time_remaining · time_at` (entfällt, wenn beide `null` sind), ganz rechts das
   Chevron.
-- **Bedienbereich** (aufgeklappt) — zwei beschriftete Slider-Zeilen auf einem
-  gemeinsamen Raster, damit Labels, Regler und Werte fluchten:
+- **Bedienbereich** (aufgeklappt) — links untereinander zwei beschriftete
+  Slider-Zeilen auf einem gemeinsamen Raster, damit Labels, Regler und Werte
+  fluchten; rechts daneben, über beide Zeilen zentriert, der Umschalter
+  **Laden | Auto**:
 
-  | Zeile | Steuerung                        | Label      | Slider              |
-  | ----- | -------------------------------- | ---------- | ------------------- |
-  | 1     | Umschalter **Laden \| Auto**     | „Ladeziel“ | `charge_target_pct` |
-  | 2     | —                                | „min. SoC“ | `threshold_pct`     |
+  | Zeile | Label      | Slider              | Bereich          |
+  | ----- | ---------- | ------------------- | ---------------- |
+  | 1     | „Ladeziel“ | `charge_target_pct` | 50–100, Schritt 5 |
+  | 2     | „min. SoC“ | `threshold_pct`     | 10–80, Schritt 5  |
 
   Der Ladeziel-Slider ist **nur im Modus `charge` aktiv** und sonst ausgegraut —
   ein Ladeziel ohne erzwungenes Laden hat keine Wirkung. Der `min. SoC`-Slider
@@ -215,6 +217,42 @@ Je Eintrag in `items`:
 - **Phase 1** — alle Bedienelemente ändern **nur den lokalen Anzeigezustand**:
   Aufklappzustand, Lademodus, Slider und Umschalter. Nichts wird gespeichert,
   ein Reload stellt die Konfigurationswerte wieder her.
+
+### Einheitliche Höhen
+
+Die Karte füllt die Höhe, die ihr Container ihr zuweist (`ha-card` steht auf
+`height: 100%`, der Inhalt ist eine Flex-Spalte). Der Inhalt bleibt dabei oben,
+die Bedienzeile rutscht an die Untergrenze der Karte.
+
+Damit lassen sich mehrere Karten einer Reihe im **Sections-Dashboard** auf
+dieselbe Höhe bringen: allen Karten der Reihe dieselben `grid_options` geben.
+
+```yaml
+type: grid
+cards:
+  - type: custom:des-storage-card
+    variant: battery
+    name: Hausakku 1
+    status: discharging
+    soc: 62
+    grid_options:
+      columns: 12
+      rows: 2
+
+  - type: custom:des-storage-card
+    variant: battery
+    name: Hausakku 2
+    status: charging
+    soc: 18
+    grid_options:
+      columns: 12
+      rows: 2
+```
+
+`rows` so weit erhöhen, bis die höchste Karte der Reihe hineinpasst — die
+niedrigeren strecken sich dann mit. Ohne `grid_options` (Standard `rows: auto`)
+behält jede Karte ihre natürliche Höhe, eine aufgeklappte Akku-Karte ist dann
+höher als eine eingeklappte.
 
 ### YAML-Fallstricke
 

@@ -227,9 +227,10 @@ export class DesStorageCard extends LitElement {
         </div>
         <div class="badges">
           ${backup === 'none' ? nothing : this._renderBackupBadge(backup)}
-          <span class="badge status-${this._status}">
-            ${STATUS_LABEL[this._status]}
-          </span>
+          ${this._renderBadge(
+            STATUS_LABEL[this._status],
+            `status-${this._status}`,
+          )}
         </div>
       </div>
 
@@ -262,55 +263,58 @@ export class DesStorageCard extends LitElement {
         ></ha-icon>
       </div>
 
-      ${this._expanded ? this._renderBatteryControls() : nothing}
+      ${this._expanded
+        ? html`<div class="grow"></div>
+            ${this._renderBatteryControls()}`
+        : nothing}
     `;
   }
 
   /**
    * Two labelled slider rows on one grid, so labels, tracks and values line
-   * up. The charge-mode control sits in the first column of the first row;
-   * the second row leaves that column empty.
+   * up. The charge-mode control sits to their right, centred over both rows.
    */
   private _renderBatteryControls(): TemplateResult {
     const targetActive = this._chargeMode === 'charge';
 
     return html`
       <div class="controls">
+        <div class="ctl-rows">
+          <span class="ctl-label ${targetActive ? '' : 'disabled'}">Ladeziel</span>
+          <input
+            class="slider"
+            type="range"
+            min=${TARGET_MIN}
+            max=${TARGET_MAX}
+            step=${TARGET_STEP}
+            .value=${String(this._chargeTarget)}
+            ?disabled=${!targetActive}
+            aria-label="Ladeziel"
+            @input=${this._onTargetInput}
+          />
+          <span class="ctl-value ${targetActive ? '' : 'disabled'}">
+            ${formatInt(this._chargeTarget)} %
+          </span>
+
+          <span class="ctl-label">min. SoC</span>
+          <input
+            class="slider"
+            type="range"
+            min=${THRESHOLD_MIN}
+            max=${THRESHOLD_MAX}
+            step=${THRESHOLD_STEP}
+            .value=${String(this._threshold)}
+            aria-label="Minimaler Ladestand"
+            @input=${this._onThresholdInput}
+          />
+          <span class="ctl-value">${formatInt(this._threshold)} %</span>
+        </div>
         ${this._renderSegmented(
           CHARGE_MODES,
           this._chargeMode,
           (value) => this._setChargeMode(value),
           'Lademodus',
         )}
-        <span class="ctl-label ${targetActive ? '' : 'disabled'}">Ladeziel</span>
-        <input
-          class="slider"
-          type="range"
-          min=${TARGET_MIN}
-          max=${TARGET_MAX}
-          step=${TARGET_STEP}
-          .value=${String(this._chargeTarget)}
-          ?disabled=${!targetActive}
-          aria-label="Ladeziel"
-          @input=${this._onTargetInput}
-        />
-        <span class="ctl-value ${targetActive ? '' : 'disabled'}">
-          ${formatInt(this._chargeTarget)} %
-        </span>
-
-        <span></span>
-        <span class="ctl-label">min. SoC</span>
-        <input
-          class="slider"
-          type="range"
-          min=${THRESHOLD_MIN}
-          max=${THRESHOLD_MAX}
-          step=${THRESHOLD_STEP}
-          .value=${String(this._threshold)}
-          aria-label="Minimaler Ladestand"
-          @input=${this._onThresholdInput}
-        />
-        <span class="ctl-value">${formatInt(this._threshold)} %</span>
       </div>
     `;
   }
@@ -423,11 +427,10 @@ export class DesStorageCard extends LitElement {
         </div>
         <div class="badges">
           <!-- Heating charges the heat store, so it reads as "charging". -->
-          <span
-            class="badge ${heatingCount > 0 ? 'status-charging' : 'status-off'}"
-          >
-            ${heatingCount > 0 ? `${formatInt(heatingCount)} heizen` : 'Aus'}
-          </span>
+          ${this._renderBadge(
+            heatingCount > 0 ? `${formatInt(heatingCount)} heizen` : 'Aus',
+            heatingCount > 0 ? 'status-charging' : 'status-off',
+          )}
         </div>
       </div>
 
@@ -508,10 +511,20 @@ export class DesStorageCard extends LitElement {
     `;
   }
 
+  /**
+   * The label sits in its own element so it can be nudged down optically.
+   * Metric centring alone reads as too high - see `.badge-label` in the styles.
+   */
+  private _renderBadge(label: string, modifier: string): TemplateResult {
+    return html`<span class="badge ${modifier}">
+      <span class="badge-label">${label}</span>
+    </span>`;
+  }
+
   private _renderBackupBadge(backup: BackupState): TemplateResult {
     return backup === 'active'
-      ? html`<span class="badge backup-active">NOTSTROM AKTIV</span>`
-      : html`<span class="badge backup-ready">Notstrom bereit</span>`;
+      ? this._renderBadge('NOTSTROM AKTIV', 'backup-active')
+      : this._renderBadge('Notstrom bereit', 'backup-ready');
   }
 
   private _powerClass(power: number): string {
@@ -557,17 +570,34 @@ export class DesStorageCard extends LitElement {
   }
 
   static override styles = css`
+    /* The card fills whatever height the sections grid hands it, so several
+       cards in one row can be levelled with grid_options.rows. */
     :host {
       display: block;
+      height: 100%;
     }
 
     ha-card {
+      height: 100%;
+      box-sizing: border-box;
+      display: flex;
+      flex-direction: column;
       background: var(--card-background-color, var(--ha-card-background, #fff));
       color: var(--primary-text-color);
     }
 
     .card {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
       padding: 12px 16px;
+    }
+
+    /* Eats the spare height when the card is stretched, so the content stays
+       at the top and the control row sits on the bottom edge. */
+    .grow {
+      flex: 1 1 0;
+      min-height: 12px;
     }
 
     /* --- header --- */
@@ -618,8 +648,6 @@ export class DesStorageCard extends LitElement {
       flex-shrink: 0;
     }
 
-    /* inline-flex + line-height:1 centres the label optically, which a bare
-       line-height on an inline box does not. */
     .badge {
       display: inline-flex;
       align-items: center;
@@ -634,6 +662,14 @@ export class DesStorageCard extends LitElement {
       /* Fallback for browsers without color-mix(); overridden below. */
       background: rgba(127, 127, 127, 0.15);
       color: var(--secondary-text-color);
+    }
+
+    /* Metric centring puts the glyphs visually too high: with line-height:1
+       the em box still reserves descender space these labels do not use, so
+       their optical centre sits above the box centre. Nudge the text down. */
+    .badge-label {
+      display: block;
+      transform: translateY(1px);
     }
 
     .status-charging {
@@ -787,13 +823,21 @@ export class DesStorageCard extends LitElement {
     /* --- battery controls (collapsed by default) --- */
 
     .controls {
-      display: grid;
-      grid-template-columns: auto auto 1fr auto;
+      display: flex;
       align-items: center;
-      gap: 8px 10px;
-      margin-top: 10px;
+      gap: 14px;
       padding-top: 10px;
       border-top: 1px solid var(--divider-color, rgba(127, 127, 127, 0.22));
+    }
+
+    /* Both slider rows share one grid so labels, tracks and values line up. */
+    .ctl-rows {
+      flex: 1;
+      min-width: 0;
+      display: grid;
+      grid-template-columns: auto 1fr auto;
+      align-items: center;
+      gap: 8px 10px;
     }
 
     .ctl-label {
