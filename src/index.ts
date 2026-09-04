@@ -1,5 +1,6 @@
 import { DesStorageCard } from './des-storage-card';
 import { DesInverterCard } from './des-inverter-card';
+import { DesHouseCard } from './des-house-card';
 
 const VERSION = '0.2.0';
 
@@ -24,6 +25,13 @@ const CARDS: ReadonlyArray<CardRegistration> = [
     name: 'Daniels Wechselrichterkarte',
     description:
       'Wechselrichter-Übersicht: PV-Leistung, Strings und Phasen (Entities oder Demo-Werte).',
+  },
+  {
+    type: 'des-house-card',
+    element: DesHouseCard,
+    name: 'Daniels Hauskarte',
+    description:
+      'Hausverbrauch und Stromherkunft: Solar, Speicher, Netz plus Tageswerte (Entities oder Demo-Werte).',
   },
 ];
 
@@ -51,4 +59,4 @@ console.info(
   'background:#555;color:#fff;border-radius:0 3px 3px 0;padding:2px 4px',
 );
 
-export { DesStorageCard, DesInverterCard };
+export { DesStorageCard, DesInverterCard, DesHouseCard };

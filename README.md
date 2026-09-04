@@ -9,6 +9,7 @@ Aktuell enthalten:
 | -------------------------- | --------------------------------------------------------- |
 | `custom:des-storage-card`  | Speicherkarte — Varianten `battery` und `thermal_group`    |
 | `custom:des-inverter-card` | Wechselrichter-Übersicht — PV-Leistung, Strings, Phasen    |
+| `custom:des-house-card`    | Hauskarte — Verbrauch und Stromherkunft (Solar/Speicher/Netz) |
 
 > **Phase 3 — lesend und schreibend.** Jedes Wertfeld nimmt einen statischen
 > Wert **oder** eine Entity-ID. Die Karte liest aus `hass.states`, rendert bei
@@ -25,8 +26,8 @@ npm install
 npm run build
 ```
 
-Ergebnis: `dist/daniels-energy-cards.js` (~83 kB, gzip ~22 kB; Lit und **beide**
-Karten sind mit eingebettet).
+Ergebnis: `dist/daniels-energy-cards.js` (~99 kB, gzip ~24 kB; Lit und **alle
+drei** Karten sind mit eingebettet).
 
 Weitere Skripte:
 
@@ -95,9 +96,9 @@ hinzufügen (**Einstellungen → Dashboards → ⋮ → Ressourcen**):
 3. Browser-Cache leeren bzw. Hard-Reload (Strg+Shift+R). Bei jedem Update der
    Datei hilft ein Versions-Query wie `/local/daniels-energy-cards.js?v=2`.
 
-Die Karten erscheinen danach auch im Karten-Picker als „Daniels Speicherkarte“
-und „Daniels Wechselrichterkarte“. Einen visuellen Editor gibt es bewusst nicht —
-die Konfiguration erfolgt in YAML.
+Die Karten erscheinen danach auch im Karten-Picker als „Daniels Speicherkarte“,
+„Daniels Wechselrichterkarte“ und „Daniels Hauskarte“. Einen visuellen Editor
+gibt es bewusst nicht — die Konfiguration erfolgt in YAML.
 
 ---
 
@@ -633,6 +634,128 @@ demo_state: normal        # normal | alarm | night
 
 ---
 
+## Hauskarte (`des-house-card`)
+
+> **Phase 1 + 2 — lesend.** Sobald **mindestens ein** Entity-Feld gesetzt ist,
+> liest die Karte ihren Messwert-Satz aus `hass.states` und `demo_state` wird
+> ignoriert. Ohne Entity-Feld bleibt der **Demo-Modus** — nützlich als
+> Editor-Vorschau. Geschrieben wird nichts.
+
+Zeigt den aktuellen **Hausverbrauch**, **woher der Strom gerade kommt** (Solar /
+Speicher / Netz) und die **Tageswerte**. Der Speicher erscheint nur als
+Herkunftsanteil, ohne Speicherdetails (dafür gibt es die Speicherkarte); der
+PV-Ertrag ist bewusst nicht enthalten (dafür die Wechselrichterkarte). Wie bei
+den anderen Karten ist der „Heute“-Block **standardmäßig eingeklappt** — ein
+Klick auf das Chevron klappt ihn auf.
+
+**Statische Optionen** (gelten in beiden Modi):
+
+| Option              | Typ                            | Beschreibung                                                                 |
+| ------------------- | ------------------------------ | ---------------------------------------------------------------------------- |
+| `name`              | string                         | **Pflicht.** Titel in der Kopfzeile.                                         |
+| `demo_state`        | `normal` \| `night` \| `export` | Demo-Datensatz — **nur** wirksam, wenn kein Entity-Feld gesetzt ist. Standard `normal`. |
+| `invert_grid`       | boolean                        | Dreht das Vorzeichen der Netzleistung. Standard `false` (positiv = Bezug).    |
+| `storage_positive`  | `discharge` \| `charge`         | Bedeutung eines **positiven** Speicherwerts. Standard `discharge`.            |
+
+**Entity-Felder** (lesend). Jedes ist optional. Die erwartete Einheit ist die
+Basiseinheit — abweichende Einheiten werden über `unit_of_measurement`
+umgerechnet (`kW`/`MW` → W, `Wh`/`MWh` → kWh).
+
+| Feld                       | Erwartet     | Ziel                                                              |
+| -------------------------- | ------------ | ---------------------------------------------------------------- |
+| `load_power_entity`        | W            | Hausverbrauch — die große Zahl.                                   |
+| `grid_power_entity`        | W            | Netzleistung (Vorzeichen, siehe `invert_grid`).                  |
+| `storage_power_entities`   | Liste, W     | Speicher, die das Haus versorgen; je Eintrag signierte Leistung.  |
+| `today_consumption_entity` | kWh          | Verbrauch heute (Meta-Zeile + „Heute“-Block).                     |
+| `today_import_entity`      | kWh          | Netzbezug heute (rot, „Heute“-Block).                            |
+| `today_export_entity`      | kWh          | Einspeisung heute (grün, „Heute“-Block).                         |
+| `autarky_entity`           | %            | Autarkie; **wenn gesetzt, ersetzt sie die Berechnung**.           |
+
+**Vorzeichen** — `grid_power_entity` ist signiert: nach `invert_grid` gilt
+**positiv = Netzbezug**, **negativ = Einspeisung**. Für die Speicher legt
+`storage_positive` fest, was ein positiver Wert bedeutet: bei `discharge`
+(Standard) zählt positiv als Entladung ins Haus, bei `charge` umgekehrt. Nur die
+Entladung (Anteil, der ins Haus fließt) geht in die Mix-Rechnung ein.
+
+**Mix-Berechnung** (alle Werte in W; ein fehlender Wert zählt als 0):
+
+```
+grid       = grid_raw · (invert_grid ? −1 : 1)
+gridIn     = max(grid, 0)                       # Netzbezug
+gridOut    = max(−grid, 0)                      # Einspeisung
+storageDis = Σ max(±entity, 0)                  # Vorzeichen je storage_positive
+speicher   = min(storageDis, load)
+netz       = min(gridIn, load − speicher)
+solar      = max(load − speicher − netz, 0)
+```
+
+Die Prozente sind `Anteil / load`. Ist `load ≤ 0` (oder nicht lesbar), sind alle
+Anteile 0 % und der Balken bleibt leer; die große Zahl zeigt dann „–“.
+
+**Autarkie heute** — ohne `autarky_entity` rechnet die Karte
+`1 − import / consumption` (ganzzahlige %). Ist der Tagesverbrauch `≤ 0` oder
+nicht lesbar, zeigt sie „–“.
+
+**Aufbau — eingeklappt**
+
+- **Kopfzeile** — Name links, darunter gedämpft `… kWh heute · … % autark`.
+  Rechts **eine** Pille: grün `Einspeisung … W` (Einspeisung), sonst rot
+  `Netzbezug … W` (Bezug), sonst gedämpft `Netz 0 W`.
+- **Leistungszeile** — der Verbrauch groß in neutraler Textfarbe, daneben klein
+  gedämpft „Verbrauch“.
+- **Mix-Balken** — ein gestapelter Balken (8 px, abgerundet) in der Reihenfolge
+  **Solar** (grün), **Speicher** (blau, wie „Lädt“ bei der Speicherkarte) und
+  **Netz** (rot). Die Schiene ist der gedämpfte Theme-Hintergrund.
+- **Legende** — drei Zeilen mit Farbquadrat, Label (`Solar`, `Speicher`, `Netz`),
+  Leistung in W und Anteil in %.
+
+**Aufbau — aufgeklappt** (unter dem Chevron, durch eine Haarlinie getrennt)
+
+- **Heute** — zwei Spalten Label/Wert, je eine Nachkommastelle:
+
+  | Zeile         | Wert                | Farbe   |
+  | ------------- | ------------------- | ------- |
+  | Verbrauch     | `today_consumption` | neutral |
+  | Netzbezug     | `today_import`      | rot     |
+  | Einspeisung   | `today_export`      | grün    |
+
+  Fehlt eine dieser Entitäten, entfällt ihre Zeile. Ist **keiner** der drei
+  Tageswerte konfiguriert, blendet die Karte Chevron und Block aus.
+
+**Beispiel-YAML** — Entities (alles aus `hass.states`):
+
+```yaml
+type: custom:des-house-card
+name: Haus
+invert_grid: false
+storage_positive: discharge
+
+load_power_entity: sensor.inverter_load_power
+grid_power_entity: sensor.inverter_external_power
+storage_power_entities:
+  - sensor.inverter_battery_power
+  - sensor.zendure_power
+today_consumption_entity: sensor.inverter_today_load_consumption
+today_import_entity: sensor.inverter_today_energy_import
+today_export_entity: sensor.inverter_today_energy_export
+# autarky_entity: sensor.autarkie   # optional; ersetzt die Berechnung
+```
+
+Ohne jedes Entity-Feld läuft dieselbe Karte im Demo-Modus:
+
+```yaml
+type: custom:des-house-card
+name: Haus
+demo_state: normal        # normal | night | export
+```
+
+Der Demo-Datensatz `normal` zeigt Solar 2.840 W / 72 %, Speicher 710 W / 18 %,
+Netz 400 W / 10 % und die Pille „Netzbezug 400 W“; `night` deckt den Verbrauch
+zu 100 % aus dem Speicher; `export` speist Überschuss ins Netz („Einspeisung
+3.800 W“, 100 % Solar).
+
+---
+
 ## Schreibverhalten
 
 Grundregel: **jedes Bedienelement schreibt in die Entität, an die es gebunden
@@ -723,9 +846,10 @@ Offen für die Wechselrichterkarte:
 
 ```
 src/
-  index.ts             Registrierung beider Custom Elements + Karten-Picker-Einträge
+  index.ts             Registrierung der Custom Elements + Karten-Picker-Einträge
   des-storage-card.ts  Speicherkarte (Rendering + Styles)
   des-inverter-card.ts Wechselrichterkarte (Entity-Binding + Demo-Fallback)
+  des-house-card.ts    Hauskarte (Verbrauch und Stromherkunft, Entity + Demo)
   types.ts             Config-Schema und HA-Typen
   resolve.ts           Statischer Wert ↔ Entity: Auflösung über hass.states
   service.ts           Schreibpfad: Domain → Service-Call

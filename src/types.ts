@@ -274,6 +274,62 @@ export interface DesInverterCardConfig {
   grid_voltage_entities?: string[];
 }
 
+// ===========================================================================
+// des-house-card
+// ===========================================================================
+
+/**
+ * Which set of static demo values the card renders. Like the inverter card,
+ * phase 1 has no entity binding: the whole readout comes from a canned dataset
+ * so every visual state can be checked from YAML alone.
+ *
+ * - `normal` - solar-dominated day with a small grid draw and some discharge.
+ * - `night`  - no solar and no grid, the battery covers the whole house.
+ * - `export` - surplus solar, house fully self-supplied and feeding the grid.
+ */
+export type HouseDemoState = 'normal' | 'night' | 'export';
+
+/** What a positive value on a `storage_power_entities` entry means. */
+export type StoragePositive = 'discharge' | 'charge';
+
+/**
+ * Phase 1 + 2 in one, read-only. As soon as any of the load/grid/storage/today
+ * entity fields is set the card reads its whole readout from `hass.states` and
+ * `demo_state` is ignored; with no entity field it falls back to the static
+ * demo dataset. Power values scale onto W and energy values onto kWh by the
+ * entity's `unit_of_measurement` (kW/MW → W, Wh/MWh → kWh), like the inverter
+ * card.
+ */
+export interface DesHouseCardConfig {
+  type: string;
+  name: string;
+
+  /** Static demo dataset, used only when no entity field is set. Default `normal`. */
+  demo_state?: HouseDemoState;
+
+  /** Flip the grid-power sign convention. Default `false` (positive = draw). */
+  invert_grid?: boolean;
+  /** Whether a positive storage power means discharging or charging. Default `discharge`. */
+  storage_positive?: StoragePositive;
+
+  // --- entity binding (read-only) -----------------------------------------
+
+  /** House consumption in W. */
+  load_power_entity?: string;
+  /** Grid power in W (signed; see `invert_grid`). */
+  grid_power_entity?: string;
+  /** One entry per storage that feeds the house, each signed power in W. */
+  storage_power_entities?: string[];
+  /** Energy consumed today (kWh). */
+  today_consumption_entity?: string;
+  /** Energy imported from the grid today (kWh). */
+  today_import_entity?: string;
+  /** Energy exported to the grid today (kWh). */
+  today_export_entity?: string;
+  /** Self-sufficiency in percent; when set it replaces the computed value. */
+  autarky_entity?: string;
+}
+
 /** Minimal shape of the Home Assistant object handed to a card. */
 export interface HomeAssistant {
   states: Record<
