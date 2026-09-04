@@ -3,18 +3,18 @@
  * Copyright 2019 Google LLC
  * SPDX-License-Identifier: BSD-3-Clause
  */
-const W = globalThis, ne = W.ShadowRoot && (W.ShadyCSS === void 0 || W.ShadyCSS.nativeShadow) && "adoptedStyleSheets" in Document.prototype && "replace" in CSSStyleSheet.prototype, ae = Symbol(), he = /* @__PURE__ */ new WeakMap();
-let Se = class {
+const W = globalThis, ae = W.ShadowRoot && (W.ShadyCSS === void 0 || W.ShadyCSS.nativeShadow) && "adoptedStyleSheets" in Document.prototype && "replace" in CSSStyleSheet.prototype, oe = Symbol(), ue = /* @__PURE__ */ new WeakMap();
+let Me = class {
   constructor(e, t, r) {
-    if (this._$cssResult$ = !0, r !== ae) throw Error("CSSResult is not constructable. Use `unsafeCSS` or `css` instead.");
+    if (this._$cssResult$ = !0, r !== oe) throw Error("CSSResult is not constructable. Use `unsafeCSS` or `css` instead.");
     this.cssText = e, this.t = t;
   }
   get styleSheet() {
     let e = this.o;
     const t = this.t;
-    if (ne && e === void 0) {
+    if (ae && e === void 0) {
       const r = t !== void 0 && t.length === 1;
-      r && (e = he.get(t)), e === void 0 && ((this.o = e = new CSSStyleSheet()).replaceSync(this.cssText), r && he.set(t, e));
+      r && (e = ue.get(t)), e === void 0 && ((this.o = e = new CSSStyleSheet()).replaceSync(this.cssText), r && ue.set(t, e));
     }
     return e;
   }
@@ -22,20 +22,20 @@ let Se = class {
     return this.cssText;
   }
 };
-const We = (i) => new Se(typeof i == "string" ? i : i + "", void 0, ae), Te = (i, ...e) => {
+const We = (i) => new Me(typeof i == "string" ? i : i + "", void 0, oe), Te = (i, ...e) => {
   const t = i.length === 1 ? i[0] : e.reduce((r, s, n) => r + ((a) => {
     if (a._$cssResult$ === !0) return a.cssText;
     if (typeof a == "number") return a;
     throw Error("Value passed to 'css' function must be a 'css' function result: " + a + ". Use 'unsafeCSS' to pass non-literal values, but take care to ensure page security.");
   })(s) + i[n + 1], i[0]);
-  return new Se(t, i, ae);
-}, Be = (i, e) => {
-  if (ne) i.adoptedStyleSheets = e.map((t) => t instanceof CSSStyleSheet ? t : t.styleSheet);
+  return new Me(t, i, oe);
+}, Ie = (i, e) => {
+  if (ae) i.adoptedStyleSheets = e.map((t) => t instanceof CSSStyleSheet ? t : t.styleSheet);
   else for (const t of e) {
     const r = document.createElement("style"), s = W.litNonce;
     s !== void 0 && r.setAttribute("nonce", s), r.textContent = t.cssText, i.appendChild(r);
   }
-}, ue = ne ? (i) => i : (i) => i instanceof CSSStyleSheet ? ((e) => {
+}, pe = ae ? (i) => i : (i) => i instanceof CSSStyleSheet ? ((e) => {
   let t = "";
   for (const r of e.cssRules) t += r.cssText;
   return We(t);
@@ -45,10 +45,10 @@ const We = (i) => new Se(typeof i == "string" ? i : i + "", void 0, ae), Te = (i
  * Copyright 2017 Google LLC
  * SPDX-License-Identifier: BSD-3-Clause
  */
-const { is: Ie, defineProperty: je, getOwnPropertyDescriptor: Ke, getOwnPropertyNames: Ve, getOwnPropertySymbols: Ge, getPrototypeOf: qe } = Object, K = globalThis, pe = K.trustedTypes, Ye = pe ? pe.emptyScript : "", Ze = K.reactiveElementPolyfillSupport, L = (i, e) => i, te = { toAttribute(i, e) {
+const { is: je, defineProperty: Ke, getOwnPropertyDescriptor: Ve, getOwnPropertyNames: Ge, getOwnPropertySymbols: qe, getPrototypeOf: Ye } = Object, V = globalThis, ge = V.trustedTypes, Ze = ge ? ge.emptyScript : "", Xe = V.reactiveElementPolyfillSupport, L = (i, e) => i, re = { toAttribute(i, e) {
   switch (e) {
     case Boolean:
-      i = i ? Ye : null;
+      i = i ? Ze : null;
       break;
     case Object:
     case Array:
@@ -73,8 +73,8 @@ const { is: Ie, defineProperty: je, getOwnPropertyDescriptor: Ke, getOwnProperty
       }
   }
   return t;
-} }, Ce = (i, e) => !Ie(i, e), ge = { attribute: !0, type: String, converter: te, reflect: !1, useDefault: !1, hasChanged: Ce };
-Symbol.metadata ??= Symbol("metadata"), K.litPropertyMetadata ??= /* @__PURE__ */ new WeakMap();
+} }, Ce = (i, e) => !je(i, e), me = { attribute: !0, type: String, converter: re, reflect: !1, useDefault: !1, hasChanged: Ce };
+Symbol.metadata ??= Symbol("metadata"), V.litPropertyMetadata ??= /* @__PURE__ */ new WeakMap();
 let k = class extends HTMLElement {
   static addInitializer(e) {
     this._$Ei(), (this.l ??= []).push(e);
@@ -82,14 +82,14 @@ let k = class extends HTMLElement {
   static get observedAttributes() {
     return this.finalize(), this._$Eh && [...this._$Eh.keys()];
   }
-  static createProperty(e, t = ge) {
+  static createProperty(e, t = me) {
     if (t.state && (t.attribute = !1), this._$Ei(), this.prototype.hasOwnProperty(e) && ((t = Object.create(t)).wrapped = !0), this.elementProperties.set(e, t), !t.noAccessor) {
       const r = Symbol(), s = this.getPropertyDescriptor(e, r, t);
-      s !== void 0 && je(this.prototype, e, s);
+      s !== void 0 && Ke(this.prototype, e, s);
     }
   }
   static getPropertyDescriptor(e, t, r) {
-    const { get: s, set: n } = Ke(this.prototype, e) ?? { get() {
+    const { get: s, set: n } = Ve(this.prototype, e) ?? { get() {
       return this[t];
     }, set(a) {
       this[t] = a;
@@ -100,17 +100,17 @@ let k = class extends HTMLElement {
     }, configurable: !0, enumerable: !0 };
   }
   static getPropertyOptions(e) {
-    return this.elementProperties.get(e) ?? ge;
+    return this.elementProperties.get(e) ?? me;
   }
   static _$Ei() {
     if (this.hasOwnProperty(L("elementProperties"))) return;
-    const e = qe(this);
+    const e = Ye(this);
     e.finalize(), e.l !== void 0 && (this.l = [...e.l]), this.elementProperties = new Map(e.elementProperties);
   }
   static finalize() {
     if (this.hasOwnProperty(L("finalized"))) return;
     if (this.finalized = !0, this._$Ei(), this.hasOwnProperty(L("properties"))) {
-      const t = this.properties, r = [...Ve(t), ...Ge(t)];
+      const t = this.properties, r = [...Ge(t), ...qe(t)];
       for (const s of r) this.createProperty(s, t[s]);
     }
     const e = this[Symbol.metadata];
@@ -129,8 +129,8 @@ let k = class extends HTMLElement {
     const t = [];
     if (Array.isArray(e)) {
       const r = new Set(e.flat(1 / 0).reverse());
-      for (const s of r) t.unshift(ue(s));
-    } else e !== void 0 && t.push(ue(e));
+      for (const s of r) t.unshift(pe(s));
+    } else e !== void 0 && t.push(pe(e));
     return t;
   }
   static _$Eu(e, t) {
@@ -156,7 +156,7 @@ let k = class extends HTMLElement {
   }
   createRenderRoot() {
     const e = this.shadowRoot ?? this.attachShadow(this.constructor.shadowRootOptions);
-    return Be(e, this.constructor.elementStyles), e;
+    return Ie(e, this.constructor.elementStyles), e;
   }
   connectedCallback() {
     this.renderRoot ??= this.createRenderRoot(), this.enableUpdating(!0), this._$EO?.forEach((e) => e.hostConnected?.());
@@ -172,14 +172,14 @@ let k = class extends HTMLElement {
   _$ET(e, t) {
     const r = this.constructor.elementProperties.get(e), s = this.constructor._$Eu(e, r);
     if (s !== void 0 && r.reflect === !0) {
-      const n = (r.converter?.toAttribute !== void 0 ? r.converter : te).toAttribute(t, r.type);
+      const n = (r.converter?.toAttribute !== void 0 ? r.converter : re).toAttribute(t, r.type);
       this._$Em = e, n == null ? this.removeAttribute(s) : this.setAttribute(s, n), this._$Em = null;
     }
   }
   _$AK(e, t) {
     const r = this.constructor, s = r._$Eh.get(e);
     if (s !== void 0 && this._$Em !== s) {
-      const n = r.getPropertyOptions(s), a = typeof n.converter == "function" ? { fromAttribute: n.converter } : n.converter?.fromAttribute !== void 0 ? n.converter : te;
+      const n = r.getPropertyOptions(s), a = typeof n.converter == "function" ? { fromAttribute: n.converter } : n.converter?.fromAttribute !== void 0 ? n.converter : re;
       this._$Em = s;
       const o = a.fromAttribute(t, n.type);
       this[s] = o ?? this._$Ej?.get(s) ?? o, this._$Em = null;
@@ -256,56 +256,56 @@ let k = class extends HTMLElement {
   firstUpdated(e) {
   }
 };
-k.elementStyles = [], k.shadowRootOptions = { mode: "open" }, k[L("elementProperties")] = /* @__PURE__ */ new Map(), k[L("finalized")] = /* @__PURE__ */ new Map(), Ze?.({ ReactiveElement: k }), (K.reactiveElementVersions ??= []).push("2.1.2");
+k.elementStyles = [], k.shadowRootOptions = { mode: "open" }, k[L("elementProperties")] = /* @__PURE__ */ new Map(), k[L("finalized")] = /* @__PURE__ */ new Map(), Xe?.({ ReactiveElement: k }), (V.reactiveElementVersions ??= []).push("2.1.2");
 /**
  * @license
  * Copyright 2017 Google LLC
  * SPDX-License-Identifier: BSD-3-Clause
  */
-const oe = globalThis, me = (i) => i, B = oe.trustedTypes, fe = B ? B.createPolicy("lit-html", { createHTML: (i) => i }) : void 0, Me = "$lit$", $ = `lit$${Math.random().toFixed(9).slice(2)}$`, Le = "?" + $, Xe = `<${Le}>`, y = document, P = () => y.createComment(""), N = (i) => i === null || typeof i != "object" && typeof i != "function", le = Array.isArray, Je = (i) => le(i) || typeof i?.[Symbol.iterator] == "function", Z = `[ 	
-\f\r]`, C = /<(?:(!--|\/[^a-zA-Z])|(\/?[a-zA-Z][^>\s]*)|(\/?$))/g, _e = /-->/g, ve = />/g, w = RegExp(`>|${Z}(?:([^\\s"'>=/]+)(${Z}*=${Z}*(?:[^ 	
-\f\r"'\`<>=]|("|')|))|$)`, "g"), be = /'/g, $e = /"/g, Pe = /^(?:script|style|textarea|title)$/i, Ne = (i) => (e, ...t) => ({ _$litType$: i, strings: e, values: t }), c = Ne(1), Qe = Ne(2), E = Symbol.for("lit-noChange"), h = Symbol.for("lit-nothing"), we = /* @__PURE__ */ new WeakMap(), x = y.createTreeWalker(y, 129);
-function Oe(i, e) {
-  if (!le(i) || !i.hasOwnProperty("raw")) throw Error("invalid template strings array");
-  return fe !== void 0 ? fe.createHTML(e) : e;
+const le = globalThis, fe = (i) => i, I = le.trustedTypes, _e = I ? I.createPolicy("lit-html", { createHTML: (i) => i }) : void 0, Le = "$lit$", $ = `lit$${Math.random().toFixed(9).slice(2)}$`, Pe = "?" + $, Je = `<${Pe}>`, x = document, P = () => x.createComment(""), N = (i) => i === null || typeof i != "object" && typeof i != "function", ce = Array.isArray, Qe = (i) => ce(i) || typeof i?.[Symbol.iterator] == "function", X = `[ 	
+\f\r]`, T = /<(?:(!--|\/[^a-zA-Z])|(\/?[a-zA-Z][^>\s]*)|(\/?$))/g, ve = /-->/g, be = />/g, w = RegExp(`>|${X}(?:([^\\s"'>=/]+)(${X}*=${X}*(?:[^ 	
+\f\r"'\`<>=]|("|')|))|$)`, "g"), $e = /'/g, we = /"/g, Ne = /^(?:script|style|textarea|title)$/i, Oe = (i) => (e, ...t) => ({ _$litType$: i, strings: e, values: t }), c = Oe(1), et = Oe(2), E = Symbol.for("lit-noChange"), h = Symbol.for("lit-nothing"), ye = /* @__PURE__ */ new WeakMap(), y = x.createTreeWalker(x, 129);
+function ze(i, e) {
+  if (!ce(i) || !i.hasOwnProperty("raw")) throw Error("invalid template strings array");
+  return _e !== void 0 ? _e.createHTML(e) : e;
 }
-const et = (i, e) => {
+const tt = (i, e) => {
   const t = i.length - 1, r = [];
-  let s, n = e === 2 ? "<svg>" : e === 3 ? "<math>" : "", a = C;
+  let s, n = e === 2 ? "<svg>" : e === 3 ? "<math>" : "", a = T;
   for (let o = 0; o < t; o++) {
     const l = i[o];
     let u, p, d = -1, _ = 0;
-    for (; _ < l.length && (a.lastIndex = _, p = a.exec(l), p !== null); ) _ = a.lastIndex, a === C ? p[1] === "!--" ? a = _e : p[1] !== void 0 ? a = ve : p[2] !== void 0 ? (Pe.test(p[2]) && (s = RegExp("</" + p[2], "g")), a = w) : p[3] !== void 0 && (a = w) : a === w ? p[0] === ">" ? (a = s ?? C, d = -1) : p[1] === void 0 ? d = -2 : (d = a.lastIndex - p[2].length, u = p[1], a = p[3] === void 0 ? w : p[3] === '"' ? $e : be) : a === $e || a === be ? a = w : a === _e || a === ve ? a = C : (a = w, s = void 0);
+    for (; _ < l.length && (a.lastIndex = _, p = a.exec(l), p !== null); ) _ = a.lastIndex, a === T ? p[1] === "!--" ? a = ve : p[1] !== void 0 ? a = be : p[2] !== void 0 ? (Ne.test(p[2]) && (s = RegExp("</" + p[2], "g")), a = w) : p[3] !== void 0 && (a = w) : a === w ? p[0] === ">" ? (a = s ?? T, d = -1) : p[1] === void 0 ? d = -2 : (d = a.lastIndex - p[2].length, u = p[1], a = p[3] === void 0 ? w : p[3] === '"' ? we : $e) : a === we || a === $e ? a = w : a === ve || a === be ? a = T : (a = w, s = void 0);
     const b = a === w && i[o + 1].startsWith("/>") ? " " : "";
-    n += a === C ? l + Xe : d >= 0 ? (r.push(u), l.slice(0, d) + Me + l.slice(d) + $ + b) : l + $ + (d === -2 ? o : b);
+    n += a === T ? l + Je : d >= 0 ? (r.push(u), l.slice(0, d) + Le + l.slice(d) + $ + b) : l + $ + (d === -2 ? o : b);
   }
-  return [Oe(i, n + (i[t] || "<?>") + (e === 2 ? "</svg>" : e === 3 ? "</math>" : "")), r];
+  return [ze(i, n + (i[t] || "<?>") + (e === 2 ? "</svg>" : e === 3 ? "</math>" : "")), r];
 };
 class O {
   constructor({ strings: e, _$litType$: t }, r) {
     let s;
     this.parts = [];
     let n = 0, a = 0;
-    const o = e.length - 1, l = this.parts, [u, p] = et(e, t);
-    if (this.el = O.createElement(u, r), x.currentNode = this.el.content, t === 2 || t === 3) {
+    const o = e.length - 1, l = this.parts, [u, p] = tt(e, t);
+    if (this.el = O.createElement(u, r), y.currentNode = this.el.content, t === 2 || t === 3) {
       const d = this.el.content.firstChild;
       d.replaceWith(...d.childNodes);
     }
-    for (; (s = x.nextNode()) !== null && l.length < o; ) {
+    for (; (s = y.nextNode()) !== null && l.length < o; ) {
       if (s.nodeType === 1) {
-        if (s.hasAttributes()) for (const d of s.getAttributeNames()) if (d.endsWith(Me)) {
-          const _ = p[a++], b = s.getAttribute(d).split($), H = /([.?@])?(.*)/.exec(_);
-          l.push({ type: 1, index: n, name: H[2], strings: b, ctor: H[1] === "." ? rt : H[1] === "?" ? st : H[1] === "@" ? it : V }), s.removeAttribute(d);
+        if (s.hasAttributes()) for (const d of s.getAttributeNames()) if (d.endsWith(Le)) {
+          const _ = p[a++], b = s.getAttribute(d).split($), F = /([.?@])?(.*)/.exec(_);
+          l.push({ type: 1, index: n, name: F[2], strings: b, ctor: F[1] === "." ? st : F[1] === "?" ? it : F[1] === "@" ? nt : G }), s.removeAttribute(d);
         } else d.startsWith($) && (l.push({ type: 6, index: n }), s.removeAttribute(d));
-        if (Pe.test(s.tagName)) {
+        if (Ne.test(s.tagName)) {
           const d = s.textContent.split($), _ = d.length - 1;
           if (_ > 0) {
-            s.textContent = B ? B.emptyScript : "";
-            for (let b = 0; b < _; b++) s.append(d[b], P()), x.nextNode(), l.push({ type: 2, index: ++n });
+            s.textContent = I ? I.emptyScript : "";
+            for (let b = 0; b < _; b++) s.append(d[b], P()), y.nextNode(), l.push({ type: 2, index: ++n });
             s.append(d[_], P());
           }
         }
-      } else if (s.nodeType === 8) if (s.data === Le) l.push({ type: 2, index: n });
+      } else if (s.nodeType === 8) if (s.data === Pe) l.push({ type: 2, index: n });
       else {
         let d = -1;
         for (; (d = s.data.indexOf($, d + 1)) !== -1; ) l.push({ type: 7, index: n }), d += $.length - 1;
@@ -314,7 +314,7 @@ class O {
     }
   }
   static createElement(e, t) {
-    const r = y.createElement("template");
+    const r = x.createElement("template");
     return r.innerHTML = e, r;
   }
 }
@@ -324,7 +324,7 @@ function S(i, e, t = i, r) {
   const n = N(e) ? void 0 : e._$litDirective$;
   return s?.constructor !== n && (s?._$AO?.(!1), n === void 0 ? s = void 0 : (s = new n(i), s._$AT(i, t, r)), r !== void 0 ? (t._$Co ??= [])[r] = s : t._$Cl = s), s !== void 0 && (e = S(i, s._$AS(i, e.values), s, r)), e;
 }
-class tt {
+class rt {
   constructor(e, t) {
     this._$AV = [], this._$AN = void 0, this._$AD = e, this._$AM = t;
   }
@@ -335,17 +335,17 @@ class tt {
     return this._$AM._$AU;
   }
   u(e) {
-    const { el: { content: t }, parts: r } = this._$AD, s = (e?.creationScope ?? y).importNode(t, !0);
-    x.currentNode = s;
-    let n = x.nextNode(), a = 0, o = 0, l = r[0];
+    const { el: { content: t }, parts: r } = this._$AD, s = (e?.creationScope ?? x).importNode(t, !0);
+    y.currentNode = s;
+    let n = y.nextNode(), a = 0, o = 0, l = r[0];
     for (; l !== void 0; ) {
       if (a === l.index) {
         let u;
-        l.type === 2 ? u = new D(n, n.nextSibling, this, e) : l.type === 1 ? u = new l.ctor(n, l.name, l.strings, this, e) : l.type === 6 && (u = new nt(n, this, e)), this._$AV.push(u), l = r[++o];
+        l.type === 2 ? u = new D(n, n.nextSibling, this, e) : l.type === 1 ? u = new l.ctor(n, l.name, l.strings, this, e) : l.type === 6 && (u = new at(n, this, e)), this._$AV.push(u), l = r[++o];
       }
-      a !== l?.index && (n = x.nextNode(), a++);
+      a !== l?.index && (n = y.nextNode(), a++);
     }
-    return x.currentNode = y, s;
+    return y.currentNode = x, s;
   }
   p(e) {
     let t = 0;
@@ -371,7 +371,7 @@ class D {
     return this._$AB;
   }
   _$AI(e, t = this) {
-    e = S(this, e, t), N(e) ? e === h || e == null || e === "" ? (this._$AH !== h && this._$AR(), this._$AH = h) : e !== this._$AH && e !== E && this._(e) : e._$litType$ !== void 0 ? this.$(e) : e.nodeType !== void 0 ? this.T(e) : Je(e) ? this.k(e) : this._(e);
+    e = S(this, e, t), N(e) ? e === h || e == null || e === "" ? (this._$AH !== h && this._$AR(), this._$AH = h) : e !== this._$AH && e !== E && this._(e) : e._$litType$ !== void 0 ? this.$(e) : e.nodeType !== void 0 ? this.T(e) : Qe(e) ? this.k(e) : this._(e);
   }
   O(e) {
     return this._$AA.parentNode.insertBefore(e, this._$AB);
@@ -380,22 +380,22 @@ class D {
     this._$AH !== e && (this._$AR(), this._$AH = this.O(e));
   }
   _(e) {
-    this._$AH !== h && N(this._$AH) ? this._$AA.nextSibling.data = e : this.T(y.createTextNode(e)), this._$AH = e;
+    this._$AH !== h && N(this._$AH) ? this._$AA.nextSibling.data = e : this.T(x.createTextNode(e)), this._$AH = e;
   }
   $(e) {
-    const { values: t, _$litType$: r } = e, s = typeof r == "number" ? this._$AC(e) : (r.el === void 0 && (r.el = O.createElement(Oe(r.h, r.h[0]), this.options)), r);
+    const { values: t, _$litType$: r } = e, s = typeof r == "number" ? this._$AC(e) : (r.el === void 0 && (r.el = O.createElement(ze(r.h, r.h[0]), this.options)), r);
     if (this._$AH?._$AD === s) this._$AH.p(t);
     else {
-      const n = new tt(s, this), a = n.u(this.options);
+      const n = new rt(s, this), a = n.u(this.options);
       n.p(t), this.T(a), this._$AH = n;
     }
   }
   _$AC(e) {
-    let t = we.get(e.strings);
-    return t === void 0 && we.set(e.strings, t = new O(e)), t;
+    let t = ye.get(e.strings);
+    return t === void 0 && ye.set(e.strings, t = new O(e)), t;
   }
   k(e) {
-    le(this._$AH) || (this._$AH = [], this._$AR());
+    ce(this._$AH) || (this._$AH = [], this._$AR());
     const t = this._$AH;
     let r, s = 0;
     for (const n of e) s === t.length ? t.push(r = new D(this.O(P()), this.O(P()), this, this.options)) : r = t[s], r._$AI(n), s++;
@@ -403,15 +403,15 @@ class D {
   }
   _$AR(e = this._$AA.nextSibling, t) {
     for (this._$AP?.(!1, !0, t); e !== this._$AB; ) {
-      const r = me(e).nextSibling;
-      me(e).remove(), e = r;
+      const r = fe(e).nextSibling;
+      fe(e).remove(), e = r;
     }
   }
   setConnected(e) {
     this._$AM === void 0 && (this._$Cv = e, this._$AP?.(e));
   }
 }
-class V {
+class G {
   get tagName() {
     return this.element.tagName;
   }
@@ -436,7 +436,7 @@ class V {
     e === h ? this.element.removeAttribute(this.name) : this.element.setAttribute(this.name, e ?? "");
   }
 }
-class rt extends V {
+class st extends G {
   constructor() {
     super(...arguments), this.type = 3;
   }
@@ -444,7 +444,7 @@ class rt extends V {
     this.element[this.name] = e === h ? void 0 : e;
   }
 }
-class st extends V {
+class it extends G {
   constructor() {
     super(...arguments), this.type = 4;
   }
@@ -452,7 +452,7 @@ class st extends V {
     this.element.toggleAttribute(this.name, !!e && e !== h);
   }
 }
-class it extends V {
+class nt extends G {
   constructor(e, t, r, s, n) {
     super(e, t, r, s, n), this.type = 5;
   }
@@ -465,7 +465,7 @@ class it extends V {
     typeof this._$AH == "function" ? this._$AH.call(this.options?.host ?? this.element, e) : this._$AH.handleEvent(e);
   }
 }
-class nt {
+class at {
   constructor(e, t, r) {
     this.element = e, this.type = 6, this._$AN = void 0, this._$AM = t, this.options = r;
   }
@@ -476,9 +476,9 @@ class nt {
     S(this, e);
   }
 }
-const at = oe.litHtmlPolyfillSupport;
-at?.(O, D), (oe.litHtmlVersions ??= []).push("3.3.3");
-const ot = (i, e, t) => {
+const ot = le.litHtmlPolyfillSupport;
+ot?.(O, D), (le.litHtmlVersions ??= []).push("3.3.3");
+const lt = (i, e, t) => {
   const r = t?.renderBefore ?? e;
   let s = r._$litPart$;
   if (s === void 0) {
@@ -492,7 +492,7 @@ const ot = (i, e, t) => {
  * Copyright 2017 Google LLC
  * SPDX-License-Identifier: BSD-3-Clause
  */
-const ce = globalThis;
+const de = globalThis;
 class A extends k {
   constructor() {
     super(...arguments), this.renderOptions = { host: this }, this._$Do = void 0;
@@ -503,7 +503,7 @@ class A extends k {
   }
   update(e) {
     const t = this.render();
-    this.hasUpdated || (this.renderOptions.isConnected = this.isConnected), super.update(e), this._$Do = ot(t, this.renderRoot, this.renderOptions);
+    this.hasUpdated || (this.renderOptions.isConnected = this.isConnected), super.update(e), this._$Do = lt(t, this.renderRoot, this.renderOptions);
   }
   connectedCallback() {
     super.connectedCallback(), this._$Do?.setConnected(!0);
@@ -515,16 +515,16 @@ class A extends k {
     return E;
   }
 }
-A._$litElement$ = !0, A.finalized = !0, ce.litElementHydrateSupport?.({ LitElement: A });
-const lt = ce.litElementPolyfillSupport;
-lt?.({ LitElement: A });
-(ce.litElementVersions ??= []).push("4.2.2");
-const G = "de-DE";
+A._$litElement$ = !0, A.finalized = !0, de.litElementHydrateSupport?.({ LitElement: A });
+const ct = de.litElementPolyfillSupport;
+ct?.({ LitElement: A });
+(de.litElementVersions ??= []).push("4.2.2");
+const q = "de-DE";
 function f(i) {
-  return new Intl.NumberFormat(G, { maximumFractionDigits: 0 }).format(i);
+  return new Intl.NumberFormat(q, { maximumFractionDigits: 0 }).format(i);
 }
-function ct(i) {
-  return new Intl.NumberFormat(G, {
+function dt(i) {
+  return new Intl.NumberFormat(q, {
     maximumFractionDigits: 0,
     signDisplay: "always"
   }).format(i);
@@ -533,14 +533,14 @@ function xe(i) {
   const e = Math.round(i), t = f(Math.abs(e));
   return e > 0 ? `+${t}` : e < 0 ? `−${t}` : t;
 }
-function dt(i, e = 1) {
-  return new Intl.NumberFormat(G, {
+function ht(i, e = 1) {
+  return new Intl.NumberFormat(q, {
     minimumFractionDigits: 0,
     maximumFractionDigits: e
   }).format(i);
 }
 function g(i, e = 1) {
-  return new Intl.NumberFormat(G, {
+  return new Intl.NumberFormat(q, {
     minimumFractionDigits: e,
     maximumFractionDigits: e
   }).format(i);
@@ -548,18 +548,18 @@ function g(i, e = 1) {
 function z(i, e, t) {
   return Math.min(t, Math.max(e, i));
 }
-const ht = /* @__PURE__ */ new Set(["unavailable", "unknown", "none", "null", ""]), ut = /^[a-z][a-z0-9_]*\.[a-z0-9_]+$/;
-function q(i) {
-  return typeof i == "string" && ut.test(i);
+const ut = /* @__PURE__ */ new Set(["unavailable", "unknown", "none", "null", ""]), pt = /^[a-z][a-z0-9_]*\.[a-z0-9_]+$/;
+function Y(i) {
+  return typeof i == "string" && pt.test(i);
 }
-const re = { kind: "unset" }, M = { kind: "unavailable" };
-function ze(i, e) {
+const se = { kind: "unset" }, C = { kind: "unavailable" };
+function Ue(i, e) {
   const t = e?.states?.[i];
   if (!t || typeof t.state != "string") return null;
   const r = t.state.trim();
-  return ht.has(r.toLowerCase()) ? null : r;
+  return ut.has(r.toLowerCase()) ? null : r;
 }
-function X(i, e, t) {
+function J(i, e, t) {
   const r = e?.states?.[i]?.attributes?.[t];
   if (typeof r == "number") return Number.isFinite(r) ? r : null;
   if (typeof r == "string") {
@@ -569,49 +569,49 @@ function X(i, e, t) {
   return null;
 }
 function m(i, e) {
-  if (i == null || typeof i == "boolean") return re;
+  if (i == null || typeof i == "boolean") return se;
   if (typeof i == "number")
-    return Number.isFinite(i) ? { kind: "value", value: i } : M;
-  if (q(i)) {
-    const r = ze(i, e);
-    if (r === null) return M;
+    return Number.isFinite(i) ? { kind: "value", value: i } : C;
+  if (Y(i)) {
+    const r = Ue(i, e);
+    if (r === null) return C;
     const s = Number.parseFloat(r);
-    return Number.isFinite(s) ? { kind: "value", value: s } : M;
+    return Number.isFinite(s) ? { kind: "value", value: s } : C;
   }
   const t = Number.parseFloat(i);
-  return Number.isFinite(t) ? { kind: "value", value: t } : M;
+  return Number.isFinite(t) ? { kind: "value", value: t } : C;
 }
 function v(i, e) {
-  if (i == null) return re;
+  if (i == null) return se;
   if (typeof i == "boolean") return { kind: "value", value: i ? "on" : "off" };
   if (typeof i == "number") return { kind: "value", value: String(i) };
-  if (q(i)) {
-    const r = ze(i, e);
-    return r === null ? M : { kind: "value", value: r };
+  if (Y(i)) {
+    const r = Ue(i, e);
+    return r === null ? C : { kind: "value", value: r };
   }
   const t = i.trim();
-  return t.length > 0 ? { kind: "value", value: t } : re;
+  return t.length > 0 ? { kind: "value", value: t } : se;
 }
-const Ue = /* @__PURE__ */ new Set(["number", "input_number"]), R = /* @__PURE__ */ new Set(["switch", "input_boolean"]), Y = /* @__PURE__ */ new Set(["select", "input_select"]), pt = /* @__PURE__ */ new Set(["on", "true", "1", "yes", "an", "ein"]);
-function T(i) {
+const De = /* @__PURE__ */ new Set(["number", "input_number"]), R = /* @__PURE__ */ new Set(["switch", "input_boolean"]), Z = /* @__PURE__ */ new Set(["select", "input_select"]), gt = /* @__PURE__ */ new Set(["on", "true", "1", "yes", "an", "ein"]);
+function M(i) {
   const e = i.indexOf(".");
   return e === -1 ? "" : i.slice(0, e);
 }
 function U(i, e) {
-  return typeof i == "string" && q(i) && e.has(T(i));
+  return typeof i == "string" && Y(i) && e.has(M(i));
 }
-function ye(i) {
-  return U(i, Ue);
+function B(i) {
+  return U(i, De);
 }
-function gt(i) {
+function mt(i) {
   return U(i, R);
 }
-function De(i) {
+function Re(i) {
   if (!i || typeof i != "object") return !1;
   const e = i.entity;
-  return U(e, Y) || U(e, R);
+  return U(e, Z) || U(e, R);
 }
-function de(i, e, t, r) {
+function he(i, e, t, r) {
   if (typeof i?.callService != "function")
     return Promise.reject(new Error("des-storage-card: hass.callService fehlt"));
   try {
@@ -620,30 +620,30 @@ function de(i, e, t, r) {
     return Promise.reject(s);
   }
 }
-function mt(i, e, t) {
-  const r = T(e);
-  return Ue.has(r) ? de(i, r, "set_value", { entity_id: e, value: t }) : Promise.reject(
+function ke(i, e, t) {
+  const r = M(e);
+  return De.has(r) ? he(i, r, "set_value", { entity_id: e, value: t }) : Promise.reject(
     new Error(`des-storage-card: ${e} ist keine number-Entität`)
   );
 }
-function Re(i, e, t) {
-  const r = T(e);
-  return R.has(r) ? de(i, r, t ? "turn_on" : "turn_off", { entity_id: e }) : Promise.reject(
+function Fe(i, e, t) {
+  const r = M(e);
+  return R.has(r) ? he(i, r, t ? "turn_on" : "turn_off", { entity_id: e }) : Promise.reject(
     new Error(`des-storage-card: ${e} ist kein Schalter`)
   );
 }
 function ft(i, e, t) {
-  const r = T(e);
-  return Y.has(r) ? de(i, r, "select_option", { entity_id: e, option: t }) : Promise.reject(
+  const r = M(e);
+  return Z.has(r) ? he(i, r, "select_option", { entity_id: e, option: t }) : Promise.reject(
     new Error(`des-storage-card: ${e} ist keine select-Entität`)
   );
 }
-function He(i, e) {
+function Be(i, e) {
   const t = e === "charge" ? i.charge_state : i.auto_state;
   return t !== void 0 ? t : U(i.entity, R) ? e === "charge" ? "on" : "off" : void 0;
 }
-function ke(i, e) {
-  const t = He(i, "charge");
+function Ae(i, e) {
+  const t = Be(i, "charge");
   return t === void 0 ? !1 : t.trim().toLowerCase() === e.trim().toLowerCase();
 }
 function _t(i) {
@@ -652,9 +652,9 @@ function _t(i) {
   const { entity: e, charge_state: t, auto_state: r } = i;
   if (typeof e != "string" || e.length === 0)
     return '"charge_mode_control" braucht "entity"';
-  if (!De(i))
+  if (!Re(i))
     return `"charge_mode_control.entity" muss select, input_select, switch oder input_boolean sein (ist: ${e})`;
-  if (Y.has(T(e))) {
+  if (Z.has(M(e))) {
     const s = [
       t === void 0 ? "charge_state" : null,
       r === void 0 ? "auto_state" : null
@@ -665,22 +665,22 @@ function _t(i) {
   return null;
 }
 function vt(i, e, t) {
-  const r = e.entity, s = T(r), n = He(e, t);
-  return Y.has(s) ? n === void 0 ? Promise.reject(
+  const r = e.entity, s = M(r), n = Be(e, t);
+  return Z.has(s) ? n === void 0 ? Promise.reject(
     new Error(
       `des-storage-card: charge_mode_control braucht ${t === "charge" ? "charge_state" : "auto_state"} für ${r}`
     )
-  ) : ft(i, r, n) : R.has(s) ? Re(i, r, pt.has((n ?? "").toLowerCase())) : Promise.reject(
+  ) : ft(i, r, n) : R.has(s) ? Fe(i, r, gt.has((n ?? "").toLowerCase())) : Promise.reject(
     new Error(`des-storage-card: ${r} wird als Lademodus nicht unterstützt`)
   );
 }
-const Fe = {
+const He = {
   charging: "Lädt",
   discharging: "Entlädt",
   idle: "Bereit",
   heating: "Heizt",
   off: "Aus"
-}, F = { min: 10, max: 80, step: 5 }, J = { min: 50, max: 100, step: 5 }, Ae = 5, Ee = 25, bt = 500, $t = 8e3, wt = /* @__PURE__ */ new Set([
+}, H = { min: 10, max: 80, step: 5 }, Q = { min: 50, max: 100, step: 5 }, Ee = 5, Se = 25, bt = 500, $t = 8e3, wt = /* @__PURE__ */ new Set([
   "not charging",
   "not discharging",
   "unknown",
@@ -688,41 +688,49 @@ const Fe = {
   "none",
   "-",
   "--"
-]), xt = [
+]), yt = [
   { value: "charge", label: "Laden" },
   { value: "auto", label: "Auto" }
-], yt = [
+], xt = [
   { value: "on", label: "An" },
   { value: "auto", label: "Auto" },
   { value: "off", label: "Aus" }
-];
-function kt(i) {
+], kt = {
+  1: "on",
+  2: "auto",
+  3: "off"
+}, At = {
+  on: 1,
+  auto: 2,
+  off: 3
+};
+function Et(i) {
   const e = i.trim().toLowerCase();
-  return e === "standby" ? "idle" : e in Fe ? e : null;
+  return e === "standby" ? "idle" : e in He ? e : null;
 }
-function At(i) {
+function St(i) {
   const e = i.trim().toLowerCase();
   return e === "on" || e === "auto" || e === "off" ? e : "auto";
 }
-function Q(i, e) {
+function ee(i, e) {
   const { min: t, max: r, step: s } = e;
   if (!(s > 0)) return z(i, t, r);
   const n = Math.round((i - t) / s), a = Number((t + n * s).toFixed(6));
   return z(a, t, r);
 }
-function Et(i) {
+function Mt(i) {
   if (!Number.isFinite(i) || Number.isInteger(i)) return 0;
   const e = String(i), t = e.indexOf(".");
   return t === -1 ? 0 : Math.min(3, e.length - t - 1);
 }
-function ee(i, e) {
-  const t = Et(e);
+function te(i, e) {
+  const t = Mt(e);
   return t === 0 ? f(i) : g(i, t);
 }
-function St(i) {
+function Tt(i) {
   return i < 4 || i > 50 ? "temp-alert" : i < 8 || i > 40 ? "temp-warn" : "";
 }
-const I = class I extends A {
+const j = class j extends A {
   constructor() {
     super(), this._writeTimers = /* @__PURE__ */ new Map(), this._settleTimers = /* @__PURE__ */ new Map(), this._expanded = !1, this._thresholdLocal = null, this._targetLocal = null, this._chargeModeLocal = null, this._itemModesLocal = [];
   }
@@ -745,12 +753,17 @@ const I = class I extends A {
         throw new Error(
           'des-storage-card: "items" braucht mindestens einen Eintrag'
         );
-      if (t.length > Ae)
+      if (t.length > Ee)
         throw new Error(
-          `des-storage-card: "items" erlaubt höchstens ${Ae} Einträge`
+          `des-storage-card: "items" erlaubt höchstens ${Ee} Einträge`
         );
       if (t.some((r) => !r || !r.name))
         throw new Error('des-storage-card: jeder Eintrag in "items" braucht "name"');
+      for (const r of t)
+        if (r.mode_entity !== void 0 && !B(r.mode_entity))
+          throw new Error(
+            `des-storage-card: "mode_entity" muss eine number- oder input_number-Entität sein (ist: ${r.mode_entity})`
+          );
       this._itemModesLocal = t.map(() => null);
     }
     this._config = e, this._expanded = !1, this._thresholdLocal = null, this._targetLocal = null, this._chargeModeLocal = null;
@@ -787,16 +800,16 @@ const I = class I extends A {
       this._thresholdLocal !== null && this._entityMatches(
         e.threshold_pct,
         this._thresholdLocal,
-        this._rangeFor(e.threshold_pct, F)
+        this._rangeFor(e.threshold_pct, H)
       ) && (this._thresholdLocal = null, this._clearSettle("threshold")), this._targetLocal !== null && this._entityMatches(
         e.charge_target_pct,
         this._targetLocal,
-        this._rangeFor(e.charge_target_pct, J)
+        this._rangeFor(e.charge_target_pct, Q)
       ) && (this._targetLocal = null, this._clearSettle("target"));
       const n = e.charge_mode_control;
       if (this._chargeModeLocal !== null && n?.entity) {
         const a = v(n.entity, this.hass);
-        a.kind === "value" && (ke(n, a.value) ? "charge" : "auto") === this._chargeModeLocal && (this._chargeModeLocal = null, this._clearSettle("chargeMode"));
+        a.kind === "value" && (Ae(n, a.value) ? "charge" : "auto") === this._chargeModeLocal && (this._chargeModeLocal = null, this._clearSettle("chargeMode"));
       }
       return;
     }
@@ -805,17 +818,16 @@ const I = class I extends A {
     const s = [...this._itemModesLocal];
     t.forEach((n, a) => {
       const o = s[a];
-      if (!o || o === "auto" || !n.switch_entity) return;
-      const l = v(n.switch_entity, this.hass);
-      if (l.kind !== "value") return;
-      (l.value.trim().toLowerCase() === "on" ? "on" : "off") === o && (s[a] = null, r = !0, this._clearSettle(`item:${a}`));
+      if (!o) return;
+      const l = this._itemModeFromEntity(n);
+      l === null || l !== o || (s[a] = null, r = !0, this._clearSettle(`item:${a}`));
     }), r && (this._itemModesLocal = s);
   }
   /** True when the slot is entity-bound and already carries exactly `local`. */
   _entityMatches(e, t, r) {
-    if (typeof e != "string" || !q(e)) return !1;
+    if (typeof e != "string" || !Y(e)) return !1;
     const s = m(e, this.hass);
-    return s.kind === "value" && Q(s.value, r) === t;
+    return s.kind === "value" && ee(s.value, r) === t;
   }
   /**
    * The bounds a slider actually uses.
@@ -826,8 +838,8 @@ const I = class I extends A {
    * still yields a usable range.
    */
   _rangeFor(e, t) {
-    if (!ye(e)) return t;
-    const r = e, s = X(r, this.hass, "min") ?? t.min, n = X(r, this.hass, "max") ?? t.max, a = X(r, this.hass, "step") ?? t.step;
+    if (!B(e)) return t;
+    const r = e, s = J(r, this.hass, "min") ?? t.min, n = J(r, this.hass, "max") ?? t.max, a = J(r, this.hass, "step") ?? t.step;
     return !(s < n) || !(a > 0) ? t : { min: s, max: n, step: a };
   }
   getCardSize() {
@@ -874,12 +886,12 @@ const I = class I extends A {
   _status(e, t) {
     const r = v(e.status, this.hass);
     if (r.kind === "value") {
-      const s = kt(r.value);
+      const s = Et(r.value);
       if (s !== null) return s;
     }
     if (t.kind === "value") {
-      if (t.value < -Ee) return "discharging";
-      if (t.value > Ee) return "charging";
+      if (t.value < -Se) return "discharging";
+      if (t.value > Se) return "charging";
     }
     return "idle";
   }
@@ -911,12 +923,12 @@ const I = class I extends A {
   _threshold(e) {
     if (this._thresholdLocal !== null) return this._thresholdLocal;
     const t = m(e.threshold_pct, this.hass);
-    return t.kind === "value" ? Q(t.value, this._rangeFor(e.threshold_pct, F)) : null;
+    return t.kind === "value" ? ee(t.value, this._rangeFor(e.threshold_pct, H)) : null;
   }
   _chargeTarget(e) {
     if (this._targetLocal !== null) return this._targetLocal;
     const t = m(e.charge_target_pct, this.hass);
-    return t.kind === "value" ? Q(t.value, this._rangeFor(e.charge_target_pct, J)) : null;
+    return t.kind === "value" ? ee(t.value, this._rangeFor(e.charge_target_pct, Q)) : null;
   }
   /**
    * `null` means "cannot say" - the control is bound to an entity the card
@@ -929,23 +941,41 @@ const I = class I extends A {
     const t = e.charge_mode_control;
     if (t?.entity) {
       const s = v(t.entity, this.hass);
-      return s.kind !== "value" ? null : ke(t, s.value) ? "charge" : "auto";
+      return s.kind !== "value" ? null : Ae(t, s.value) ? "charge" : "auto";
     }
     const r = v(e.charge_mode, this.hass);
     return r.kind === "value" && r.value.trim().toLowerCase() === "charge" ? "charge" : "auto";
   }
-  /** Local click wins, then `mode`, then the switch entity's on/off state. */
+  /**
+   * Local click wins, then `mode_entity`, then a static `mode`, then the
+   * switch entity's on/off state. `null` means no segment is highlighted -
+   * `mode_entity` carrying something outside 1/2/3 is the only way there.
+   */
   _itemMode(e, t) {
     const r = this._itemModesLocal[t];
     if (r) return r;
+    if (e.mode_entity)
+      return this._itemModeFromEntity(e);
     const s = v(e.mode, this.hass);
-    if (s.kind === "value") return At(s.value);
-    if (e.switch_entity) {
-      const n = v(e.switch_entity, this.hass);
-      if (n.kind === "value")
-        return n.value.trim().toLowerCase() === "on" ? "on" : "off";
+    return s.kind === "value" ? St(s.value) : this._itemModeFromEntity(e) ?? "auto";
+  }
+  /**
+   * The mode the entities currently report, ignoring any local override.
+   * `null` when nothing readable says what the mode is.
+   */
+  _itemModeFromEntity(e) {
+    if (e.mode_entity) {
+      const t = v(e.mode_entity, this.hass);
+      if (t.kind !== "value") return null;
+      const r = Math.round(Number.parseFloat(t.value));
+      return kt[r] ?? null;
     }
-    return "auto";
+    if (e.switch_entity) {
+      const t = v(e.switch_entity, this.hass);
+      if (t.kind === "value")
+        return t.value.trim().toLowerCase() === "on" ? "on" : "off";
+    }
+    return null;
   }
   // =========================================================================
   // variant: battery
@@ -962,7 +992,7 @@ const I = class I extends A {
         </div>
         <div class="badges">
           ${o === "none" ? h : this._renderBackupBadge(o)}
-          ${this._renderBadge(Fe[a], `status-${a}`)}
+          ${this._renderBadge(He[a], `status-${a}`)}
         </div>
       </div>
 
@@ -1004,7 +1034,7 @@ const I = class I extends A {
    * up. The charge-mode control sits to their right, centred over both rows.
    */
   _renderBatteryControls(e) {
-    const t = this._chargeMode(e), r = t === "charge", s = this._chargeTarget(e), n = this._threshold(e), a = this._rangeFor(e.charge_target_pct, J), o = this._rangeFor(e.threshold_pct, F);
+    const t = this._chargeMode(e), r = t === "charge", s = this._chargeTarget(e), n = this._threshold(e), a = this._rangeFor(e.charge_target_pct, Q), o = this._rangeFor(e.threshold_pct, H);
     return c`
       <div class="controls">
         <div class="ctl-rows">
@@ -1022,7 +1052,7 @@ const I = class I extends A {
             @change=${this._onTargetChange}
           />
           <span class="ctl-value ${r ? "" : "disabled"}">
-            ${s === null ? this._dash() : `${ee(s, a.step)} %`}
+            ${s === null ? this._dash() : `${te(s, a.step)} %`}
           </span>
 
           <span class="ctl-label">min. SoC</span>
@@ -1038,11 +1068,11 @@ const I = class I extends A {
             @change=${this._onThresholdChange}
           />
           <span class="ctl-value">
-            ${n === null ? this._dash() : `${ee(n, o.step)} %`}
+            ${n === null ? this._dash() : `${te(n, o.step)} %`}
           </span>
         </div>
         ${this._renderSegmented(
-      xt,
+      yt,
       t,
       (l) => this._setChargeMode(l),
       "Lademodus"
@@ -1054,13 +1084,13 @@ const I = class I extends A {
   _renderBatteryMeta(e, t) {
     const r = m(e.temp_c, this.hass), s = this._threshold(e), n = [];
     return t.kind === "value" ? n.push(`${g(t.value)} kWh`) : t.kind === "unavailable" && n.push(c`${this._dash()} kWh`), r.kind === "value" ? n.push(
-      c`<span class=${St(r.value)}>
+      c`<span class=${Tt(r.value)}>
           ${g(r.value)} °C
         </span>`
     ) : r.kind === "unavailable" && n.push(c`${this._dash()} °C`), n.push(
-      s === null ? c`min. ${this._dash()} SoC` : `min. ${ee(
+      s === null ? c`min. ${this._dash()} SoC` : `min. ${te(
         s,
-        this._rangeFor(e.threshold_pct, F).step
+        this._rangeFor(e.threshold_pct, H).step
       )} % SoC`
     ), c`${n.map(
       (a, o) => o === 0 ? a : c` · ${a}`
@@ -1173,7 +1203,7 @@ const I = class I extends A {
           ${r.kind === "value" ? this._formatPower(r.value) : r.kind === "unavailable" ? this._dash() : ""}
         </span>
         ${this._renderSegmented(
-      yt,
+      xt,
       this._itemMode(e, t),
       (a) => this._setItemMode(t, a),
       `Modus ${e.name}`
@@ -1231,7 +1261,7 @@ const I = class I extends A {
   }
   _formatPower(e) {
     const t = Math.round(e);
-    return `${t === 0 ? f(0) : ct(t)} W`;
+    return `${t === 0 ? f(0) : dt(t)} W`;
   }
   // --- interaction ---------------------------------------------------------
   //
@@ -1247,7 +1277,7 @@ const I = class I extends A {
   _setChargeMode(e) {
     this._chargeModeLocal = e;
     const t = this._config?.charge_mode_control;
-    !t?.entity || !De(t) || (this._holdOptimistic("chargeMode", () => {
+    !t?.entity || !Re(t) || (this._holdOptimistic("chargeMode", () => {
       this._chargeModeLocal = null;
     }), this._write(vt(this.hass, t, e), () => {
       this._clearSettle("chargeMode"), this._chargeModeLocal = null;
@@ -1269,14 +1299,14 @@ const I = class I extends A {
     this._thresholdLocal = t, this._scheduleNumberWrite("threshold", this._config?.threshold_pct, t);
   }
   _scheduleNumberWrite(e, t, r) {
-    if (!ye(t)) return;
+    if (!B(t)) return;
     const s = t, n = this._writeTimers.get(e);
     n !== void 0 && window.clearTimeout(n), this._writeTimers.set(
       e,
       window.setTimeout(() => {
         this._writeTimers.delete(e), this._holdOptimistic(e, () => {
           e === "threshold" ? this._thresholdLocal = null : this._targetLocal = null;
-        }), this._write(mt(this.hass, s, r), () => {
+        }), this._write(ke(this.hass, s, r), () => {
           this._clearSettle(e), e === "threshold" ? this._thresholdLocal = null : this._targetLocal = null;
         });
       }, bt)
@@ -1285,15 +1315,24 @@ const I = class I extends A {
   _setItemMode(e, t) {
     const r = [...this._itemModesLocal];
     r[e] = t, this._itemModesLocal = r;
-    const s = this._config?.items?.[e]?.switch_entity;
-    if (t === "auto" || !gt(s)) return;
-    const n = () => {
-      const a = [...this._itemModesLocal];
-      a[e] = null, this._itemModesLocal = a;
+    const s = this._config?.items?.[e], n = () => {
+      const o = [...this._itemModesLocal];
+      o[e] = null, this._itemModesLocal = o;
     };
-    this._holdOptimistic(`item:${e}`, n), this._write(Re(this.hass, s, t === "on"), () => {
+    if (s?.mode_entity) {
+      if (!B(s.mode_entity)) return;
+      this._holdOptimistic(`item:${e}`, n), this._write(
+        ke(this.hass, s.mode_entity, At[t]),
+        () => {
+          this._clearSettle(`item:${e}`), n();
+        }
+      );
+      return;
+    }
+    const a = s?.switch_entity;
+    t === "auto" || !mt(a) || (this._holdOptimistic(`item:${e}`, n), this._write(Fe(this.hass, a, t === "on"), () => {
       this._clearSettle(`item:${e}`), n();
-    });
+    }));
   }
   /** Awaits a service call and runs `onFailure` if it rejects. */
   async _write(e, t) {
@@ -1304,7 +1343,7 @@ const I = class I extends A {
     }
   }
 };
-I.properties = {
+j.properties = {
   // Assigning `hass` is a reactive property write, so Home Assistant's
   // state updates re-render the card without a custom setter.
   hass: { attribute: !1 },
@@ -1314,7 +1353,7 @@ I.properties = {
   _chargeModeLocal: { state: !0 },
   _expanded: { state: !0 },
   _itemModesLocal: { state: !0 }
-}, I.styles = Te`
+}, j.styles = Te`
     /* The card fills whatever height the sections grid hands it, so several
        cards in one row can be levelled with grid_options.rows. */
     :host {
@@ -1751,12 +1790,12 @@ I.properties = {
       outline-offset: -2px;
     }
   `;
-let se = I;
-const Tt = /* @__PURE__ */ new Set([
+let ie = j;
+const Ct = /* @__PURE__ */ new Set([
   "normal",
   "alarm",
   "night"
-]), Ct = 12.5, Mt = 6.5, Lt = 6, Pt = 0.5, Nt = 500, Ot = ["L1", "L2", "L3"], zt = {
+]), Lt = 12.5, Pt = 6.5, Nt = 6, Ot = 0.5, zt = 500, Ut = ["L1", "L2", "L3"], Dt = {
   normal: {
     model: "Growatt MOD 10KTL3-X",
     todayProduction: 24.6,
@@ -1822,7 +1861,7 @@ const Tt = /* @__PURE__ */ new Set([
       { grid: 0, inverter: 0, voltage: 232.2 }
     ]
   }
-}, j = class j extends A {
+}, K = class K extends A {
   constructor() {
     super(), this._expanded = !1;
   }
@@ -1831,7 +1870,7 @@ const Tt = /* @__PURE__ */ new Set([
       throw new Error("des-inverter-card: Konfiguration fehlt");
     if (!e.name)
       throw new Error('des-inverter-card: "name" ist erforderlich');
-    if (e.demo_state && !Tt.has(e.demo_state))
+    if (e.demo_state && !Ct.has(e.demo_state))
       throw new Error(
         'des-inverter-card: "demo_state" muss "normal", "alarm" oder "night" sein'
       );
@@ -1851,23 +1890,23 @@ const Tt = /* @__PURE__ */ new Set([
     };
   }
   get _data() {
-    return zt[this._config?.demo_state ?? "normal"];
+    return Dt[this._config?.demo_state ?? "normal"];
   }
   // --- config-derived scalars ----------------------------------------------
   get _kwpTotal() {
-    return this._config?.kwp_total ?? Ct;
+    return this._config?.kwp_total ?? Lt;
   }
   get _kwpString() {
     return [
-      this._config?.kwp_pv1 ?? Mt,
-      this._config?.kwp_pv2 ?? Lt
+      this._config?.kwp_pv1 ?? Pt,
+      this._config?.kwp_pv2 ?? Nt
     ];
   }
   /** Per-string amber flags for a badly imbalanced array. */
   get _imbalance() {
     const e = this._config;
     if (e?.imbalance_warn === !1) return [!1, !1];
-    const t = e?.imbalance_ratio ?? Pt, r = e?.imbalance_min_w ?? Nt, [s, n] = this._data.strings.map((o) => o.power), a = (o, l) => o < t * l && l > r;
+    const t = e?.imbalance_ratio ?? Ot, r = e?.imbalance_min_w ?? zt, [s, n] = this._data.strings.map((o) => o.power), a = (o, l) => o < t * l && l > r;
     return [a(s, n), a(n, s)];
   }
   render() {
@@ -1931,7 +1970,7 @@ const Tt = /* @__PURE__ */ new Set([
             ${f(e.pvPower)} W
           </span>
           <span class="pv-share">
-            ${f(s)} % von ${dt(r)} kWp
+            ${f(s)} % von ${ht(r)} kWp
           </span>
         </div>
         <div class="temp">
@@ -2003,7 +2042,7 @@ const Tt = /* @__PURE__ */ new Set([
 
         ${e.phases.map(
       (a, o) => c`
-            <span class="row-label">${Ot[o]}</span>
+            <span class="row-label">${Ut[o]}</span>
             <span class="num ${this._gridClass(r[o])}">
               ${xe(r[o])} W
             </span>
@@ -2054,7 +2093,7 @@ const Tt = /* @__PURE__ */ new Set([
       role="img"
       aria-label="Temperatur"
     >
-      ${Qe`<path
+      ${et`<path
         fill="currentColor"
         d="M15 13V5a3 3 0 0 0-6 0v8a5 5 0 1 0 6 0m-3-10a2 2 0 0 1 2 2v1h-4V5a2 2 0 0 1 2-2Z"
       />`}
@@ -2067,11 +2106,11 @@ const Tt = /* @__PURE__ */ new Set([
     (e.key === "Enter" || e.key === " ") && (e.preventDefault(), this._toggleExpanded());
   }
 };
-j.properties = {
+K.properties = {
   hass: { attribute: !1 },
   _config: { state: !0 },
   _expanded: { state: !0 }
-}, j.styles = Te`
+}, K.styles = Te`
     :host {
       display: block;
       height: 100%;
@@ -2384,23 +2423,23 @@ j.properties = {
       font-variant-numeric: tabular-nums;
     }
   `;
-let ie = j;
-const Ut = "0.1.0", Dt = [
+let ne = K;
+const Rt = "0.2.0", Ft = [
   {
     type: "des-storage-card",
-    element: se,
+    element: ie,
     name: "Daniels Speicherkarte",
     description: "Speicherkarte für Hausakkus (battery) und Wärmespeicher-Gruppen (thermal_group)."
   },
   {
     type: "des-inverter-card",
-    element: ie,
+    element: ne,
     name: "Daniels Wechselrichterkarte",
     description: "Wechselrichter-Übersicht: PV-Leistung, Strings und Phasen (Phase 1: Demo-Werte)."
   }
 ];
 window.customCards = window.customCards ?? [];
-for (const i of Dt)
+for (const i of Ft)
   customElements.get(i.type) || customElements.define(i.type, i.element), window.customCards.some((e) => e.type === i.type) || window.customCards.push({
     type: i.type,
     name: i.name,
@@ -2408,11 +2447,11 @@ for (const i of Dt)
     preview: !1
   });
 console.info(
-  `%c DANIELS-ENERGY-CARDS %c v${Ut} `,
+  `%c DANIELS-ENERGY-CARDS %c v${Rt} `,
   "background:#03a9f4;color:#fff;font-weight:700;border-radius:3px 0 0 3px;padding:2px 4px",
   "background:#555;color:#fff;border-radius:0 3px 3px 0;padding:2px 4px"
 );
 export {
-  ie as DesInverterCard,
-  se as DesStorageCard
+  ne as DesInverterCard,
+  ie as DesStorageCard
 };

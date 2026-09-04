@@ -25,7 +25,7 @@ npm install
 npm run build
 ```
 
-Ergebnis: `dist/daniels-energy-cards.js` (~75 kB, gzip ~20 kB; Lit und **beide**
+Ergebnis: `dist/daniels-energy-cards.js` (~77 kB, gzip ~20 kB; Lit und **beide**
 Karten sind mit eingebettet).
 
 Weitere Skripte:
@@ -273,13 +273,29 @@ Je Eintrag in `items`:
 | `name`          | string                            | **Pflicht.** Zeilenbeschriftung.                                        |
 | `energy_kwh`    | number \| Entity                  | Heute eingespeichert.                                                   |
 | `power_w`       | number \| Entity                  | Aktuelle Heizleistung; `> 0` zählt als „heizt“.                          |
-| `mode`          | `on` \| `auto` \| `off` \| Entity | Startstellung des Umschalters. Hat Vorrang vor `switch_entity`.          |
-| `switch_entity` | Entity (`switch.*`)               | Ohne `mode`: Umschalter steht bei State `on` auf **An**, sonst auf **Aus**. |
+| `mode_entity`   | Entity (`input_number`)           | Modus als Zahl: **1 = An, 2 = Auto, 3 = Aus**. Steuert den Umschalter in beide Richtungen. |
+| `mode`          | `on` \| `auto` \| `off` \| Entity | Startstellung, wenn kein `mode_entity` gesetzt ist.                      |
+| `switch_entity` | Entity (`switch.*`)               | Ohne `mode_entity`/`mode`: Umschalter steht bei State `on` auf **An**, sonst auf **Aus**. |
 
-**An** ruft `switch.turn_on` auf `switch_entity`, **Aus** ruft `turn_off`.
-**Auto** ruft bewusst *nichts* — es gibt den Schalter an die bestehende
-Überschuss-Automation zurück. Ohne `switch_entity` bleibt der Umschalter rein
-lokal.
+Der Umschalter kennt zwei Betriebsarten, je nachdem was konfiguriert ist:
+
+**Mit `mode_entity`** — der Umschalter zeigt den Modus aus dieser Entität
+(States kommen als `"2.0"` an und werden gerundet) und schreibt beim Klick
+`input_number.set_value` mit **1**, **2** oder **3** zurück. `switch_entity`
+wird dabei **nicht** geschaltet — die Automation hinter der Modus-Entität
+entscheidet, wann der Heizer tatsächlich läuft. Auch **Auto** schreibt hier
+(Wert 2), weil die Entität diesen dritten Zustand abbilden kann. Ein Wert
+außerhalb 1/2/3 ließe sich nicht zuordnen: dann ist kein Segment aktiv und der
+Umschalter wird abgeblendet.
+
+**Ohne `mode_entity`** — unverändert wie bisher: **An** ruft `switch.turn_on`
+auf `switch_entity`, **Aus** ruft `turn_off`, **Auto** ruft bewusst *nichts*
+und gibt den Schalter an die bestehende Überschuss-Automation zurück. Ohne
+`switch_entity` bleibt der Umschalter rein lokal.
+
+`switch_entity` wird mit `mode_entity` nur noch **gelesen**. Das Badge
+„n heizen“ und die grüne Einfärbung der Leistung richten sich unabhängig davon
+nach `power_w > 0`.
 
 **Aufbau**
 
@@ -437,14 +453,19 @@ cards:
     variant: thermal_group
     name: Wärmespeicher Aquarien
     items:
+      # mode_entity: 1 = An, 2 = Auto, 3 = Aus. Der Umschalter schreibt
+      # dorthin; switch_entity wird nur noch gelesen (Heizzustand).
       - name: Aquarium 1200 L
         energy_kwh: sensor.arbeitszimmer_aquariumsolarheizer1_aquarium_solarheizer_1_heute
         power_w: sensor.aquariumsolarheizer1_switch_0_power
+        mode_entity: input_number.aquarium_1200l_modus
         switch_entity: switch.aquariumsolarheizer1_switch_0
       - name: Aquarium 700 L
         energy_kwh: sensor.arbeitszimmer_aquariumsolarheizer2_aquarium_solarheizer_2_heute
         power_w: sensor.aquariumsolarheizer2_switch_0_power
+        mode_entity: input_number.aquarium_700l_modus
         switch_entity: switch.aquariumsolarheizer2_switch_0
+      # Ohne mode_entity: der Umschalter schaltet switch_entity direkt.
       - name: Aquarium 600 L
         energy_kwh: sensor.arbeitszimmer_aquarienheizer600l_aquarium_solarheizer_600l_heute
         power_w: sensor.aquarienheizer600l_leistung
@@ -573,8 +594,9 @@ lokal — es bewegt sich, löst aber keinen Service-Call aus.
 | Slider **min. SoC**    | `threshold_pct`       | `number.set_value` / `input_number.set_value` |
 | Slider **Ladeziel**    | `charge_target_pct`   | dito                                        |
 | **Laden \| Auto**      | `charge_mode_control` | `select_option` bzw. `turn_on`/`turn_off`   |
-| **An** / **Aus**       | `items[].switch_entity` | `switch.turn_on` / `switch.turn_off`      |
-| **Auto** (thermal)     | —                     | kein Call — gibt an die Automation zurück    |
+| **An/Auto/Aus**        | `items[].mode_entity` | `input_number.set_value` mit 1 / 2 / 3      |
+| **An** / **Aus**       | `items[].switch_entity` | `switch.turn_on` / `switch.turn_off` (ohne `mode_entity`) |
+| **Auto** (nur Switch)  | —                     | kein Call — gibt an die Automation zurück    |
 
 Nur die Domains `number`, `input_number`, `switch`, `input_boolean`, `select`
 und `input_select` werden geschrieben; alles andere bleibt lokal.
@@ -637,9 +659,9 @@ Offen für die Speicherkarte:
 - **Deye-Ladelogik** — sobald es eine Entität gibt, die erzwungenes Laden der
   Hausakkus schaltet, bekommen beide Hausakku-Karten ein `charge_mode_control`
   und der Umschalter **Laden | Auto** wird dort ebenfalls schreibend.
-- **`Auto` für die Aquarien** — aktuell nur lokal wählbar, weil kein Schalter
-  diesen dritten Zustand abbildet. Mit einem `input_boolean` je Heizer, den die
-  Überschuss-Automation auswertet, könnte auch `Auto` schreibend werden.
+- **`Auto` für die Aquarien** — mit `mode_entity` gelöst: ein `input_number` je
+  Heizer bildet alle drei Zustände ab, und die Überschuss-Automation liest ihn
+  aus. Ohne `mode_entity` bleibt `Auto` weiterhin nur lokal wählbar.
 
 Die Wechselrichterkarte steht davon unabhängig noch auf Phase 1, siehe
 [Offen für Phase 2](#offen-für-phase-2).

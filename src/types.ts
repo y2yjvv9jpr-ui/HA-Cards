@@ -60,9 +60,19 @@ export interface ThermalItemConfig {
   energy_kwh?: NumberValue;
   /** Current heating power in W; `> 0` counts as heating. */
   power_w?: NumberValue;
-  /** Start position of the toggle. Takes precedence over `switch_entity`. */
+  /**
+   * `input_number` holding the mode: 1 = An, 2 = Auto, 3 = Aus.
+   *
+   * When set it both drives and receives the toggle, and `switch_entity`
+   * becomes read-only - the automation behind the mode entity owns the switch.
+   */
+  mode_entity?: string;
+  /** Start position of the toggle. Used when `mode_entity` is unset. */
   mode?: TextValue;
-  /** Falls back to this switch's state (`on`/`off`) when `mode` is unset. */
+  /**
+   * Without `mode_entity` the toggle reads and writes this switch directly.
+   * With `mode_entity` it is only read (heating state).
+   */
   switch_entity?: string;
 }
 

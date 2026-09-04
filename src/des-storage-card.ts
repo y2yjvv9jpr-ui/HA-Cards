@@ -90,6 +90,18 @@ const ITEM_MODES: ReadonlyArray<{ value: ItemMode; label: string }> = [
   { value: 'off', label: 'Aus' },
 ];
 
+/** How `mode_entity` encodes the three modes. */
+const MODE_BY_NUMBER: Readonly<Record<number, ItemMode>> = {
+  1: 'on',
+  2: 'auto',
+  3: 'off',
+};
+const NUMBER_BY_MODE: Readonly<Record<ItemMode, number>> = {
+  on: 1,
+  auto: 2,
+  off: 3,
+};
+
 /** `standby` is an accepted alias for `idle`; anything else returns null. */
 function normaliseStatus(raw: string): StorageStatus | null {
   const value = raw.trim().toLowerCase();
@@ -215,6 +227,13 @@ export class DesStorageCard extends LitElement {
       if (items.some((item) => !item || !item.name)) {
         throw new Error('des-storage-card: jeder Eintrag in "items" braucht "name"');
       }
+      for (const item of items) {
+        if (item.mode_entity !== undefined && !isWritableNumber(item.mode_entity)) {
+          throw new Error(
+            `des-storage-card: "mode_entity" muss eine number- oder input_number-Entität sein (ist: ${item.mode_entity})`,
+          );
+        }
+      }
       this._itemModesLocal = items.map(() => null);
     }
 
@@ -306,16 +325,14 @@ export class DesStorageCard extends LitElement {
     const next = [...this._itemModesLocal];
     items.forEach((item, index) => {
       const local = next[index];
-      // "auto" has no entity to match, so it stays until the card reloads.
-      if (!local || local === 'auto' || !item.switch_entity) return;
-      const state = resolveText(item.switch_entity, this.hass);
-      if (state.kind !== 'value') return;
-      const actual = state.value.trim().toLowerCase() === 'on' ? 'on' : 'off';
-      if (actual === local) {
-        next[index] = null;
-        changed = true;
-        this._clearSettle(`item:${index}`);
-      }
+      if (!local) return;
+      // A bare switch cannot express "auto", so that choice stays local until
+      // the card reloads; a mode entity confirms all three.
+      const actual = this._itemModeFromEntity(item);
+      if (actual === null || actual !== local) return;
+      next[index] = null;
+      changed = true;
+      this._clearSettle(`item:${index}`);
     });
     if (changed) this._itemModesLocal = next;
   }
@@ -536,13 +553,39 @@ export class DesStorageCard extends LitElement {
       : 'auto';
   }
 
-  /** Local click wins, then `mode`, then the switch entity's on/off state. */
-  private _itemMode(item: ThermalItemConfig, index: number): ItemMode {
+  /**
+   * Local click wins, then `mode_entity`, then a static `mode`, then the
+   * switch entity's on/off state. `null` means no segment is highlighted -
+   * `mode_entity` carrying something outside 1/2/3 is the only way there.
+   */
+  private _itemMode(item: ThermalItemConfig, index: number): ItemMode | null {
     const local = this._itemModesLocal[index];
     if (local) return local;
 
+    if (item.mode_entity) {
+      // The mode entity is authoritative; never fall back to the switch, which
+      // would report the heater's state as if it were the selected mode.
+      return this._itemModeFromEntity(item);
+    }
+
     const configured = resolveText(item.mode, this.hass);
     if (configured.kind === 'value') return normaliseItemMode(configured.value);
+
+    return this._itemModeFromEntity(item) ?? 'auto';
+  }
+
+  /**
+   * The mode the entities currently report, ignoring any local override.
+   * `null` when nothing readable says what the mode is.
+   */
+  private _itemModeFromEntity(item: ThermalItemConfig): ItemMode | null {
+    if (item.mode_entity) {
+      const state = resolveText(item.mode_entity, this.hass);
+      if (state.kind !== 'value') return null;
+      // States arrive as strings like "2.0".
+      const numeric = Math.round(Number.parseFloat(state.value));
+      return MODE_BY_NUMBER[numeric] ?? null;
+    }
 
     if (item.switch_entity) {
       const state = resolveText(item.switch_entity, this.hass);
@@ -550,7 +593,7 @@ export class DesStorageCard extends LitElement {
         return state.value.trim().toLowerCase() === 'on' ? 'on' : 'off';
       }
     }
-    return 'auto';
+    return null;
   }
 
   // =========================================================================
@@ -1051,15 +1094,32 @@ export class DesStorageCard extends LitElement {
     next[index] = mode;
     this._itemModesLocal = next;
 
-    const entityId = this._config?.items?.[index]?.switch_entity;
-    // "Auto" hands control back to the surplus automation - nothing to call.
-    if (mode === 'auto' || !isWritableSwitch(entityId)) return;
-
+    const item = this._config?.items?.[index];
     const release = () => {
       const revert = [...this._itemModesLocal];
       revert[index] = null;
       this._itemModesLocal = revert;
     };
+
+    // With a mode entity the card writes the mode and leaves the switch alone -
+    // the automation behind that entity decides when the heater actually runs.
+    if (item?.mode_entity) {
+      if (!isWritableNumber(item.mode_entity)) return;
+      this._holdOptimistic(`item:${index}`, release);
+      void this._write(
+        writeNumber(this.hass, item.mode_entity, NUMBER_BY_MODE[mode]),
+        () => {
+          this._clearSettle(`item:${index}`);
+          release();
+        },
+      );
+      return;
+    }
+
+    const entityId = item?.switch_entity;
+    // "Auto" hands control back to the surplus automation - nothing to call.
+    if (mode === 'auto' || !isWritableSwitch(entityId)) return;
+
     this._holdOptimistic(`item:${index}`, release);
     void this._write(writeSwitch(this.hass, entityId as string, mode === 'on'), () => {
       this._clearSettle(`item:${index}`);
