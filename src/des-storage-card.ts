@@ -17,6 +17,7 @@ import {
   writeNumber,
   writeSwitch,
 } from './service';
+import { renderSegmented, segmentedStyles } from './segmented';
 import type {
   BackupState,
   ChargeMode,
@@ -727,7 +728,7 @@ export class DesStorageCard extends LitElement {
               : `${formatForStep(threshold, thresholdRange.step)} %`}
           </span>
         </div>
-        ${this._renderSegmented(
+        ${renderSegmented(
           CHARGE_MODES,
           mode,
           (value) => this._setChargeMode(value),
@@ -929,7 +930,7 @@ export class DesStorageCard extends LitElement {
               ? this._dash()
               : ''}
         </span>
-        ${this._renderSegmented(
+        ${renderSegmented(
           ITEM_MODES,
           this._itemMode(item, index),
           (value) => this._setItemMode(index, value),
@@ -946,39 +947,6 @@ export class DesStorageCard extends LitElement {
   /** Muted placeholder for a value the card could not read. */
   private _dash(): TemplateResult {
     return html`<span class="unavail">–</span>`;
-  }
-
-  /** One segmented control, used for both charge mode and item modes. */
-  private _renderSegmented<T extends string>(
-    options: ReadonlyArray<{ value: T; label: string }>,
-    active: T | null,
-    onSelect: (value: T) => void,
-    ariaLabel: string,
-  ): TemplateResult {
-    return html`
-      <div
-        class="seg ${active === null ? 'unknown' : ''}"
-        role="group"
-        aria-label=${ariaLabel}
-        title=${active === null ? 'Zustand nicht lesbar' : nothing}
-      >
-        ${options.map(
-          ({ value, label }) => html`
-            <button
-              type="button"
-              class=${active === value ? 'active' : ''}
-              aria-pressed=${active === value ? 'true' : 'false'}
-              @click=${(ev: Event) => {
-                ev.stopPropagation();
-                onSelect(value);
-              }}
-            >
-              ${label}
-            </button>
-          `,
-        )}
-      </div>
-    `;
   }
 
   /**
@@ -1138,7 +1106,9 @@ export class DesStorageCard extends LitElement {
     }
   }
 
-  static override styles = css`
+  static override styles = [
+    segmentedStyles,
+    css`
     /* The card fills whatever height the sections grid hands it, so several
        cards in one row can be levelled with grid_options.rows. */
     :host {
@@ -1529,50 +1499,6 @@ export class DesStorageCard extends LitElement {
       color: var(--success-color, #2e7d32);
       font-weight: 500;
     }
-
-    /* --- segmented control --- */
-
-    .seg {
-      display: inline-flex;
-      border: 1px solid var(--divider-color, rgba(127, 127, 127, 0.28));
-      border-radius: 5px;
-      overflow: hidden;
-    }
-
-    .seg button {
-      font-family: inherit;
-      font-size: 11px;
-      line-height: 1;
-      padding: 4px 7px;
-      background: none;
-      border: none;
-      border-left: 1px solid var(--divider-color, rgba(127, 127, 127, 0.28));
-      color: var(--secondary-text-color);
-      cursor: pointer;
-    }
-
-    .seg.unknown {
-      opacity: 0.5;
-    }
-
-    .seg button:first-child {
-      border-left: none;
-    }
-
-    .seg button:hover {
-      color: var(--primary-text-color);
-    }
-
-    .seg button.active {
-      background: rgba(3, 169, 244, 0.12);
-      background: color-mix(in srgb, var(--primary-color, #03a9f4) 12%, transparent);
-      color: var(--primary-color, #03a9f4);
-      font-weight: 500;
-    }
-
-    .seg button:focus-visible {
-      outline: 2px solid var(--primary-color, #03a9f4);
-      outline-offset: -2px;
-    }
-  `;
+  `,
+  ];
 }

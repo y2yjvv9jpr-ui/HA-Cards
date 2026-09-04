@@ -330,6 +330,43 @@ export interface DesHouseCardConfig {
   autarky_entity?: string;
 }
 
+// ===========================================================================
+// des-stats-card
+// ===========================================================================
+
+/** The four periods the statistics card can switch between. */
+export type StatsPeriod = 'day' | 'week' | 'month' | 'year';
+
+/**
+ * One period's six energy figures, each in kWh. Every field is optional and
+ * takes a static value or an entity id; `charge`/`discharge` also take a list
+ * that is summed (several batteries). A period whose block is missing or whose
+ * every field is empty is dropped from the period switcher.
+ */
+export interface StatsPeriodConfig {
+  consumption?: NumberValue;
+  production?: NumberValue;
+  import?: NumberValue;
+  export?: NumberValue;
+  charge?: NumberValue | NumberValue[];
+  discharge?: NumberValue | NumberValue[];
+}
+
+/**
+ * Phase 1 + 2 in one, read-only. With a `periods` block the card reads its
+ * figures from `hass.states`; with none it falls back to a static demo dataset
+ * (editor preview). Energy values scale onto kWh by `unit_of_measurement`
+ * (Wh → /1000, MWh → ×1000). The chosen period lives in component state and is
+ * never written back to Home Assistant.
+ */
+export interface DesStatsCardConfig {
+  type: string;
+  name: string;
+  /** Period selected on load; falls back to the first available one. Default `day`. */
+  default_period?: StatsPeriod;
+  periods?: Partial<Record<StatsPeriod, StatsPeriodConfig>>;
+}
+
 /** Minimal shape of the Home Assistant object handed to a card. */
 export interface HomeAssistant {
   states: Record<

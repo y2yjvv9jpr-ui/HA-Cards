@@ -10,6 +10,7 @@ Aktuell enthalten:
 | `custom:des-storage-card`  | Speicherkarte — Varianten `battery` und `thermal_group`    |
 | `custom:des-inverter-card` | Wechselrichter-Übersicht — PV-Leistung, Strings, Phasen    |
 | `custom:des-house-card`    | Hauskarte — Verbrauch und Stromherkunft (Solar/Speicher/Netz) |
+| `custom:des-stats-card`    | Statistikkarte — sechs Energiewerte je Zeitraum (Tag/Woche/Monat/Jahr) |
 
 > **Phase 3 — lesend und schreibend.** Jedes Wertfeld nimmt einen statischen
 > Wert **oder** eine Entity-ID. Die Karte liest aus `hass.states`, rendert bei
@@ -26,8 +27,8 @@ npm install
 npm run build
 ```
 
-Ergebnis: `dist/daniels-energy-cards.js` (~99 kB, gzip ~24 kB; Lit und **alle
-drei** Karten sind mit eingebettet).
+Ergebnis: `dist/daniels-energy-cards.js` (~108 kB, gzip ~26 kB; Lit und **alle
+vier** Karten sind mit eingebettet).
 
 Weitere Skripte:
 
@@ -97,8 +98,8 @@ hinzufügen (**Einstellungen → Dashboards → ⋮ → Ressourcen**):
    Datei hilft ein Versions-Query wie `/local/daniels-energy-cards.js?v=2`.
 
 Die Karten erscheinen danach auch im Karten-Picker als „Daniels Speicherkarte“,
-„Daniels Wechselrichterkarte“ und „Daniels Hauskarte“. Einen visuellen Editor
-gibt es bewusst nicht — die Konfiguration erfolgt in YAML.
+„Daniels Wechselrichterkarte“, „Daniels Hauskarte“ und „Daniels Statistikkarte“.
+Einen visuellen Editor gibt es bewusst nicht — die Konfiguration erfolgt in YAML.
 
 ---
 
@@ -756,6 +757,119 @@ zu 100 % aus dem Speicher; `export` speist Überschuss ins Netz („Einspeisung
 
 ---
 
+## Statistikkarte (`des-stats-card`)
+
+> **Phase 1 + 2 — lesend.** Mit einem `periods`-Block liest die Karte ihre Werte
+> aus `hass.states`; ohne `periods` bleibt der **Demo-Modus** — nützlich als
+> Editor-Vorschau. Geschrieben wird nichts, der gewählte Zeitraum lebt nur im
+> Component-State.
+
+Zeigt für einen wählbaren Zeitraum (**Tag / Woche / Monat / Jahr**) sechs
+Energiewerte als Zeilen mit Balken: **Verbrauch, Produktion, Import, Export,
+Laden, Entladen**. Die Metazeile zeigt Autarkie und Eigenverbrauchsquote des
+gewählten Zeitraums.
+
+Die Zeitraumwahl nutzt **dieselbe** segmentierte Komponente wie die An/Auto/Aus-
+Umschalter der `thermal_group`-Speicherkarte (ausgelagert nach
+[`src/segmented.ts`](src/segmented.ts) und in beiden Karten verwendet) — gleiche
+Optik, gleiches Verhalten. Sie steht rechts neben dem Titel, die Metazeile
+darunter über die volle Kartenbreite.
+
+| Option           | Typ                            | Beschreibung                                                     |
+| ---------------- | ------------------------------ | --------------------------------------------------------------- |
+| `name`           | string                         | **Pflicht.** Titel in der Kopfzeile.                            |
+| `default_period` | `day` \| `week` \| `month` \| `year` | Beim Laden gewählter Zeitraum; fällt auf den ersten verfügbaren zurück. Standard `day`. |
+| `periods`        | Objekt (siehe unten)           | Je Zeitraum ein Block mit den sechs Energiefeldern.              |
+
+Je Zeitraum unter `periods.<day\|week\|month\|year>`:
+
+| Feld          | Typ                        | Beschreibung                                     |
+| ------------- | -------------------------- | ------------------------------------------------ |
+| `consumption` | kWh — Wert oder Entity     | Verbrauch.                                        |
+| `production`  | kWh — Wert oder Entity     | Produktion.                                       |
+| `import`      | kWh — Wert oder Entity     | Netzbezug.                                        |
+| `export`      | kWh — Wert oder Entity     | Einspeisung.                                      |
+| `charge`      | kWh — Wert, Entity, Liste  | Laden; eine Liste wird summiert (mehrere Akkus).  |
+| `discharge`   | kWh — Wert, Entity, Liste  | Entladen; eine Liste wird summiert.               |
+
+**Verfügbare Zeiträume** — ein Zeitraum ohne Block oder ohne einen einzigen
+lesbaren Wert erscheint **nicht** im Umschalter. Ist `default_period` nicht
+verfügbar, wählt die Karte den ersten verfügbaren (Reihenfolge Tag → Woche →
+Monat → Jahr). Einheiten werden über `unit_of_measurement` umgerechnet
+(`Wh` → /1000, `MWh` → ×1000).
+
+**Berechnung** (beide in Prozent, ganzzahlig):
+
+```
+Autarkie       = 1 − import / consumption
+Eigenverbrauch = 1 − export / production
+```
+
+Ist der Nenner `≤ 0` oder fehlt ein Wert, steht an der Stelle „–“. Fehlen
+**beide** Kennzahlen, entfällt die Metazeile ganz.
+
+**Aufbau**
+
+- **Titelzeile** — `name` links, der Zeitraum-Umschalter rechts (mittig zur
+  Titelzeile).
+- **Metazeile** — gedämpft, volle Breite:
+  `… % autark · … % Eigenverbrauch`.
+- **Sechs Zeilen** im Raster `Label | Balken | Wert`: Label gedämpft, Wert
+  rechtsbündig als `… kWh` mit einer Nachkommastelle. Eine Zeile mit fehlender
+  Entität wird ausgeblendet. Der Balken (6 px, abgerundet, gedämpfte Schiene)
+  füllt sich anteilig zum **größten angezeigten Wert** des Zeitraums; sind alle
+  Werte 0, bleiben die Schienen leer.
+
+**Farben** — die vier Theme-Grüntöne/-Blautöne plus zwei eigene, per
+CSS-Custom-Property der Karte überschreibbare Töne:
+
+| Zeile      | Farbe                                                       |
+| ---------- | ---------------------------------------------------------- |
+| Verbrauch  | neutrales Grau (`--secondary-text-color`)                   |
+| Produktion | Grün (`--success-color`) — wie „positive Leistung“ sonst    |
+| Import     | Rot (`--error-color`)                                       |
+| Export     | Olivgrün (`--stats-export-color`, Fallback `#639922`)       |
+| Laden      | Blau (`--info-color`) — die Ladefarbe der Speicherkarte     |
+| Entladen   | helleres Blau (`--stats-discharge-color`, Fallback `#7fb8e8`) |
+
+**Beispiel-YAML** — Entities:
+
+```yaml
+type: custom:des-stats-card
+name: Statistik
+default_period: day
+periods:
+  day:
+    consumption: sensor.energie_verbrauch_heute
+    production: sensor.energie_produktion_heute
+    import: sensor.energie_import_heute
+    export: sensor.energie_export_heute
+    charge: [sensor.akku1_geladen_heute, sensor.akku2_geladen_heute]
+    discharge: [sensor.akku1_entladen_heute, sensor.akku2_entladen_heute]
+  week:
+    consumption: sensor.energie_verbrauch_woche
+    production: sensor.energie_produktion_woche
+    import: sensor.energie_import_woche
+    export: sensor.energie_export_woche
+    charge: sensor.akku_geladen_woche
+    discharge: sensor.akku_entladen_woche
+  month: { … gleiche Felder … }
+  year:  { … }
+```
+
+Ohne `periods`-Block läuft dieselbe Karte im Demo-Modus:
+
+```yaml
+type: custom:des-stats-card
+name: Statistik
+default_period: week      # day | week | month | year
+```
+
+Der Demo-Datensatz `week` zeigt z. B. **74 % autark, 68 % Eigenverbrauch**, den
+Verbrauch-Balken bei 100 % und die Produktion bei 86 %.
+
+---
+
 ## Schreibverhalten
 
 Grundregel: **jedes Bedienelement schreibt in die Entität, an die es gebunden
@@ -850,9 +964,11 @@ src/
   des-storage-card.ts  Speicherkarte (Rendering + Styles)
   des-inverter-card.ts Wechselrichterkarte (Entity-Binding + Demo-Fallback)
   des-house-card.ts    Hauskarte (Verbrauch und Stromherkunft, Entity + Demo)
+  des-stats-card.ts    Statistikkarte (sechs Energiewerte je Zeitraum, Entity + Demo)
   types.ts             Config-Schema und HA-Typen
   resolve.ts           Statischer Wert ↔ Entity: Auflösung über hass.states
   service.ts           Schreibpfad: Domain → Service-Call
+  segmented.ts         Segmentierter Umschalter (Storage- und Statistikkarte)
   format.ts            Zahlenformatierung (de-DE)
 vite.config.ts         Lib-Build → dist/daniels-energy-cards.js
 hacs.json              HACS-Manifest (Typ Dashboard)

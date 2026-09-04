@@ -1,6 +1,7 @@
 import { DesStorageCard } from './des-storage-card';
 import { DesInverterCard } from './des-inverter-card';
 import { DesHouseCard } from './des-house-card';
+import { DesStatsCard } from './des-stats-card';
 
 const VERSION = '0.2.0';
 
@@ -33,6 +34,13 @@ const CARDS: ReadonlyArray<CardRegistration> = [
     description:
       'Hausverbrauch und Stromherkunft: Solar, Speicher, Netz plus Tageswerte (Entities oder Demo-Werte).',
   },
+  {
+    type: 'des-stats-card',
+    element: DesStatsCard,
+    name: 'Daniels Statistikkarte',
+    description:
+      'Energiestatistik je Zeitraum (Tag/Woche/Monat/Jahr): Verbrauch, Produktion, Import, Export, Laden, Entladen.',
+  },
 ];
 
 window.customCards = window.customCards ?? [];
@@ -59,4 +67,4 @@ console.info(
   'background:#555;color:#fff;border-radius:0 3px 3px 0;padding:2px 4px',
 );
 
-export { DesStorageCard, DesInverterCard, DesHouseCard };
+export { DesStorageCard, DesInverterCard, DesHouseCard, DesStatsCard };
