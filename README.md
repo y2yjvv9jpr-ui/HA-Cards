@@ -5,13 +5,14 @@ gebaut mit Vite zu **einer einzelnen** JS-Datei ohne externe Laufzeit-Abhängigk
 
 Aktuell enthalten:
 
-| Karte                      | Zweck                                                    |
-| -------------------------- | -------------------------------------------------------- |
-| `custom:des-storage-card`  | Speicherkarte — Varianten `battery` und `thermal`         |
+| Karte                     | Zweck                                                     |
+| ------------------------- | --------------------------------------------------------- |
+| `custom:des-storage-card` | Speicherkarte — Varianten `battery` und `thermal_group`    |
 
 > **Phase 1:** Die Karte ist reine Darstellung. Alle Werte kommen als statische
 > Werte direkt aus der YAML-Konfiguration — keine Entity-Bindung, keine
-> Berechnungen. Die Buttons sind bewusst ohne Funktion. Siehe
+> Berechnungen. Die Bedienelemente schalten ausschließlich den lokalen
+> Anzeigezustand um; nichts wird gespeichert. Siehe
 > [Phase 2](#phase-2-entities-statt-statischer-werte).
 
 ---
@@ -23,7 +24,7 @@ npm install
 npm run build
 ```
 
-Ergebnis: `dist/daniels-energy-cards.js` (~34 kB, Lit ist mit eingebettet).
+Ergebnis: `dist/daniels-energy-cards.js` (~40 kB, Lit ist mit eingebettet).
 
 Weitere Skripte:
 
@@ -103,43 +104,116 @@ Einen visuellen Editor gibt es bewusst nicht — die Konfiguration erfolgt in YA
 type: custom:des-storage-card
 ```
 
-| Option           | Typ                                                        | Variante | Beschreibung                                                        |
-| ---------------- | ---------------------------------------------------------- | -------- | ------------------------------------------------------------------- |
-| `variant`        | `battery` \| `thermal`                                      | —        | **Pflicht.** Bestimmt Layout und Bedienzeile.                        |
-| `name`           | string                                                      | —        | **Pflicht.** Titel links in der Kopfzeile.                           |
-| `status`         | `charging` \| `discharging` \| `idle` \| `heating` \| `off` | —        | **Pflicht.** Steuert das Status-Badge rechts oben.                   |
-| `soc`            | number (%)                                                  | battery  | Ladestand, füllt das Batteriesymbol und steht groß daneben.          |
-| `capacity_kwh`   | number                                                      | battery  | Nennkapazität, erscheint in der Subzeile.                            |
-| `energy_kwh`     | number                                                      | beide    | battery: Restenergie · thermal: heute eingespeicherte kWh.           |
-| `power_w`        | number                                                      | beide    | Vorzeichen: **negativ = Entladen**, **positiv = Laden/Heizen**.      |
-| `temp_c`         | number \| `null`                                            | battery  | Akkutemperatur. Bei `null` entfällt die Zeile komplett.              |
-| `threshold_pct`  | number                                                      | battery  | Entladeschwelle, Startwert des Sliders (10–80, Schritt 5).           |
-| `time_remaining` | string \| `null`                                            | beide    | Freitext, z. B. `"4:36 h bis 50 %"`.                                 |
-| `time_at`        | string \| `null`                                            | beide    | Freitext, z. B. `"um 00:12"`.                                        |
-| `backup`         | `none` \| `ready` \| `active`                               | beide    | Notstrom-Badge. Bei `none` (Standard) ausgeblendet.                  |
+Gemeinsame Optionen:
 
-### Darstellung im Detail
+| Option    | Typ                              | Beschreibung                          |
+| --------- | -------------------------------- | ------------------------------------- |
+| `variant` | `battery` \| `thermal_group`     | **Pflicht.** Bestimmt das Layout.     |
+| `name`    | string                           | **Pflicht.** Titel in der Kopfzeile.  |
 
-- **Kopfzeile** — Name links, rechts das Status-Badge. Bei `backup: ready`
-  steht davor ein grünes „Notstrom bereit“, bei `backup: active` ein rotes
-  „NOTSTROM AKTIV“.
-- **Status-Farben** — `charging` blau (`--info-color`), `discharging` und
-  `heating` amber (`--warning-color`), `idle` und `off` grau
-  (`--secondary-text-color`). Hintergrund jeweils transparent eingefärbt.
-- **Batteriesymbol** — als SVG gezeichnet, Füllbreite entspricht `soc`.
-  Farbe: grün über 50 %, gelb von 20–50 %, rot unter 20 %.
-- **Leistung** — rot bei negativem, grün bei positivem `power_w`, mit
-  Vorzeichen und Tausenderpunkt (`-1.240 W`, `+2.450 W`, `0 W`).
-- **Zahlenformat** — deutsches Format (`de-DE`): Komma als Dezimaltrenner,
-  Punkt als Tausendertrenner.
+### `variant: battery`
 
-Die Karte nutzt ausschließlich HA-Theme-Variablen (`--card-background-color`,
-`--primary-text-color`, `--secondary-text-color`, …) und passt sich damit
-hellem wie dunklem Theme an. `card-mod` wird nicht benötigt.
+Kompakte Karte für einen einzelnen Akku. Die Bedienzeile ist **standardmäßig
+eingeklappt** — ein Klick auf die Hauptzeile oder das Chevron klappt sie auf.
+
+| Option           | Typ                                                                     | Beschreibung                                                     |
+| ---------------- | ----------------------------------------------------------------------- | ---------------------------------------------------------------- |
+| `status`         | `charging` \| `discharging` \| `idle` \| `standby` \| `heating` \| `off` | **Pflicht.** Steuert das Status-Badge.                            |
+| `soc`            | number (%)                                                              | Ladestand; füllt das Batteriesymbol, steht groß daneben.          |
+| `capacity_kwh`   | number                                                                  | Kapazität — erstes Segment der Meta-Zeile.                        |
+| `energy_kwh`     | number                                                                  | Restenergie, klein neben dem Ladestand.                           |
+| `power_w`        | number                                                                  | Vorzeichen: **negativ = Entladen**, **positiv = Laden**.          |
+| `temp_c`         | number \| `null`                                                        | Akkutemperatur. Bei `null` entfällt das Segment in der Meta-Zeile. |
+| `threshold_pct`  | number                                                                  | Entladeschwelle; Startwert des Sliders (10–80, Schritt 5).        |
+| `charge_mode`    | `auto` \| `charge`                                                      | Startzustand des Modus-Buttons. Standard: `auto`.                 |
+| `time_remaining` | string \| `null`                                                        | Freitext, z. B. `"4:36 h bis 20 %"`.                              |
+| `time_at`        | string \| `null`                                                        | Freitext, z. B. `"um 00:12"`.                                     |
+| `backup`         | `none` \| `ready` \| `active`                                           | Notstrom-Badge. Bei `none` (Standard) ausgeblendet.               |
+
+**Aufbau**
+
+- **Kopfzeile** — Name, direkt daneben gedämpft `Kapazität · Temperatur · Schwelle`
+  (Temperatur-Segment entfällt bei `temp_c: null`). Rechts die Badges: bei
+  `backup: ready` grün „Notstrom bereit“, bei `backup: active` rot
+  „NOTSTROM AKTIV“, danach das Status-Badge.
+- **Hauptzeile** — aufrechtes SVG-Batteriesymbol (Füllstand von unten, grün über
+  50 %, gelb 20–50 %, rot darunter), daneben Ladestand und Restenergie auf einer
+  Basislinie. Rechts die Leistung farbig, darunter gedämpft
+  `time_remaining · time_at` (entfällt, wenn beide `null` sind), ganz rechts das
+  Chevron.
+- **Bedienzeile** (aufgeklappt) — Modus-Button, Slider für die Entladeschwelle
+  und der aktuelle Wert. Der Slider aktualisiert auch das `Schwelle`-Segment in
+  der Kopfzeile.
+
+**Modus-Button** — die Beschriftung nennt die *nächste* Aktion, die Füllung zeigt
+den *aktuellen* Zustand:
+
+| `charge_mode` | Button        | Stil     | Bedeutung                          |
+| ------------- | ------------- | -------- | ---------------------------------- |
+| `auto`        | „Jetzt laden“ | Umriss   | Normalbetrieb                      |
+| `charge`      | „Auto“        | gefüllt  | Laden erzwungen, Klick geht zurück |
+
+### `variant: thermal_group`
+
+Fasst 1–5 Wärmesenken (z. B. Aquarien) in **einer** Karte zusammen.
+
+| Option  | Typ                | Beschreibung                          |
+| ------- | ------------------ | ------------------------------------- |
+| `items` | Liste (1–5) unten  | **Pflicht.** Die einzelnen Verbraucher. |
+
+Je Eintrag in `items`:
+
+| Option       | Typ                       | Beschreibung                                      |
+| ------------ | ------------------------- | ------------------------------------------------- |
+| `name`       | string                    | **Pflicht.** Zeilenbeschriftung.                  |
+| `energy_kwh` | number                    | Heute eingespeichert.                             |
+| `power_w`    | number                    | Aktuelle Heizleistung; `> 0` zählt als „heizt“.   |
+| `mode`       | `on` \| `auto` \| `off`   | Startstellung des Umschalters. Standard: `auto`.  |
+
+**Aufbau**
+
+- **Kopfzeile** — Name links, rechts das Badge: amber „N heizen“ (N = Einträge
+  mit `power_w > 0`) bzw. grau „Aus“, wenn keiner heizt.
+- **Summenzeile** — Fisch-Icon, Summe aller `energy_kwh` groß mit „heute
+  eingespeichert“, rechts die Gesamtleistung (amber, wenn > 0).
+- **Eine Zeile je Eintrag** — Name, Energie, Leistung und ein Umschalter
+  **An | Auto | Aus**. `Auto` überlässt die Entscheidung der Überschusslogik,
+  `An`/`Aus` erzwingen den Zustand.
+
+### Allgemeines
+
+- **Zahlenformat** — deutsches Format (`de-DE`): Komma als Dezimaltrenner, Punkt
+  als Tausendertrenner. Leistungen mit Vorzeichen (`-1.240 W`, `+2.450 W`,
+  `0 W`).
+- **Theme** — ausschließlich HA-Theme-Variablen (`--card-background-color`,
+  `--primary-text-color`, `--secondary-text-color`, `--info-color`,
+  `--warning-color`, `--success-color`, `--error-color`), hell wie dunkel.
+  `card-mod` wird nicht benötigt.
+- **Phase 1** — alle Bedienelemente ändern **nur den lokalen Anzeigezustand**:
+  Aufklappzustand, Modus-Button, Slider und Umschalter. Nichts wird gespeichert,
+  ein Reload stellt die Konfigurationswerte wieder her.
+
+### YAML-Fallstricke
+
+Home Assistant parst mit **YAML 1.1** — unquotiertes `on`/`off` wird dort zu
+`true`/`false`. Die Karte fängt das ab:
+
+| Geschrieben        | YAML liefert | Karte versteht |
+| ------------------ | ------------ | -------------- |
+| `status: off`      | `false`      | Status „Aus“   |
+| `status: standby`  | `"standby"`  | wie `idle`     |
+| `mode: on`         | `true`       | Modus `on`     |
+| `mode: off`        | `false`      | Modus `off`    |
+
+Quoten (`status: "off"`) funktioniert genauso; der HA-Editor tut das beim
+Speichern automatisch.
 
 ---
 
-## Beispiel-YAML — alle sechs Karteninstanzen
+## Beispiel-YAML
+
+Zwei Hausakkus, die Zendure mit Notstrom, dazu eine Gruppenkarte für die drei
+Aquarien:
 
 ```yaml
 type: vertical-stack
@@ -155,7 +229,8 @@ cards:
     power_w: -1240
     temp_c: 23.5
     threshold_pct: 20
-    time_remaining: 4:36 h bis 50 %
+    charge_mode: auto
+    time_remaining: 4:36 h bis 20 %
     time_at: um 00:12
     backup: none
 
@@ -169,11 +244,13 @@ cards:
     power_w: 2450
     temp_c: 21.0
     threshold_pct: 15
-    time_remaining: 2:10 h bis 80 %
+    charge_mode: charge
+    time_remaining: 2:10 h bis 15 %
     time_at: um 14:45
     backup: none
 
   # ---------- Zendure mit Notstrom ----------
+  # temp_c: null lässt das °C-Segment in der Kopfzeile weg.
   - type: custom:des-storage-card
     variant: battery
     name: Zendure
@@ -184,48 +261,29 @@ cards:
     power_w: 0
     temp_c: null
     threshold_pct: 30
+    charge_mode: auto
     time_remaining: null
     time_at: null
     backup: ready
 
-  # ---------- Aquarien als Wärmespeicher ----------
+  # ---------- Aquarien als eine Gruppe ----------
   - type: custom:des-storage-card
-    variant: thermal
-    name: Aquarium Wohnzimmer
-    status: heating
-    energy_kwh: 1.24
-    power_w: 300
-    temp_c: null
-    time_remaining: noch 0:45 h
-    time_at: bis 15:30
-    backup: none
-
-  - type: custom:des-storage-card
-    variant: thermal
-    name: Aquarium Büro
-    status: off
-    energy_kwh: 0.42
-    power_w: 0
-    temp_c: null
-    time_remaining: null
-    time_at: null
-    backup: none
-
-  - type: custom:des-storage-card
-    variant: thermal
-    name: Aquarium Keller
-    status: heating
-    energy_kwh: 12.75
-    power_w: 1200
-    temp_c: null
-    time_remaining: noch 2:15 h
-    time_at: bis 17:00
-    backup: active
+    variant: thermal_group
+    name: Aquarien
+    items:
+      - name: Wohnzimmer 1200 L
+        energy_kwh: 1.24
+        power_w: 300
+        mode: auto
+      - name: Büro 700 L
+        energy_kwh: 0.42
+        power_w: 0
+        mode: "off"
+      - name: Keller 600 L
+        energy_kwh: 12.75
+        power_w: 1200
+        mode: "on"
 ```
-
-> **YAML-Hinweis:** `status: off` muss so notiert werden — HA nutzt YAML 1.1,
-> dort wird unquotiertes `off` zu `false`. Der HA-Editor quotet den Wert beim
-> Speichern automatisch (`status: "off"`); beides funktioniert.
 
 ---
 
@@ -247,9 +305,10 @@ Dafür sind nur zwei Stellen anzufassen:
   den Zweig ergänzen, der eine Entity-ID in `hass.states` nachschlägt.
 
 Kein einziger Aufrufer in der Karte muss geändert werden. Ebenso vorbereitet:
-die Klick-Handler `_onChargeNow()` und `_onToggleHeater()` in
-[`src/des-storage-card.ts`](src/des-storage-card.ts) sind bewusst leer und
-warten auf die passenden Service-Calls.
+die lokalen Umschalter (`_toggleChargeMode()`, `_setItemMode()`,
+`_onThresholdInput()`) in [`src/des-storage-card.ts`](src/des-storage-card.ts)
+kapseln den Zustand bereits an einer Stelle — dort kommen später die
+Service-Calls dazu.
 
 ## Projektstruktur
 

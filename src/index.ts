@@ -14,7 +14,7 @@ if (!window.customCards.some((card) => card.type === CARD_TYPE)) {
     type: CARD_TYPE,
     name: 'Daniels Speicherkarte',
     description:
-      'Speicherkarte für Hausakkus (battery) und Wärmespeicher (thermal).',
+      'Speicherkarte für Hausakkus (battery) und Wärmespeicher-Gruppen (thermal_group).',
     preview: false,
   });
 }
