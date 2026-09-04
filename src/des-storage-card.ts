@@ -1,9 +1,19 @@
 import { LitElement, html, css, nothing, type TemplateResult } from 'lit';
 import { formatFixed, formatInt, formatSignedInt, clamp } from './format';
-import { resolveNumber, resolveText, type Resolved } from './resolve';
+import { isEntityId, resolveNumber, resolveText, type Resolved } from './resolve';
+import {
+  isChargeState,
+  isWritableChargeMode,
+  isWritableNumber,
+  isWritableSwitch,
+  writeChargeMode,
+  writeNumber,
+  writeSwitch,
+} from './service';
 import type {
   BackupState,
   ChargeMode,
+  NumberValue,
   DesStorageCardConfig,
   HomeAssistant,
   ItemMode,
@@ -32,6 +42,13 @@ const MAX_ITEMS = 5;
 
 /** Below this many watts the battery counts as idle, not as charging. */
 const POWER_DEADBAND_W = 25;
+
+/**
+ * Sliders write on `change` (pointer release), and that write is debounced:
+ * keyboard stepping fires `change` per arrow key, so without this a held key
+ * would queue a service call per step.
+ */
+const WRITE_DEBOUNCE_MS = 500;
 
 /** Remaining-time states that mean "nothing to show". */
 const NO_TIME_STATES = new Set([
@@ -108,6 +125,9 @@ export class DesStorageCard extends LitElement {
   declare _chargeModeLocal: ChargeMode | null;
   declare _itemModesLocal: Array<ItemMode | null>;
 
+  /** Pending debounced slider writes, keyed by which slider they belong to. */
+  private _writeTimers = new Map<'threshold' | 'target', number>();
+
   constructor() {
     super();
     this._expanded = false;
@@ -153,6 +173,91 @@ export class DesStorageCard extends LitElement {
     this._thresholdLocal = null;
     this._targetLocal = null;
     this._chargeModeLocal = null;
+  }
+
+  override disconnectedCallback(): void {
+    super.disconnectedCallback();
+    for (const timer of this._writeTimers.values()) window.clearTimeout(timer);
+    this._writeTimers.clear();
+  }
+
+  /**
+   * Drops an optimistic local value once the entity reports it back, so the
+   * control follows the entity again (including changes made elsewhere).
+   * Runs in `willUpdate` rather than `updated` so it costs no extra render.
+   */
+  protected override willUpdate(): void {
+    const config = this._config;
+    if (!config) return;
+
+    if (config.variant === 'battery') {
+      if (
+        this._thresholdLocal !== null &&
+        this._entityMatches(
+          config.threshold_pct,
+          this._thresholdLocal,
+          THRESHOLD_MIN,
+          THRESHOLD_MAX,
+          THRESHOLD_STEP,
+        )
+      ) {
+        this._thresholdLocal = null;
+      }
+
+      if (
+        this._targetLocal !== null &&
+        this._entityMatches(
+          config.charge_target_pct,
+          this._targetLocal,
+          TARGET_MIN,
+          TARGET_MAX,
+          TARGET_STEP,
+        )
+      ) {
+        this._targetLocal = null;
+      }
+
+      const control = config.charge_mode_control;
+      if (this._chargeModeLocal !== null && control?.entity) {
+        const state = resolveText(control.entity, this.hass);
+        if (state.kind === 'value') {
+          const actual = isChargeState(control, state.value) ? 'charge' : 'auto';
+          if (actual === this._chargeModeLocal) this._chargeModeLocal = null;
+        }
+      }
+      return;
+    }
+
+    const items = config.items ?? [];
+    let changed = false;
+    const next = [...this._itemModesLocal];
+    items.forEach((item, index) => {
+      const local = next[index];
+      // "auto" has no entity to match, so it stays until the card reloads.
+      if (!local || local === 'auto' || !item.switch_entity) return;
+      const state = resolveText(item.switch_entity, this.hass);
+      if (state.kind !== 'value') return;
+      const actual = state.value.trim().toLowerCase() === 'on' ? 'on' : 'off';
+      if (actual === local) {
+        next[index] = null;
+        changed = true;
+      }
+    });
+    if (changed) this._itemModesLocal = next;
+  }
+
+  /** True when the slot is entity-bound and already carries exactly `local`. */
+  private _entityMatches(
+    slot: NumberValue | undefined,
+    local: number,
+    min: number,
+    max: number,
+    step: number,
+  ): boolean {
+    // Static values are never "confirmed" by an entity - they stay local.
+    if (typeof slot !== 'string' || !isEntityId(slot)) return false;
+    const resolved = resolveNumber(slot, this.hass);
+    return resolved.kind === 'value' && snap(resolved.value, min, max, step) === local;
   }
 
   getCardSize(): number {
@@ -312,6 +417,15 @@ export class DesStorageCard extends LitElement {
 
   private _chargeMode(config: DesStorageCardConfig): ChargeMode {
     if (this._chargeModeLocal !== null) return this._chargeModeLocal;
+
+    const control = config.charge_mode_control;
+    if (control?.entity) {
+      const state = resolveText(control.entity, this.hass);
+      if (state.kind === 'value') {
+        return isChargeState(control, state.value) ? 'charge' : 'auto';
+      }
+    }
+
     const resolved = resolveText(config.charge_mode, this.hass);
     return resolved.kind === 'value' &&
       resolved.value.trim().toLowerCase() === 'charge'
@@ -439,6 +553,7 @@ export class DesStorageCard extends LitElement {
             ?disabled=${!targetActive}
             aria-label="Ladeziel"
             @input=${this._onTargetInput}
+            @change=${this._onTargetChange}
           />
           <span class="ctl-value ${targetActive ? '' : 'disabled'}">
             ${target === null ? this._dash() : `${formatInt(target)} %`}
@@ -454,6 +569,7 @@ export class DesStorageCard extends LitElement {
             .value=${String(threshold ?? THRESHOLD_MIN)}
             aria-label="Minimaler Ladestand"
             @input=${this._onThresholdInput}
+            @change=${this._onThresholdChange}
           />
           <span class="ctl-value">
             ${threshold === null ? this._dash() : `${formatInt(threshold)} %`}
@@ -731,7 +847,11 @@ export class DesStorageCard extends LitElement {
     return `${watts === 0 ? formatInt(0) : formatSignedInt(watts)} W`;
   }
 
-  // --- local-only interaction (phase 2 still writes nothing back) ----------
+  // --- interaction ---------------------------------------------------------
+  //
+  // Every handler updates the local state first so the UI reacts immediately,
+  // then writes to the bound entity. A rejected write drops the local value,
+  // which puts the control back on whatever the entity really says.
 
   private _toggleExpanded(): void {
     this._expanded = !this._expanded;
@@ -746,8 +866,16 @@ export class DesStorageCard extends LitElement {
 
   private _setChargeMode(mode: ChargeMode): void {
     this._chargeModeLocal = mode;
+
+    const control = this._config?.charge_mode_control;
+    if (!control?.entity || !isWritableChargeMode(control)) return;
+
+    void this._write(writeChargeMode(this.hass, control, mode), () => {
+      this._chargeModeLocal = null;
+    });
   }
 
+  /** Dragging only moves the UI; the write happens on release. */
   private _onTargetInput(ev: Event): void {
     this._targetLocal = Number((ev.target as HTMLInputElement).value);
   }
@@ -756,10 +884,67 @@ export class DesStorageCard extends LitElement {
     this._thresholdLocal = Number((ev.target as HTMLInputElement).value);
   }
 
+  private _onTargetChange(ev: Event): void {
+    const value = Number((ev.target as HTMLInputElement).value);
+    this._targetLocal = value;
+    this._scheduleNumberWrite('target', this._config?.charge_target_pct, value);
+  }
+
+  private _onThresholdChange(ev: Event): void {
+    const value = Number((ev.target as HTMLInputElement).value);
+    this._thresholdLocal = value;
+    this._scheduleNumberWrite('threshold', this._config?.threshold_pct, value);
+  }
+
+  private _scheduleNumberWrite(
+    which: 'threshold' | 'target',
+    slot: NumberValue | undefined,
+    value: number,
+  ): void {
+    // Statically configured sliders stay local, exactly as in phase 2.
+    if (!isWritableNumber(slot)) return;
+    const entityId = slot as string;
+
+    const pending = this._writeTimers.get(which);
+    if (pending !== undefined) window.clearTimeout(pending);
+
+    this._writeTimers.set(
+      which,
+      window.setTimeout(() => {
+        this._writeTimers.delete(which);
+        void this._write(writeNumber(this.hass, entityId, value), () => {
+          if (which === 'threshold') this._thresholdLocal = null;
+          else this._targetLocal = null;
+        });
+      }, WRITE_DEBOUNCE_MS),
+    );
+  }
+
   private _setItemMode(index: number, mode: ItemMode): void {
     const next = [...this._itemModesLocal];
     next[index] = mode;
     this._itemModesLocal = next;
+
+    const entityId = this._config?.items?.[index]?.switch_entity;
+    // "Auto" hands control back to the surplus automation - nothing to call.
+    if (mode === 'auto' || !isWritableSwitch(entityId)) return;
+
+    void this._write(writeSwitch(this.hass, entityId as string, mode === 'on'), () => {
+      const revert = [...this._itemModesLocal];
+      revert[index] = null;
+      this._itemModesLocal = revert;
+    });
+  }
+
+  /** Awaits a service call and runs `onFailure` if it rejects. */
+  private async _write(call: Promise<unknown>, onFailure: () => void): Promise<void> {
+    try {
+      await call;
+    } catch (error) {
+      onFailure();
+      // eslint-disable-next-line no-console
+      console.error('des-storage-card: Service-Call fehlgeschlagen', error);
+    }
   }
 
   static override styles = css`

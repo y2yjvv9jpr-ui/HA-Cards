@@ -10,11 +10,11 @@ Aktuell enthalten:
 | `custom:des-storage-card`  | Speicherkarte — Varianten `battery` und `thermal_group`    |
 | `custom:des-inverter-card` | Wechselrichter-Übersicht — PV-Leistung, Strings, Phasen    |
 
-> **Phase 2 — lesend.** Jedes Wertfeld nimmt einen statischen Wert **oder** eine
-> Entity-ID. Die Karte liest aus `hass.states` und rendert bei jedem
-> Zustandswechsel neu. Die Bedienelemente zeigen die gelesenen Werte, ändern
-> aber weiterhin nur den lokalen Anzeigezustand — geschrieben wird nichts.
-> Service-Calls folgen in [Phase 3](#ausblick-phase-3).
+> **Phase 3 — lesend und schreibend.** Jedes Wertfeld nimmt einen statischen
+> Wert **oder** eine Entity-ID. Die Karte liest aus `hass.states`, rendert bei
+> jedem Zustandswechsel neu, und jedes Bedienelement schreibt in die Entität,
+> an die es gebunden ist. Ist ein Wert statisch konfiguriert, bleibt sein
+> Bedienelement rein lokal. Siehe [Schreibverhalten](#schreibverhalten).
 
 ---
 
@@ -25,7 +25,7 @@ npm install
 npm run build
 ```
 
-Ergebnis: `dist/daniels-energy-cards.js` (~65 kB, gzip ~17 kB; Lit und **beide**
+Ergebnis: `dist/daniels-energy-cards.js` (~72 kB, gzip ~19 kB; Lit und **beide**
 Karten sind mit eingebettet).
 
 Weitere Skripte:
@@ -135,7 +135,8 @@ eine Entity-ID.
 | `temp_c`                     | number \| Entity \| `null`   | Akkutemperatur. Bei `null` entfällt das Segment in der Meta-Zeile.                 |
 | `threshold_pct`              | number \| Entity             | Minimaler Ladestand; Slider 10–80, Schritt 5.                                     |
 | `charge_target_pct`          | number \| Entity             | Ladeziel für erzwungenes Laden; Slider 50–100, Schritt 5.                          |
-| `charge_mode`                | `auto` \| `charge` \| Entity | Startzustand des Lademodus. Standard: `auto`.                                     |
+| `charge_mode`                | `auto` \| `charge` \| Entity | Anzeige des Lademodus, wenn kein `charge_mode_control` gesetzt ist.                |
+| `charge_mode_control`        | Objekt                       | Bindet **Laden \| Auto** an eine Entität, siehe unten. Ohne dieses Feld bleibt der Umschalter lokal. |
 | `time_remaining`             | string \| Entity             | Restzeit. Hat Vorrang vor den beiden folgenden.                                   |
 | `time_remaining_charging`    | string \| Entity             | Restzeit, solange die Leistung positiv ist.                                       |
 | `time_remaining_discharging` | string \| Entity             | Restzeit sonst.                                                                   |
@@ -171,6 +172,26 @@ entfällt das Badge — eine nicht lesbare Notstromquelle wird bewusst nicht als
 Leistung: positiv → `time_remaining_charging`, sonst
 `time_remaining_discharging`. States wie `Not Charging`, `Not Discharging`,
 `unknown` oder `unavailable` blenden die Zeile aus.
+
+**`charge_mode_control`** — macht aus dem Umschalter **Laden | Auto** ein
+schreibendes Bedienelement:
+
+```yaml
+charge_mode_control:
+  entity: input_select.zendure_operation_mode
+  charge_state: ZENDURE_CHARGE_OPTION   # Option, die erzwungenes Laden bedeutet
+  auto_state: ZENDURE_AUTO_OPTION       # Option für den Normalbetrieb
+```
+
+Der Service richtet sich nach der Domain der Entität:
+
+| Domain                      | Service                | `charge_state` / `auto_state`     |
+| --------------------------- | ---------------------- | --------------------------------- |
+| `select`, `input_select`    | `select_option`        | **Pflicht** — die Options-Strings |
+| `switch`, `input_boolean`   | `turn_on` / `turn_off` | optional, Standard `on` / `off`   |
+
+Das aktive Segment wird aus dem State abgeleitet: State == `charge_state`
+→ **Laden**, sonst **Auto**.
 
 **Aufbau**
 
@@ -234,8 +255,10 @@ Je Eintrag in `items`:
 | `mode`          | `on` \| `auto` \| `off` \| Entity | Startstellung des Umschalters. Hat Vorrang vor `switch_entity`.          |
 | `switch_entity` | Entity (`switch.*`)               | Ohne `mode`: Umschalter steht bei State `on` auf **An**, sonst auf **Aus**. |
 
-`Auto` ist in Phase 2 nur lokal wählbar — es gibt keine Entität, die diesen
-Zustand abbildet.
+**An** ruft `switch.turn_on` auf `switch_entity`, **Aus** ruft `turn_off`.
+**Auto** ruft bewusst *nichts* — es gibt den Schalter an die bestehende
+Überschuss-Automation zurück. Ohne `switch_entity` bleibt der Umschalter rein
+lokal.
 
 **Aufbau**
 
@@ -264,10 +287,9 @@ Zustand abbildet.
   Sie rendert in jedem Fall weiter und bricht nie ab.
 - **Nachkommastellen** — Ladestand ohne, kWh und Temperatur mit einer,
   Leistung ganzzahlig gerundet.
-- **Phase 2** — alle Bedienelemente ändern **nur den lokalen Anzeigezustand**:
-  Aufklappzustand, Lademodus, Slider und Umschalter. Bis zur ersten Berührung
-  zeigen sie den Wert aus Config bzw. Entität; danach gilt der lokale Stand bis
-  zum Reload. Geschrieben wird nichts.
+- **Bedienelemente** — was an eine Entität gebunden ist, schreibt dorthin
+  zurück; was statisch konfiguriert ist, bleibt rein lokal. Details unter
+  [Schreibverhalten](#schreibverhalten).
 
 ### Einheitliche Höhen
 
@@ -335,6 +357,9 @@ cards:
   # Kein power_w: die Leistung entsteht aus voltage_entity x current_entity.
   # Kein status: wird aus dem Vorzeichen der Leistung abgeleitet.
   # Kein energy_kwh: wird aus soc x capacity_kwh berechnet.
+  # Kein charge_mode_control: der Umschalter Laden|Auto bleibt lokal, bis die
+  # Deye-Ladelogik existiert. Der min.-SoC-Slider schreibt dagegen schon in
+  # number.inverter_battery_low_soc.
   - type: custom:des-storage-card
     variant: battery
     name: Hausakku 1
@@ -374,6 +399,13 @@ cards:
     charge_target_pct: input_number.zendure_setting_maximum_allowed_state_of_charge
     time_remaining_charging: sensor.zendure_indication_remaining_charge_time
     time_remaining_discharging: sensor.zendure_indication_remaining_discharge_time
+    # ZENDURE_CHARGE_OPTION / ZENDURE_AUTO_OPTION sind Platzhalter: hier die
+    # Options-Strings eintragen, die input_select.zendure_operation_mode
+    # tatsaechlich anbietet (Entwicklerwerkzeuge -> Zustaende).
+    charge_mode_control:
+      entity: input_select.zendure_operation_mode
+      charge_state: ZENDURE_CHARGE_OPTION
+      auto_state: ZENDURE_AUTO_OPTION
     backup:
       entity: sensor.zendure_offgrid_mode
       active_states:
@@ -509,6 +541,39 @@ Rendering bleibt dabei unverändert.
 
 ---
 
+## Schreibverhalten
+
+Grundregel: **jedes Bedienelement schreibt in die Entität, an die es gebunden
+ist.** Ist der zugehörige Wert statisch konfiguriert, bleibt das Element rein
+lokal — es bewegt sich, löst aber keinen Service-Call aus.
+
+| Bedienelement          | gebunden an           | Service                                     |
+| ---------------------- | --------------------- | ------------------------------------------- |
+| Slider **min. SoC**    | `threshold_pct`       | `number.set_value` / `input_number.set_value` |
+| Slider **Ladeziel**    | `charge_target_pct`   | dito                                        |
+| **Laden \| Auto**      | `charge_mode_control` | `select_option` bzw. `turn_on`/`turn_off`   |
+| **An** / **Aus**       | `items[].switch_entity` | `switch.turn_on` / `switch.turn_off`      |
+| **Auto** (thermal)     | —                     | kein Call — gibt an die Automation zurück    |
+
+Nur die Domains `number`, `input_number`, `switch`, `input_boolean`, `select`
+und `input_select` werden geschrieben; alles andere bleibt lokal.
+
+**Wann geschrieben wird.** Slider schreiben nicht beim Ziehen, sondern beim
+Loslassen (`change`), und dieser Schreibvorgang ist um 500 ms verzögert. Das ist
+kein Kosmetikdetail: Tastaturbedienung löst pro Pfeiltaste ein `change` aus, und
+ohne die Verzögerung würde eine gehaltene Taste einen Service-Call pro
+Zwischenschritt absetzen. Segmentierte Umschalter schreiben sofort beim Klick.
+
+**Optimistische Anzeige.** Das Bedienelement springt sofort auf den neuen Wert,
+noch bevor Home Assistant geantwortet hat. Sobald die Entität den Wert
+bestätigt, gibt die Karte die lokale Überschreibung wieder frei und folgt
+erneut der Entität — dadurch schlägt auch eine Änderung durch, die anderswo
+gemacht wurde (Automation, zweites Dashboard).
+
+**Fehlschlag.** Wird der Service-Call abgelehnt, verwirft die Karte die lokale
+Überschreibung und zeigt wieder den echten Entity-Wert. Der Fehler landet
+zusätzlich in der Browser-Konsole.
+
 ## Entity-Anbindung
 
 Jedes Wertfeld nimmt einen statischen Wert oder eine Entity-ID am selben
@@ -538,14 +603,19 @@ aber ein „–“ ergibt statt einer stillen Falschrechnung.
 `hass` ist eine reaktive Property — Home Assistant weist sie bei jeder
 Zustandsänderung neu zu, und Lit rendert daraufhin neu.
 
-## Ausblick: Phase 3
+## Ausblick
 
-Schreibender Zugriff. Die lokalen Umschalter
-(`_setChargeMode()`, `_setItemMode()`, `_onThresholdInput()`,
-`_onTargetInput()`) in [`src/des-storage-card.ts`](src/des-storage-card.ts)
-kapseln den Zustand bereits an je einer Stelle — dort kommen die Service-Calls
-dazu. Die Felder `*_local` unterscheiden schon heute „Benutzer hat angefasst“
-von „folgt der Entität“, was dafür die Grundlage ist.
+Offen für die Speicherkarte:
+
+- **Deye-Ladelogik** — sobald es eine Entität gibt, die erzwungenes Laden der
+  Hausakkus schaltet, bekommen beide Hausakku-Karten ein `charge_mode_control`
+  und der Umschalter **Laden | Auto** wird dort ebenfalls schreibend.
+- **`Auto` für die Aquarien** — aktuell nur lokal wählbar, weil kein Schalter
+  diesen dritten Zustand abbildet. Mit einem `input_boolean` je Heizer, den die
+  Überschuss-Automation auswertet, könnte auch `Auto` schreibend werden.
+
+Die Wechselrichterkarte steht davon unabhängig noch auf Phase 1, siehe
+[Offen für Phase 2](#offen-für-phase-2).
 
 ## Projektstruktur
 
@@ -556,6 +626,7 @@ src/
   des-inverter-card.ts Wechselrichterkarte (Phase 1: Demo-Werte)
   types.ts             Config-Schema und HA-Typen
   resolve.ts           Statischer Wert ↔ Entity: Auflösung über hass.states
+  service.ts           Schreibpfad: Domain → Service-Call
   format.ts            Zahlenformatierung (de-DE)
 vite.config.ts         Lib-Build → dist/daniels-energy-cards.js
 hacs.json              HACS-Manifest (Typ Dashboard)

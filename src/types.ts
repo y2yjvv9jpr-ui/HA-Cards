@@ -35,6 +35,22 @@ export interface BackupEntityConfig {
 /** Battery: "charge" forces charging, "auto" is the normal control loop. */
 export type ChargeMode = 'auto' | 'charge';
 
+/**
+ * Makes the Laden/Auto control write instead of only display.
+ *
+ * The service follows the entity's domain: `select`/`input_select` get
+ * `select_option`, `switch`/`input_boolean` get `turn_on`/`turn_off`. For the
+ * switch domains `charge_state`/`auto_state` default to `on`/`off`, so they
+ * only have to be spelled out for selects.
+ */
+export interface ChargeModeControlConfig {
+  entity: string;
+  /** Option/state that means "charging is forced". */
+  charge_state?: string;
+  /** Option/state that means "back to the normal control loop". */
+  auto_state?: string;
+}
+
 /** Thermal item: "auto" lets the surplus logic decide, on/off force it. */
 export type ItemMode = 'on' | 'auto' | 'off';
 
@@ -51,9 +67,9 @@ export interface ThermalItemConfig {
 }
 
 /**
- * Phase 2 is read-only: values come from the config or from `hass.states`,
- * but the controls still only change local display state. Phase 3 adds the
- * service calls that write back.
+ * Phase 3: values come from the config or from `hass.states`, and every
+ * control that is bound to an entity writes back to it. A statically
+ * configured value keeps the phase-2 behaviour and stays purely local.
  */
 export interface DesStorageCardConfig {
   type: string;
@@ -88,8 +104,10 @@ export interface DesStorageCardConfig {
   threshold_pct?: NumberValue;
   /** Target state of charge for forced charging; start value of the slider. */
   charge_target_pct?: NumberValue;
-  /** Start value of the charge-mode control. */
+  /** Start value of the charge-mode control (display only). */
   charge_mode?: TextValue;
+  /** Binds the Laden/Auto control to an entity so it writes back. */
+  charge_mode_control?: ChargeModeControlConfig;
   /** Free text or entity, e.g. "4:36 h bis 20 %". Wins over the two below. */
   time_remaining?: TextValue;
   /** Used while charging (power > 0). */
@@ -234,6 +252,12 @@ export interface HomeAssistant {
     string,
     { state: string; attributes?: Record<string, unknown> } | undefined
   >;
+  /** Optional so a card handed a bare `hass` stub still renders. */
+  callService?: (
+    domain: string,
+    service: string,
+    data?: Record<string, unknown>,
+  ) => Promise<unknown> | unknown;
   themes?: unknown;
   locale?: { language?: string };
 }
