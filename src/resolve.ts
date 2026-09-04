@@ -1,28 +1,97 @@
 import type { HomeAssistant } from './types';
 
+/** States that carry no usable value. */
+const NO_VALUE = new Set(['unavailable', 'unknown', 'none', 'null', '']);
+
 /**
- * Single seam between "static value from YAML" and "value from an entity".
+ * `domain.object_id`.
  *
- * Phase 1 only ever sees numbers/strings and passes them through. Phase 2
- * adds the `typeof value === 'string'` branch that looks the id up in
- * `hass.states` - no call site has to change.
+ * Deliberately stricter than "contains a dot": free text like `4:36 h bis 20 %`
+ * and decimals like `6.55` must never be mistaken for an entity id.
  */
-export function resolveNumber(
-  value: number | string | null | undefined,
-  _hass?: HomeAssistant,
-): number | null {
-  if (value === null || value === undefined) return null;
-  if (typeof value === 'number') return Number.isFinite(value) ? value : null;
-  // Phase 2: look up `value` as an entity id in `_hass.states` here.
-  const parsed = Number(value);
-  return Number.isFinite(parsed) ? parsed : null;
+const ENTITY_ID = /^[a-z][a-z0-9_]*\.[a-z0-9_]+$/;
+
+/**
+ * Deliberately not a `value is string` type predicate: callers have already
+ * narrowed to `string` at that point, so the predicate would narrow the else
+ * branch to `never`.
+ */
+export function isEntityId(value: unknown): boolean {
+  return typeof value === 'string' && ENTITY_ID.test(value);
 }
 
-export function resolveString(
-  value: string | null | undefined,
-  _hass?: HomeAssistant,
+/**
+ * Three outcomes a config slot can have, kept apart on purpose:
+ *
+ * - `unset`       - not configured at all; the caller may derive or omit it.
+ * - `value`       - a usable value, static or read from an entity.
+ * - `unavailable` - configured, but the entity is missing/unavailable/unknown.
+ *                   The card renders a muted "–" for these instead of guessing.
+ */
+export type Resolved<T> =
+  | { kind: 'unset' }
+  | { kind: 'value'; value: T }
+  | { kind: 'unavailable' };
+
+const UNSET = { kind: 'unset' } as const;
+const UNAVAILABLE = { kind: 'unavailable' } as const;
+
+/** Raw state string of an entity, or null when it carries no usable value. */
+export function entityState(
+  entityId: string,
+  hass?: HomeAssistant,
 ): string | null {
-  if (value === null || value === undefined) return null;
-  const text = String(value).trim();
-  return text.length > 0 ? text : null;
+  const entity = hass?.states?.[entityId];
+  if (!entity || typeof entity.state !== 'string') return null;
+  const state = entity.state.trim();
+  return NO_VALUE.has(state.toLowerCase()) ? null : state;
+}
+
+/** Static number, numeric string, or an entity whose state parses as a number. */
+export function resolveNumber(
+  raw: number | string | boolean | null | undefined,
+  hass?: HomeAssistant,
+): Resolved<number> {
+  if (raw === null || raw === undefined || typeof raw === 'boolean') return UNSET;
+  if (typeof raw === 'number') {
+    return Number.isFinite(raw) ? { kind: 'value', value: raw } : UNAVAILABLE;
+  }
+
+  if (isEntityId(raw)) {
+    const state = entityState(raw, hass);
+    if (state === null) return UNAVAILABLE;
+    const parsed = Number.parseFloat(state);
+    return Number.isFinite(parsed) ? { kind: 'value', value: parsed } : UNAVAILABLE;
+  }
+
+  const parsed = Number.parseFloat(raw);
+  return Number.isFinite(parsed) ? { kind: 'value', value: parsed } : UNAVAILABLE;
+}
+
+/**
+ * Static text, or an entity's state string.
+ *
+ * Booleans become `on`/`off` so the YAML 1.1 trap (`status: off` parsing as
+ * `false`) resolves the same way as the quoted spelling.
+ */
+export function resolveText(
+  raw: string | boolean | number | null | undefined,
+  hass?: HomeAssistant,
+): Resolved<string> {
+  if (raw === null || raw === undefined) return UNSET;
+  if (typeof raw === 'boolean') return { kind: 'value', value: raw ? 'on' : 'off' };
+  if (typeof raw === 'number') return { kind: 'value', value: String(raw) };
+
+  if (isEntityId(raw)) {
+    const state = entityState(raw, hass);
+    return state === null ? UNAVAILABLE : { kind: 'value', value: state };
+  }
+
+  const text = raw.trim();
+  return text.length > 0 ? { kind: 'value', value: text } : UNSET;
+}
+
+/** Convenience for callers that treat "unset" and "unavailable" alike. */
+export function valueOr<T>(resolved: Resolved<T>, fallback: T): T {
+  return resolved.kind === 'value' ? resolved.value : fallback;
 }

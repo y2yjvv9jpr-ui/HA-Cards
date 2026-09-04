@@ -1,15 +1,14 @@
 import { LitElement, html, css, nothing, type TemplateResult } from 'lit';
-import { formatDecimal, formatInt, formatSignedInt, clamp } from './format';
-import { resolveNumber, resolveString } from './resolve';
+import { formatFixed, formatInt, formatSignedInt, clamp } from './format';
+import { resolveNumber, resolveText, type Resolved } from './resolve';
 import type {
   BackupState,
   ChargeMode,
   DesStorageCardConfig,
   HomeAssistant,
   ItemMode,
-  ItemModeConfigValue,
-  StatusConfigValue,
   StorageStatus,
+  TextValue,
   ThermalItemConfig,
 } from './types';
 
@@ -31,6 +30,20 @@ const TARGET_STEP = 5;
 
 const MAX_ITEMS = 5;
 
+/** Below this many watts the battery counts as idle, not as charging. */
+const POWER_DEADBAND_W = 25;
+
+/** Remaining-time states that mean "nothing to show". */
+const NO_TIME_STATES = new Set([
+  'not charging',
+  'not discharging',
+  'unknown',
+  'unavailable',
+  'none',
+  '-',
+  '--',
+]);
+
 const CHARGE_MODES: ReadonlyArray<{ value: ChargeMode; label: string }> = [
   { value: 'charge', label: 'Laden' },
   { value: 'auto', label: 'Auto' },
@@ -42,30 +55,20 @@ const ITEM_MODES: ReadonlyArray<{ value: ItemMode; label: string }> = [
   { value: 'off', label: 'Aus' },
 ];
 
-/**
- * Normalises whatever YAML produced for `status`.
- *
- * HA parses with YAML 1.1: unquoted `off` arrives as the boolean `false`.
- * `standby` is accepted as an alias for `idle`.
- */
-function normaliseStatus(raw: StatusConfigValue | undefined): StorageStatus | null {
-  if (raw === false) return 'off';
-  if (raw === 'standby') return 'idle';
-  if (typeof raw === 'string' && raw in STATUS_LABEL) {
-    return raw as StorageStatus;
-  }
-  return null;
+/** `standby` is an accepted alias for `idle`; anything else returns null. */
+function normaliseStatus(raw: string): StorageStatus | null {
+  const value = raw.trim().toLowerCase();
+  if (value === 'standby') return 'idle';
+  return value in STATUS_LABEL ? (value as StorageStatus) : null;
 }
 
-/** Same YAML 1.1 trap for item modes: `on`/`off` arrive as booleans. */
-function normaliseItemMode(raw: ItemModeConfigValue | undefined): ItemMode {
-  if (raw === true) return 'on';
-  if (raw === false) return 'off';
-  if (raw === 'on' || raw === 'auto' || raw === 'off') return raw;
+function normaliseItemMode(raw: string): ItemMode {
+  const value = raw.trim().toLowerCase();
+  if (value === 'on' || value === 'auto' || value === 'off') return value;
   return 'auto';
 }
 
-/** Snaps a configured percentage onto the slider's own scale. */
+/** Snaps a percentage onto the slider's own scale. */
 function snap(value: number, min: number, max: number, step: number): number {
   return clamp(Math.round(value / step) * step, min, max);
 }
@@ -83,32 +86,35 @@ function temperatureClass(temp: number): string {
 
 export class DesStorageCard extends LitElement {
   static override properties = {
+    // Assigning `hass` is a reactive property write, so Home Assistant's
+    // state updates re-render the card without a custom setter.
     hass: { attribute: false },
     _config: { state: true },
-    _threshold: { state: true },
-    _chargeTarget: { state: true },
-    _chargeMode: { state: true },
+    _thresholdLocal: { state: true },
+    _targetLocal: { state: true },
+    _chargeModeLocal: { state: true },
     _expanded: { state: true },
-    _itemModes: { state: true },
+    _itemModesLocal: { state: true },
   };
 
   declare hass?: HomeAssistant;
   declare _config?: DesStorageCardConfig;
-  declare _threshold: number;
-  declare _chargeTarget: number;
-  declare _chargeMode: ChargeMode;
   declare _expanded: boolean;
-  declare _itemModes: ItemMode[];
 
-  private _status: StorageStatus = 'idle';
+  // `null` means "follow the config/entity"; a value means the user has
+  // touched the control in this session. Phase 3 turns these into writes.
+  declare _thresholdLocal: number | null;
+  declare _targetLocal: number | null;
+  declare _chargeModeLocal: ChargeMode | null;
+  declare _itemModesLocal: Array<ItemMode | null>;
 
   constructor() {
     super();
-    this._threshold = THRESHOLD_MIN;
-    this._chargeTarget = TARGET_MAX;
-    this._chargeMode = 'auto';
     this._expanded = false;
-    this._itemModes = [];
+    this._thresholdLocal = null;
+    this._targetLocal = null;
+    this._chargeModeLocal = null;
+    this._itemModesLocal = [];
   }
 
   setConfig(config: DesStorageCardConfig): void {
@@ -124,27 +130,7 @@ export class DesStorageCard extends LitElement {
       throw new Error('des-storage-card: "name" ist erforderlich');
     }
 
-    if (config.variant === 'battery') {
-      const status = normaliseStatus(config.status);
-      if (status === null) {
-        throw new Error(
-          'des-storage-card: "status" muss charging | discharging | idle | standby | heating | off sein',
-        );
-      }
-      this._status = status;
-
-      const threshold = resolveNumber(config.threshold_pct, this.hass);
-      this._threshold =
-        threshold === null
-          ? THRESHOLD_MIN
-          : snap(threshold, THRESHOLD_MIN, THRESHOLD_MAX, THRESHOLD_STEP);
-
-      const target = resolveNumber(config.charge_target_pct, this.hass);
-      this._chargeTarget =
-        target === null ? TARGET_MAX : snap(target, TARGET_MIN, TARGET_MAX, TARGET_STEP);
-
-      this._chargeMode = config.charge_mode === 'charge' ? 'charge' : 'auto';
-    } else {
+    if (config.variant === 'thermal_group') {
       const items = config.items;
       if (!Array.isArray(items) || items.length === 0) {
         throw new Error(
@@ -159,11 +145,14 @@ export class DesStorageCard extends LitElement {
       if (items.some((item) => !item || !item.name)) {
         throw new Error('des-storage-card: jeder Eintrag in "items" braucht "name"');
       }
-      this._itemModes = items.map((item) => normaliseItemMode(item.mode));
+      this._itemModesLocal = items.map(() => null);
     }
 
     this._config = config;
     this._expanded = false;
+    this._thresholdLocal = null;
+    this._targetLocal = null;
+    this._chargeModeLocal = null;
   }
 
   getCardSize(): number {
@@ -178,17 +167,13 @@ export class DesStorageCard extends LitElement {
       type: 'custom:des-storage-card',
       variant: 'battery',
       name: 'Hausakku',
-      status: 'discharging',
       soc: 62,
       capacity_kwh: 10.2,
-      energy_kwh: 6.3,
       power_w: -1240,
       temp_c: 23.5,
       threshold_pct: 20,
       charge_target_pct: 90,
       charge_mode: 'auto',
-      time_remaining: '4:36 h bis 20 %',
-      time_at: 'um 00:12',
       backup: 'none',
     };
   }
@@ -209,63 +194,223 @@ export class DesStorageCard extends LitElement {
   }
 
   // =========================================================================
+  // resolution / derivation
+  // =========================================================================
+
+  /** `power_w` if given, otherwise voltage x current; sign optionally flipped. */
+  private _power(config: DesStorageCardConfig): Resolved<number> {
+    let power = resolveNumber(config.power_w, this.hass);
+
+    if (power.kind === 'unset' && config.voltage_entity && config.current_entity) {
+      const volts = resolveNumber(config.voltage_entity, this.hass);
+      const amps = resolveNumber(config.current_entity, this.hass);
+      power =
+        volts.kind === 'value' && amps.kind === 'value'
+          ? { kind: 'value', value: volts.value * amps.value }
+          : { kind: 'unavailable' };
+    }
+
+    if (power.kind === 'value' && config.invert_power) {
+      return { kind: 'value', value: -power.value };
+    }
+    return power;
+  }
+
+  /** Configured status, else derived from the power sign. */
+  private _status(
+    config: DesStorageCardConfig,
+    power: Resolved<number>,
+  ): StorageStatus {
+    const configured = resolveText(config.status, this.hass);
+    if (configured.kind === 'value') {
+      const status = normaliseStatus(configured.value);
+      if (status !== null) return status;
+    }
+
+    if (power.kind === 'value') {
+      if (power.value < -POWER_DEADBAND_W) return 'discharging';
+      if (power.value > POWER_DEADBAND_W) return 'charging';
+    }
+    return 'idle';
+  }
+
+  /** `energy_kwh` if given, otherwise soc x capacity / 100. */
+  private _energy(
+    config: DesStorageCardConfig,
+    soc: Resolved<number>,
+    capacity: Resolved<number>,
+  ): Resolved<number> {
+    const energy = resolveNumber(config.energy_kwh, this.hass);
+    if (energy.kind !== 'unset') return energy;
+
+    if (soc.kind === 'value' && capacity.kind === 'value') {
+      return { kind: 'value', value: (soc.value * capacity.value) / 100 };
+    }
+    // Only claim "unavailable" when the inputs were actually configured.
+    if (soc.kind === 'unavailable' || capacity.kind === 'unavailable') {
+      return { kind: 'unavailable' };
+    }
+    return { kind: 'unset' };
+  }
+
+  /**
+   * Remaining time. `time_remaining` wins; otherwise the charging variant is
+   * used while power is positive and the discharging one in every other case.
+   */
+  private _timeRemaining(
+    config: DesStorageCardConfig,
+    power: Resolved<number>,
+  ): string | null {
+    let source: TextValue | undefined = config.time_remaining;
+    if (source === undefined) {
+      source =
+        power.kind === 'value' && power.value > 0
+          ? config.time_remaining_charging
+          : config.time_remaining_discharging;
+    }
+
+    const resolved = resolveText(source, this.hass);
+    if (resolved.kind !== 'value') return null;
+    return NO_TIME_STATES.has(resolved.value.trim().toLowerCase())
+      ? null
+      : resolved.value;
+  }
+
+  private _backup(config: DesStorageCardConfig): BackupState {
+    const backup = config.backup;
+    if (!backup || backup === 'none') return 'none';
+
+    if (typeof backup === 'string') {
+      return backup === 'active' || backup === 'ready' ? backup : 'none';
+    }
+
+    const state = resolveText(backup.entity, this.hass);
+    // An unavailable entity must not be reported as "Notstrom bereit".
+    if (state.kind !== 'value') return 'none';
+
+    const active = (backup.active_states ?? []).some(
+      (candidate) => candidate.trim().toLowerCase() === state.value.toLowerCase(),
+    );
+    return active ? 'active' : 'ready';
+  }
+
+  private _threshold(config: DesStorageCardConfig): number | null {
+    if (this._thresholdLocal !== null) return this._thresholdLocal;
+    const resolved = resolveNumber(config.threshold_pct, this.hass);
+    return resolved.kind === 'value'
+      ? snap(resolved.value, THRESHOLD_MIN, THRESHOLD_MAX, THRESHOLD_STEP)
+      : null;
+  }
+
+  private _chargeTarget(config: DesStorageCardConfig): number | null {
+    if (this._targetLocal !== null) return this._targetLocal;
+    const resolved = resolveNumber(config.charge_target_pct, this.hass);
+    return resolved.kind === 'value'
+      ? snap(resolved.value, TARGET_MIN, TARGET_MAX, TARGET_STEP)
+      : null;
+  }
+
+  private _chargeMode(config: DesStorageCardConfig): ChargeMode {
+    if (this._chargeModeLocal !== null) return this._chargeModeLocal;
+    const resolved = resolveText(config.charge_mode, this.hass);
+    return resolved.kind === 'value' &&
+      resolved.value.trim().toLowerCase() === 'charge'
+      ? 'charge'
+      : 'auto';
+  }
+
+  /** Local click wins, then `mode`, then the switch entity's on/off state. */
+  private _itemMode(item: ThermalItemConfig, index: number): ItemMode {
+    const local = this._itemModesLocal[index];
+    if (local) return local;
+
+    const configured = resolveText(item.mode, this.hass);
+    if (configured.kind === 'value') return normaliseItemMode(configured.value);
+
+    if (item.switch_entity) {
+      const state = resolveText(item.switch_entity, this.hass);
+      if (state.kind === 'value') {
+        return state.value.trim().toLowerCase() === 'on' ? 'on' : 'off';
+      }
+    }
+    return 'auto';
+  }
+
+  // =========================================================================
   // variant: battery
   // =========================================================================
 
   private _renderBattery(config: DesStorageCardConfig): TemplateResult {
-    const soc = clamp(resolveNumber(config.soc, this.hass) ?? 0, 0, 100);
-    const energy = resolveNumber(config.energy_kwh, this.hass);
-    const power = resolveNumber(config.power_w, this.hass);
-    const backup: BackupState = config.backup ?? 'none';
-    const times = this._batteryTimes(config);
+    const soc = resolveNumber(config.soc, this.hass);
+    const capacity = resolveNumber(config.capacity_kwh, this.hass);
+    const power = this._power(config);
+    const energy = this._energy(config, soc, capacity);
+    const status = this._status(config, power);
+    const backup = this._backup(config);
+    const remaining = this._timeRemaining(config, power);
+    const at = resolveText(config.time_at, this.hass);
+    const times = [remaining, at.kind === 'value' ? at.value : null].filter(
+      (part): part is string => part !== null,
+    );
+
+    const showControls = config.controls !== false;
 
     return html`
       <div class="header">
         <div class="head-left">
           <span class="name">${config.name}</span>
-          <span class="meta">${this._renderBatteryMeta(config)}</span>
+          <span class="meta">${this._renderBatteryMeta(config, capacity)}</span>
         </div>
         <div class="badges">
           ${backup === 'none' ? nothing : this._renderBackupBadge(backup)}
-          ${this._renderBadge(
-            STATUS_LABEL[this._status],
-            `status-${this._status}`,
-          )}
+          ${this._renderBadge(STATUS_LABEL[status], `status-${status}`)}
         </div>
       </div>
 
       <div
-        class="main"
-        role="button"
-        tabindex="0"
-        aria-expanded=${this._expanded ? 'true' : 'false'}
-        @click=${this._toggleExpanded}
-        @keydown=${this._onMainKeydown}
+        class="main ${showControls ? 'clickable' : ''}"
+        role=${showControls ? 'button' : 'presentation'}
+        tabindex=${showControls ? 0 : -1}
+        aria-expanded=${showControls ? String(this._expanded) : nothing}
+        @click=${showControls ? this._toggleExpanded : nothing}
+        @keydown=${showControls ? this._onMainKeydown : nothing}
       >
         ${this._renderBatteryIcon(soc)}
         <div class="readout">
-          <span class="soc">${formatInt(soc)} %</span>
-          ${energy === null
+          <span class="soc">
+            ${soc.kind === 'value' ? `${formatInt(soc.value)} %` : this._dash()}
+          </span>
+          ${energy.kind === 'unset'
             ? nothing
-            : html`<span class="energy">${formatDecimal(energy)} kWh</span>`}
+            : html`<span class="energy">
+                ${energy.kind === 'value'
+                  ? `${formatFixed(energy.value)} kWh`
+                  : this._dash()}
+              </span>`}
         </div>
         <div class="timing">
-          ${power === null
+          ${power.kind === 'unset'
             ? nothing
             : html`<div class=${this._powerClass(power)}>
-                ${this._formatPower(power)}
+                ${power.kind === 'value'
+                  ? this._formatPower(power.value)
+                  : this._dash()}
               </div>`}
-          ${times === null ? nothing : html`<div class="muted">${times}</div>`}
+          ${times.length === 0
+            ? nothing
+            : html`<div class="muted">${times.join(' · ')}</div>`}
         </div>
-        <ha-icon
-          class="chevron ${this._expanded ? 'open' : ''}"
-          icon="mdi:chevron-down"
-        ></ha-icon>
+        ${showControls
+          ? html`<ha-icon
+              class="chevron ${this._expanded ? 'open' : ''}"
+              icon="mdi:chevron-down"
+            ></ha-icon>`
+          : nothing}
       </div>
 
-      ${this._expanded
+      ${showControls && this._expanded
         ? html`<div class="grow"></div>
-            ${this._renderBatteryControls()}`
+            ${this._renderBatteryControls(config)}`
         : nothing}
     `;
   }
@@ -274,8 +419,11 @@ export class DesStorageCard extends LitElement {
    * Two labelled slider rows on one grid, so labels, tracks and values line
    * up. The charge-mode control sits to their right, centred over both rows.
    */
-  private _renderBatteryControls(): TemplateResult {
-    const targetActive = this._chargeMode === 'charge';
+  private _renderBatteryControls(config: DesStorageCardConfig): TemplateResult {
+    const mode = this._chargeMode(config);
+    const targetActive = mode === 'charge';
+    const target = this._chargeTarget(config);
+    const threshold = this._threshold(config);
 
     return html`
       <div class="controls">
@@ -287,13 +435,13 @@ export class DesStorageCard extends LitElement {
             min=${TARGET_MIN}
             max=${TARGET_MAX}
             step=${TARGET_STEP}
-            .value=${String(this._chargeTarget)}
+            .value=${String(target ?? TARGET_MIN)}
             ?disabled=${!targetActive}
             aria-label="Ladeziel"
             @input=${this._onTargetInput}
           />
           <span class="ctl-value ${targetActive ? '' : 'disabled'}">
-            ${formatInt(this._chargeTarget)} %
+            ${target === null ? this._dash() : `${formatInt(target)} %`}
           </span>
 
           <span class="ctl-label">min. SoC</span>
@@ -303,15 +451,17 @@ export class DesStorageCard extends LitElement {
             min=${THRESHOLD_MIN}
             max=${THRESHOLD_MAX}
             step=${THRESHOLD_STEP}
-            .value=${String(this._threshold)}
+            .value=${String(threshold ?? THRESHOLD_MIN)}
             aria-label="Minimaler Ladestand"
             @input=${this._onThresholdInput}
           />
-          <span class="ctl-value">${formatInt(this._threshold)} %</span>
+          <span class="ctl-value">
+            ${threshold === null ? this._dash() : `${formatInt(threshold)} %`}
+          </span>
         </div>
         ${this._renderSegmented(
           CHARGE_MODES,
-          this._chargeMode,
+          mode,
           (value) => this._setChargeMode(value),
           'Lademodus',
         )}
@@ -319,50 +469,58 @@ export class DesStorageCard extends LitElement {
     `;
   }
 
-  /** "10,2 kWh · 23,5 °C · min. 20 % SoC" - temp segment dropped when null. */
-  private _renderBatteryMeta(config: DesStorageCardConfig): TemplateResult {
-    const capacity = resolveNumber(config.capacity_kwh, this.hass);
+  /** "6,6 kWh · 23,5 °C · min. 20 % SoC" - unset segments are dropped. */
+  private _renderBatteryMeta(
+    config: DesStorageCardConfig,
+    capacity: Resolved<number>,
+  ): TemplateResult {
     const temp = resolveNumber(config.temp_c, this.hass);
+    const threshold = this._threshold(config);
     const parts: Array<TemplateResult | string> = [];
 
-    if (capacity !== null) parts.push(`${formatDecimal(capacity)} kWh`);
-    if (temp !== null) {
+    if (capacity.kind === 'value') {
+      parts.push(`${formatFixed(capacity.value)} kWh`);
+    } else if (capacity.kind === 'unavailable') {
+      parts.push(html`${this._dash()} kWh`);
+    }
+
+    if (temp.kind === 'value') {
       parts.push(
-        html`<span class=${temperatureClass(temp)}>
-          ${formatDecimal(temp)} °C
+        html`<span class=${temperatureClass(temp.value)}>
+          ${formatFixed(temp.value)} °C
         </span>`,
       );
+    } else if (temp.kind === 'unavailable') {
+      parts.push(html`${this._dash()} °C`);
     }
-    parts.push(`min. ${formatInt(this._threshold)} % SoC`);
+
+    parts.push(
+      threshold === null
+        ? html`min. ${this._dash()} SoC`
+        : `min. ${formatInt(threshold)} % SoC`,
+    );
 
     return html`${parts.map((part, index) =>
       index === 0 ? part : html` · ${part}`,
     )}`;
   }
 
-  /** "4:36 h bis 20 % · um 00:12" - null when neither is set. */
-  private _batteryTimes(config: DesStorageCardConfig): string | null {
-    const parts = [
-      resolveString(config.time_remaining, this.hass),
-      resolveString(config.time_at, this.hass),
-    ].filter((part): part is string => part !== null);
-
-    return parts.length > 0 ? parts.join(' · ') : null;
-  }
-
   /** Upright battery; the fill grows from the bottom. */
-  private _renderBatteryIcon(soc: number): TemplateResult {
+  private _renderBatteryIcon(soc: Resolved<number>): TemplateResult {
+    const level = soc.kind === 'value' ? clamp(soc.value, 0, 100) : 0;
     const fillColor =
-      soc > 50
-        ? 'var(--success-color, #2e7d32)'
-        : soc >= 20
-          ? 'var(--warning-color, #ff9800)'
-          : 'var(--error-color, #d32f2f)';
+      soc.kind !== 'value'
+        ? 'transparent'
+        : level > 50
+          ? 'var(--success-color, #2e7d32)'
+          : level >= 20
+            ? 'var(--warning-color, #ff9800)'
+            : 'var(--error-color, #d32f2f)';
 
     // Inner drawable area of the battery body: y 6..32, height 26.
     const innerY = 6;
     const innerH = 26;
-    const fillH = (innerH * soc) / 100;
+    const fillH = (innerH * level) / 100;
     const fillY = innerY + (innerH - fillH);
 
     return html`
@@ -372,7 +530,9 @@ export class DesStorageCard extends LitElement {
         width="22"
         height="36"
         role="img"
-        aria-label="Ladestand ${formatInt(soc)} Prozent"
+        aria-label=${soc.kind === 'value'
+          ? `Ladestand ${formatInt(level)} Prozent`
+          : 'Ladestand unbekannt'}
       >
         <rect
           x="7"
@@ -412,13 +572,14 @@ export class DesStorageCard extends LitElement {
 
   private _renderThermalGroup(config: DesStorageCardConfig): TemplateResult {
     const items = config.items ?? [];
-    const powers = items.map((item) => resolveNumber(item.power_w, this.hass) ?? 0);
-    const totalEnergy = items.reduce(
-      (sum, item) => sum + (resolveNumber(item.energy_kwh, this.hass) ?? 0),
-      0,
-    );
-    const totalPower = powers.reduce((sum, power) => sum + power, 0);
-    const heatingCount = powers.filter((power) => power > 0).length;
+    const powers = items.map((item) => resolveNumber(item.power_w, this.hass));
+    const energies = items.map((item) => resolveNumber(item.energy_kwh, this.hass));
+
+    const totalEnergy = this._sum(energies);
+    const totalPower = this._sum(powers);
+    const heatingCount = powers.filter(
+      (power) => power.kind === 'value' && power.value > 0,
+    ).length;
 
     return html`
       <div class="header">
@@ -437,41 +598,69 @@ export class DesStorageCard extends LitElement {
       <div class="main">
         <ha-icon class="fish" icon="mdi:fish"></ha-icon>
         <div class="readout stacked">
-          <span class="soc">${formatDecimal(totalEnergy)} kWh</span>
+          <span class="soc">
+            ${totalEnergy === null
+              ? this._dash()
+              : `${formatFixed(totalEnergy)} kWh`}
+          </span>
           <span class="energy">heute eingespeichert</span>
         </div>
         <div class="timing">
-          <div class=${this._powerClass(totalPower)}>
-            ${this._formatPower(totalPower)}
+          <div
+            class=${totalPower !== null && totalPower > 0
+              ? 'power positive'
+              : 'power neutral'}
+          >
+            ${totalPower === null ? this._dash() : this._formatPower(totalPower)}
           </div>
         </div>
       </div>
 
       <div class="items">
-        ${items.map((item, index) => this._renderItem(item, index, powers[index]!))}
+        ${items.map((item, index) =>
+          this._renderItem(item, index, powers[index]!, energies[index]!),
+        )}
       </div>
     `;
+  }
+
+  /** Sums the values that resolved; null when none of them did. */
+  private _sum(values: ReadonlyArray<Resolved<number>>): number | null {
+    const usable = values.filter(
+      (entry): entry is { kind: 'value'; value: number } => entry.kind === 'value',
+    );
+    if (usable.length === 0) return null;
+    return usable.reduce((sum, entry) => sum + entry.value, 0);
   }
 
   private _renderItem(
     item: ThermalItemConfig,
     index: number,
-    power: number,
+    power: Resolved<number>,
+    energy: Resolved<number>,
   ): TemplateResult {
-    const energy = resolveNumber(item.energy_kwh, this.hass);
+    const heating = power.kind === 'value' && power.value > 0;
 
     return html`
       <div class="item">
         <span class="item-name">${item.name}</span>
         <span class="item-energy">
-          ${energy === null ? '' : `${formatDecimal(energy)} kWh`}
+          ${energy.kind === 'value'
+            ? `${formatFixed(energy.value)} kWh`
+            : energy.kind === 'unavailable'
+              ? this._dash()
+              : ''}
         </span>
-        <span class=${power > 0 ? 'item-power positive' : 'item-power'}>
-          ${this._formatPower(power)}
+        <span class=${heating ? 'item-power positive' : 'item-power'}>
+          ${power.kind === 'value'
+            ? this._formatPower(power.value)
+            : power.kind === 'unavailable'
+              ? this._dash()
+              : ''}
         </span>
         ${this._renderSegmented(
           ITEM_MODES,
-          this._itemModes[index] ?? 'auto',
+          this._itemMode(item, index),
           (value) => this._setItemMode(index, value),
           `Modus ${item.name}`,
         )}
@@ -482,6 +671,11 @@ export class DesStorageCard extends LitElement {
   // =========================================================================
   // shared
   // =========================================================================
+
+  /** Muted placeholder for a value the card could not read. */
+  private _dash(): TemplateResult {
+    return html`<span class="unavail">–</span>`;
+  }
 
   /** One segmented control, used for both charge mode and item modes. */
   private _renderSegmented<T extends string>(
@@ -527,16 +721,17 @@ export class DesStorageCard extends LitElement {
       : this._renderBadge('Notstrom bereit', 'backup-ready');
   }
 
-  private _powerClass(power: number): string {
-    if (power === 0) return 'power neutral';
-    return power < 0 ? 'power negative' : 'power positive';
+  private _powerClass(power: Resolved<number>): string {
+    if (power.kind !== 'value' || power.value === 0) return 'power neutral';
+    return power.value < 0 ? 'power negative' : 'power positive';
   }
 
   private _formatPower(power: number): string {
-    return `${power === 0 ? formatInt(0) : formatSignedInt(power)} W`;
+    const watts = Math.round(power);
+    return `${watts === 0 ? formatInt(0) : formatSignedInt(watts)} W`;
   }
 
-  // --- local-only interaction (phase 1 persists nothing) -------------------
+  // --- local-only interaction (phase 2 still writes nothing back) ----------
 
   private _toggleExpanded(): void {
     this._expanded = !this._expanded;
@@ -550,23 +745,21 @@ export class DesStorageCard extends LitElement {
   }
 
   private _setChargeMode(mode: ChargeMode): void {
-    this._chargeMode = mode;
+    this._chargeModeLocal = mode;
   }
 
   private _onTargetInput(ev: Event): void {
-    const target = ev.target as HTMLInputElement;
-    this._chargeTarget = Number(target.value);
+    this._targetLocal = Number((ev.target as HTMLInputElement).value);
   }
 
   private _onThresholdInput(ev: Event): void {
-    const target = ev.target as HTMLInputElement;
-    this._threshold = Number(target.value);
+    this._thresholdLocal = Number((ev.target as HTMLInputElement).value);
   }
 
   private _setItemMode(index: number, mode: ItemMode): void {
-    const next = [...this._itemModes];
+    const next = [...this._itemModesLocal];
     next[index] = mode;
-    this._itemModes = next;
+    this._itemModesLocal = next;
   }
 
   static override styles = css`
@@ -639,6 +832,12 @@ export class DesStorageCard extends LitElement {
 
     .temp-alert {
       color: var(--error-color, #d32f2f);
+    }
+
+    /* Placeholder for values the card could not read. */
+    .unavail {
+      color: var(--secondary-text-color);
+      opacity: 0.7;
     }
 
     .badges {
@@ -727,12 +926,12 @@ export class DesStorageCard extends LitElement {
       margin-top: 8px;
     }
 
-    [role='button'].main {
+    .main.clickable {
       cursor: pointer;
       outline: none;
     }
 
-    [role='button'].main:focus-visible {
+    .main.clickable:focus-visible {
       outline: 2px solid var(--primary-color, #03a9f4);
       outline-offset: 3px;
       border-radius: 6px;

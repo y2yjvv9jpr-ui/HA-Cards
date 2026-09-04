@@ -21,6 +21,14 @@ export function formatDecimal(value: number, digits = 1): string {
   }).format(value);
 }
 
+/** "12,4" / "5,0" - exactly `digits` decimals, so readouts do not jitter. */
+export function formatFixed(value: number, digits = 1): string {
+  return new Intl.NumberFormat(LOCALE, {
+    minimumFractionDigits: digits,
+    maximumFractionDigits: digits,
+  }).format(value);
+}
+
 export function clamp(value: number, min: number, max: number): number {
   return Math.min(max, Math.max(min, value));
 }

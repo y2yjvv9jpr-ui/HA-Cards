@@ -9,11 +9,11 @@ Aktuell enthalten:
 | ------------------------- | --------------------------------------------------------- |
 | `custom:des-storage-card` | Speicherkarte — Varianten `battery` und `thermal_group`    |
 
-> **Phase 1:** Die Karte ist reine Darstellung. Alle Werte kommen als statische
-> Werte direkt aus der YAML-Konfiguration — keine Entity-Bindung, keine
-> Berechnungen. Die Bedienelemente schalten ausschließlich den lokalen
-> Anzeigezustand um; nichts wird gespeichert. Siehe
-> [Phase 2](#phase-2-entities-statt-statischer-werte).
+> **Phase 2 — lesend.** Jedes Wertfeld nimmt einen statischen Wert **oder** eine
+> Entity-ID. Die Karte liest aus `hass.states` und rendert bei jedem
+> Zustandswechsel neu. Die Bedienelemente zeigen die gelesenen Werte, ändern
+> aber weiterhin nur den lokalen Anzeigezustand — geschrieben wird nichts.
+> Service-Calls folgen in [Phase 3](#ausblick-phase-3).
 
 ---
 
@@ -24,7 +24,7 @@ npm install
 npm run build
 ```
 
-Ergebnis: `dist/daniels-energy-cards.js` (~42 kB, Lit ist mit eingebettet).
+Ergebnis: `dist/daniels-energy-cards.js` (~49 kB, Lit ist mit eingebettet).
 
 Weitere Skripte:
 
@@ -116,20 +116,58 @@ Gemeinsame Optionen:
 Kompakte Karte für einen einzelnen Akku. Die Bedienzeile ist **standardmäßig
 eingeklappt** — ein Klick auf die Hauptzeile oder das Chevron klappt sie auf.
 
-| Option           | Typ                                                                     | Beschreibung                                                     |
-| ---------------- | ----------------------------------------------------------------------- | ---------------------------------------------------------------- |
-| `status`         | `charging` \| `discharging` \| `idle` \| `standby` \| `heating` \| `off` | **Pflicht.** Steuert das Status-Badge.                            |
-| `soc`            | number (%)                                                              | Ladestand; füllt das Batteriesymbol, steht groß daneben.          |
-| `capacity_kwh`   | number                                                                  | Kapazität — erstes Segment der Meta-Zeile.                        |
-| `energy_kwh`     | number                                                                  | Restenergie, klein neben dem Ladestand.                           |
-| `power_w`        | number                                                                  | Vorzeichen: **negativ = Entladen**, **positiv = Laden**.          |
-| `temp_c`         | number \| `null`                                                        | Akkutemperatur. Bei `null` entfällt das Segment in der Meta-Zeile. |
-| `threshold_pct`  | number                                                                  | Minimaler Ladestand; Startwert des Sliders (10–80, Schritt 5).    |
-| `charge_target_pct` | number                                                               | Ladeziel für erzwungenes Laden; Slider 50–100, Schritt 5. Standard: `100`. |
-| `charge_mode`    | `auto` \| `charge`                                                      | Startzustand des Lademodus. Standard: `auto`.                     |
-| `time_remaining` | string \| `null`                                                        | Freitext, z. B. `"4:36 h bis 20 %"`.                              |
-| `time_at`        | string \| `null`                                                        | Freitext, z. B. `"um 00:12"`.                                     |
-| `backup`         | `none` \| `ready` \| `active`                                           | Notstrom-Badge. Bei `none` (Standard) ausgeblendet.               |
+Sofern nicht anders vermerkt, nimmt jede Option einen statischen Wert **oder**
+eine Entity-ID.
+
+| Option                       | Typ                          | Beschreibung                                                                     |
+| ---------------------------- | ---------------------------- | -------------------------------------------------------------------------------- |
+| `soc`                        | number (%) \| Entity         | Ladestand; füllt das Batteriesymbol, steht groß daneben.                          |
+| `capacity_kwh`               | number \| Entity             | Kapazität — erstes Segment der Meta-Zeile.                                        |
+| `power_w`                    | number \| Entity             | Vorzeichen: **negativ = Entladen**, **positiv = Laden**.                          |
+| `voltage_entity`             | Entity                       | Zusammen mit `current_entity` Ersatz für `power_w` (U × I).                        |
+| `current_entity`             | Entity                       | siehe `voltage_entity`.                                                           |
+| `invert_power`               | boolean                      | Dreht das Vorzeichen der ermittelten Leistung. Standard: `false`.                  |
+| `status`                     | Status \| Entity             | **Optional** — ohne Angabe aus der Leistung abgeleitet.                            |
+| `energy_kwh`                 | number \| Entity             | **Optional** — ohne Angabe aus `soc × capacity_kwh / 100` berechnet.               |
+| `temp_c`                     | number \| Entity \| `null`   | Akkutemperatur. Bei `null` entfällt das Segment in der Meta-Zeile.                 |
+| `threshold_pct`              | number \| Entity             | Minimaler Ladestand; Slider 10–80, Schritt 5.                                     |
+| `charge_target_pct`          | number \| Entity             | Ladeziel für erzwungenes Laden; Slider 50–100, Schritt 5.                          |
+| `charge_mode`                | `auto` \| `charge` \| Entity | Startzustand des Lademodus. Standard: `auto`.                                     |
+| `time_remaining`             | string \| Entity             | Restzeit. Hat Vorrang vor den beiden folgenden.                                   |
+| `time_remaining_charging`    | string \| Entity             | Restzeit, solange die Leistung positiv ist.                                       |
+| `time_remaining_discharging` | string \| Entity             | Restzeit sonst.                                                                   |
+| `time_at`                    | string \| Entity             | Zeitpunkt, z. B. `"um 00:12"`.                                                    |
+| `backup`                     | Status \| Objekt             | Notstrom-Badge, siehe unten. Standard `none` (ausgeblendet).                       |
+| `controls`                   | boolean                      | `false` blendet Bedienzeile **und** Chevron aus — reine Anzeigekarte. Standard `true`. |
+
+Gültige `status`-Werte: `charging`, `discharging`, `idle`, `standby` (= `idle`),
+`heating`, `off`.
+
+**Abgeleitete Werte** — jedes dieser Felder darf fehlen:
+
+| Feld         | Ableitung, wenn nicht gesetzt                                       |
+| ------------ | ------------------------------------------------------------------- |
+| `power_w`    | `voltage_entity × current_entity`                                    |
+| `status`     | Leistung < −25 W → `discharging`, > 25 W → `charging`, sonst `idle`  |
+| `energy_kwh` | `soc × capacity_kwh / 100`                                           |
+
+**`backup` als Entität** — statt `none`/`ready`/`active` auch ein Objekt:
+
+```yaml
+backup:
+  entity: sensor.zendure_offgrid_mode
+  active_states: ["On"]      # Vergleich ohne Beachtung der Gross-/Kleinschreibung
+```
+
+Solange der State **nicht** in `active_states` steht, zeigt die Karte grün
+„Notstrom bereit“, sonst rot „NOTSTROM AKTIV“. Ist die Entität nicht verfügbar,
+entfällt das Badge — eine nicht lesbare Notstromquelle wird bewusst nicht als
+„bereit“ gemeldet.
+
+**Restzeit** — ohne `time_remaining` wählt die Karte nach dem Vorzeichen der
+Leistung: positiv → `time_remaining_charging`, sonst
+`time_remaining_discharging`. States wie `Not Charging`, `Not Discharging`,
+`unknown` oder `unavailable` blenden die Zeile aus.
 
 **Aufbau**
 
@@ -185,12 +223,16 @@ Fasst 1–5 Wärmesenken (z. B. Aquarien) in **einer** Karte zusammen.
 
 Je Eintrag in `items`:
 
-| Option       | Typ                       | Beschreibung                                      |
-| ------------ | ------------------------- | ------------------------------------------------- |
-| `name`       | string                    | **Pflicht.** Zeilenbeschriftung.                  |
-| `energy_kwh` | number                    | Heute eingespeichert.                             |
-| `power_w`    | number                    | Aktuelle Heizleistung; `> 0` zählt als „heizt“.   |
-| `mode`       | `on` \| `auto` \| `off`   | Startstellung des Umschalters. Standard: `auto`.  |
+| Option          | Typ                               | Beschreibung                                                            |
+| --------------- | --------------------------------- | ----------------------------------------------------------------------- |
+| `name`          | string                            | **Pflicht.** Zeilenbeschriftung.                                        |
+| `energy_kwh`    | number \| Entity                  | Heute eingespeichert.                                                   |
+| `power_w`       | number \| Entity                  | Aktuelle Heizleistung; `> 0` zählt als „heizt“.                          |
+| `mode`          | `on` \| `auto` \| `off` \| Entity | Startstellung des Umschalters. Hat Vorrang vor `switch_entity`.          |
+| `switch_entity` | Entity (`switch.*`)               | Ohne `mode`: Umschalter steht bei State `on` auf **An**, sonst auf **Aus**. |
+
+`Auto` ist in Phase 2 nur lokal wählbar — es gibt keine Entität, die diesen
+Zustand abbildet.
 
 **Aufbau**
 
@@ -214,9 +256,15 @@ Je Eintrag in `items`:
   `--primary-text-color`, `--secondary-text-color`, `--info-color`,
   `--warning-color`, `--success-color`, `--error-color`), hell wie dunkel.
   `card-mod` wird nicht benötigt.
-- **Phase 1** — alle Bedienelemente ändern **nur den lokalen Anzeigezustand**:
-  Aufklappzustand, Lademodus, Slider und Umschalter. Nichts wird gespeichert,
-  ein Reload stellt die Konfigurationswerte wieder her.
+- **Nicht lesbare Werte** — fehlt eine Entität oder steht sie auf `unavailable`
+  bzw. `unknown`, zeigt die Karte ein gedämpftes „–“ an der jeweiligen Stelle.
+  Sie rendert in jedem Fall weiter und bricht nie ab.
+- **Nachkommastellen** — Ladestand ohne, kWh und Temperatur mit einer,
+  Leistung ganzzahlig gerundet.
+- **Phase 2** — alle Bedienelemente ändern **nur den lokalen Anzeigezustand**:
+  Aufklappzustand, Lademodus, Slider und Umschalter. Bis zur ersten Berührung
+  zeigen sie den Wert aus Config bzw. Entität; danach gilt der lokale Stand bis
+  zum Reload. Geschrieben wird nichts.
 
 ### Einheitliche Höhen
 
@@ -273,106 +321,137 @@ Speichern automatisch.
 
 ## Beispiel-YAML
 
-Zwei Hausakkus, die Zendure mit Notstrom, dazu eine Gruppenkarte für die drei
-Aquarien:
+Die beiden Hausakkus (Leistung aus Spannung x Strom, Status und Restenergie
+abgeleitet), die Zendure AC+ mit Notstrom-Entität, dazu die drei Aquarien als
+eine Gruppe:
 
 ```yaml
 type: vertical-stack
 cards:
   # ---------- Hausakkus ----------
+  # Kein power_w: die Leistung entsteht aus voltage_entity x current_entity.
+  # Kein status: wird aus dem Vorzeichen der Leistung abgeleitet.
+  # Kein energy_kwh: wird aus soc x capacity_kwh berechnet.
   - type: custom:des-storage-card
     variant: battery
     name: Hausakku 1
-    status: discharging
-    soc: 62
-    capacity_kwh: 10.2
-    energy_kwh: 6.3
-    power_w: -1240
-    temp_c: 23.5
-    threshold_pct: 20
-    charge_target_pct: 90
-    charge_mode: auto
-    time_remaining: 4:36 h bis 20 %
-    time_at: um 00:12
+    soc: sensor.inverter_battery_1
+    temp_c: sensor.inverter_battery_1_temperature
+    voltage_entity: sensor.inverter_battery_1_voltage
+    current_entity: sensor.inverter_battery_1_current
+    capacity_kwh: 6.55
+    threshold_pct: number.inverter_battery_low_soc
+    charge_target_pct: 100
     backup: none
 
+  # controls: false macht daraus eine reine Anzeigekarte - kein Chevron,
+  # keine Bedienzeile.
   - type: custom:des-storage-card
     variant: battery
     name: Hausakku 2
-    status: charging
-    soc: 18
-    capacity_kwh: 10.2
-    energy_kwh: 1.8
-    power_w: 2450
-    temp_c: 21.0
-    threshold_pct: 15
-    charge_target_pct: 80
-    charge_mode: charge
-    time_remaining: 2:10 h bis 15 %
-    time_at: um 14:45
+    soc: sensor.inverter_battery_2
+    temp_c: sensor.inverter_battery_2_temperature
+    voltage_entity: sensor.inverter_battery_2_voltage
+    current_entity: sensor.inverter_battery_2_current
+    capacity_kwh: 6.55
+    threshold_pct: number.inverter_battery_low_soc
+    charge_target_pct: 100
     backup: none
+    controls: false
 
-  # ---------- Zendure mit Notstrom ----------
-  # temp_c: null lässt das °C-Segment in der Kopfzeile weg.
+  # ---------- Zendure AC+ ----------
   - type: custom:des-storage-card
     variant: battery
-    name: Zendure
-    status: idle
-    soc: 88
-    capacity_kwh: 3.84
-    energy_kwh: 3.4
-    power_w: 0
-    temp_c: null
-    threshold_pct: 30
-    charge_target_pct: 100
-    charge_mode: auto
-    time_remaining: null
-    time_at: null
-    backup: ready
+    name: Zendure AC+
+    soc: sensor.zendure_total_state_of_charge
+    power_w: sensor.zendure_power
+    temp_c: sensor.zendure_battery_1_temperature
+    capacity_kwh: sensor.zendure_total_capacity
+    threshold_pct: input_number.zendure_setting_minimum_allowed_state_of_charge
+    charge_target_pct: input_number.zendure_setting_maximum_allowed_state_of_charge
+    time_remaining_charging: sensor.zendure_indication_remaining_charge_time
+    time_remaining_discharging: sensor.zendure_indication_remaining_discharge_time
+    backup:
+      entity: sensor.zendure_offgrid_mode
+      active_states:
+        - "On"
 
   # ---------- Aquarien als eine Gruppe ----------
   - type: custom:des-storage-card
     variant: thermal_group
-    name: Aquarien
+    name: Wärmespeicher Aquarien
     items:
-      - name: Wohnzimmer 1200 L
-        energy_kwh: 1.24
-        power_w: 300
-        mode: auto
-      - name: Büro 700 L
-        energy_kwh: 0.42
-        power_w: 0
-        mode: "off"
-      - name: Keller 600 L
-        energy_kwh: 12.75
-        power_w: 1200
-        mode: "on"
+      - name: Aquarium 1200 L
+        energy_kwh: sensor.arbeitszimmer_aquariumsolarheizer1_aquarium_solarheizer_1_heute
+        power_w: sensor.aquariumsolarheizer1_switch_0_power
+        switch_entity: switch.aquariumsolarheizer1_switch_0
+      - name: Aquarium 700 L
+        energy_kwh: sensor.arbeitszimmer_aquariumsolarheizer2_aquarium_solarheizer_2_heute
+        power_w: sensor.aquariumsolarheizer2_switch_0_power
+        switch_entity: switch.aquariumsolarheizer2_switch_0
+      - name: Aquarium 600 L
+        energy_kwh: sensor.arbeitszimmer_aquarienheizer600l_aquarium_solarheizer_600l_heute
+        power_w: sensor.aquarienheizer600l_leistung
+        switch_entity: switch.aquarienheizer600l
+```
+
+Statische Werte funktionieren weiterhin überall — nützlich zum Ausprobieren
+eines Layouts, bevor die Entitäten feststehen:
+
+```yaml
+- type: custom:des-storage-card
+  variant: battery
+  name: Testkarte
+  status: discharging
+  soc: 62
+  capacity_kwh: 10.2
+  power_w: -1240
+  temp_c: 23.5
+  threshold_pct: 20
+  charge_target_pct: 90
+  time_remaining: 4:36 h bis 20 %
+  time_at: um 00:12
 ```
 
 ---
 
-## Phase 2: Entities statt statischer Werte
+## Entity-Anbindung
 
-Die Config-Schlüssel sind nach dem **Wert** benannt, den sie tragen, nicht nach
-ihrer Quelle. Dadurch kann später an genau derselben Stelle eine Entity stehen:
+Jedes Wertfeld nimmt einen statischen Wert oder eine Entity-ID am selben
+Schlüssel:
 
 ```yaml
-soc: 62                    # Phase 1 — statisch
-soc: sensor.akku_soc       # Phase 2 — Entity, gleicher Schlüssel
+soc: 62                    # statischer Wert
+soc: sensor.akku_soc       # Entität, gleicher Schlüssel
 ```
 
-Dafür sind nur zwei Stellen anzufassen:
+Unterschieden wird in [`src/resolve.ts`](src/resolve.ts) über das Muster
+`domain.object_id` — bewusst strenger als „enthält einen Punkt“, damit `6.55`
+und `4:36 h bis 20 %` nicht versehentlich als Entität gelesen werden.
 
-- [`src/types.ts`](src/types.ts) — die betroffenen Felder auf `number | string`
-  bzw. `string` erweitern.
-- [`src/resolve.ts`](src/resolve.ts) — `resolveNumber()` / `resolveString()` um
-  den Zweig ergänzen, der eine Entity-ID in `hass.states` nachschlägt.
+Der Resolver unterscheidet drei Fälle, und die Karte behandelt sie verschieden:
 
-Kein einziger Aufrufer in der Karte muss geändert werden. Ebenso vorbereitet:
-die lokalen Umschalter (`_toggleChargeMode()`, `_setItemMode()`,
-`_onThresholdInput()`) in [`src/des-storage-card.ts`](src/des-storage-card.ts)
-kapseln den Zustand bereits an einer Stelle — dort kommen später die
-Service-Calls dazu.
+| Ergebnis      | Bedeutung                                   | Darstellung                       |
+| ------------- | ------------------------------------------- | --------------------------------- |
+| `unset`       | gar nicht konfiguriert                      | Wert wird abgeleitet oder entfällt |
+| `value`       | nutzbarer Wert, statisch oder aus `hass`    | normal                            |
+| `unavailable` | konfiguriert, aber Entität fehlt/unavailable | gedämpftes „–“                    |
+
+Diese Trennung ist der Grund, warum eine fehlende `energy_kwh` aus
+`soc × capacity_kwh` berechnet wird, eine auf `unavailable` stehende Entität
+aber ein „–“ ergibt statt einer stillen Falschrechnung.
+
+`hass` ist eine reaktive Property — Home Assistant weist sie bei jeder
+Zustandsänderung neu zu, und Lit rendert daraufhin neu.
+
+## Ausblick: Phase 3
+
+Schreibender Zugriff. Die lokalen Umschalter
+(`_setChargeMode()`, `_setItemMode()`, `_onThresholdInput()`,
+`_onTargetInput()`) in [`src/des-storage-card.ts`](src/des-storage-card.ts)
+kapseln den Zustand bereits an je einer Stelle — dort kommen die Service-Calls
+dazu. Die Felder `*_local` unterscheiden schon heute „Benutzer hat angefasst“
+von „folgt der Entität“, was dafür die Grundlage ist.
 
 ## Projektstruktur
 
@@ -381,7 +460,7 @@ src/
   index.ts             Registrierung des Custom Elements + Karten-Picker-Eintrag
   des-storage-card.ts  Die Karte selbst (Rendering + Styles)
   types.ts             Config-Schema und HA-Typen
-  resolve.ts           Nahtstelle statischer Wert ↔ Entity (Phase 2)
+  resolve.ts           Statischer Wert ↔ Entity: Auflösung über hass.states
   format.ts            Zahlenformatierung (de-DE)
 vite.config.ts         Lib-Build → dist/daniels-energy-cards.js
 hacs.json              HACS-Manifest (Typ Dashboard)
