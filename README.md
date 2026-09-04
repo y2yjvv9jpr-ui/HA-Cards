@@ -32,7 +32,42 @@ npm run watch      # Build im Watch-Modus
 npm run typecheck  # tsc --noEmit
 ```
 
-## Installation in Home Assistant
+## Installation über HACS (empfohlen)
+
+Das Repository ist als benutzerdefiniertes HACS-Repository vom Typ **Dashboard**
+installierbar. Die gebaute Datei `dist/daniels-energy-cards.js` liegt fertig im
+Repository — es gibt keine CI und keine Release-Assets, HACS lädt sie direkt aus
+dem Standard-Branch.
+
+1. In Home Assistant **HACS** öffnen.
+2. Oben rechts **⋮ → Benutzerdefinierte Repositories**.
+3. Eintragen:
+
+   | Feld       | Wert                                          |
+   | ---------- | --------------------------------------------- |
+   | Repository | `https://github.com/y2yjvv9jpr-ui/HA-Cards`   |
+   | Typ        | **Dashboard**                                 |
+
+4. **Hinzufügen**, dann in der HACS-Liste „Daniels Energy Cards“ öffnen und
+   **Herunterladen**.
+5. Home Assistant neu starten bzw. Browser hart neu laden (Strg+Shift+R).
+
+HACS legt die Datei unter `/config/www/community/HA-Cards/` ab und trägt die
+Lovelace-Ressource in der Regel automatisch ein. Falls nicht, manuell
+hinzufügen (**Einstellungen → Dashboards → ⋮ → Ressourcen**):
+
+| Feld          | Wert                                          |
+| ------------- | --------------------------------------------- |
+| URL           | `/hacsfiles/HA-Cards/daniels-energy-cards.js` |
+| Ressourcentyp | **JavaScript-Modul** (`module`)               |
+
+> **Hinweis zum Dateinamen:** HACS erwartet standardmäßig eine `.js`-Datei, die
+> so heißt wie das Repository. Da das Repository `HA-Cards` heißt, die Datei
+> aber `daniels-energy-cards.js`, setzt die [`hacs.json`](hacs.json) den Key
+> `filename` — der überschreibt die Namenskonvention. Beim Umbenennen der
+> Build-Datei muss `hacs.json` mitgezogen werden.
+
+## Installation manuell
 
 1. `dist/daniels-energy-cards.js` nach `/config/www/` kopieren
    (der Ordner ist unter der URL `/local/` erreichbar).
@@ -226,4 +261,10 @@ src/
   resolve.ts           Nahtstelle statischer Wert ↔ Entity (Phase 2)
   format.ts            Zahlenformatierung (de-DE)
 vite.config.ts         Lib-Build → dist/daniels-energy-cards.js
+hacs.json              HACS-Manifest (Typ Dashboard)
+dist/                  Build-Ergebnis — wird bewusst mitcommittet,
+                       weil HACS die Datei direkt aus dem Repo ausliefert
 ```
+
+> Nach jeder Codeänderung `npm run build` ausführen **und** `dist/` mit
+> committen, sonst installiert HACS weiterhin den alten Stand.

@@ -1,8 +1,8 @@
 # Dependencies
 node_modules/
 
-# Build output
-dist/
+# dist/ is deliberately NOT ignored: HACS serves the built file straight
+# from the repository, so dist/daniels-energy-cards.js must be committed.
 
 # OS
 .DS_Store
