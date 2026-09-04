@@ -122,21 +122,57 @@ function targetState(
     : undefined;
 }
 
-/** Does the entity's current state mean "charging"? */
+/**
+ * Does the entity's current state mean "charging"?
+ *
+ * Only a positive match against `charge_state` counts. Inferring "charging"
+ * from "not auto_state" would be wrong for any select that has a third
+ * option - a Zendure sitting on `Standby` is neither charging nor in auto.
+ */
 export function isChargeState(
   control: ChargeModeControlConfig,
   state: string,
 ): boolean {
   const charge = targetState(control, 'charge');
-  if (charge !== undefined) {
-    return charge.trim().toLowerCase() === state.trim().toLowerCase();
+  if (charge === undefined) return false;
+  return charge.trim().toLowerCase() === state.trim().toLowerCase();
+}
+
+/**
+ * Checks a `charge_mode_control` block at config time.
+ *
+ * Returns the error message to throw, or `null` when the block is usable.
+ * Without this a typo in `charge_state` silently produced a wrong - and
+ * un-writable - segment state with nothing logged anywhere.
+ */
+export function validateChargeModeControl(control: unknown): string | null {
+  if (control === null || typeof control !== 'object') {
+    return '"charge_mode_control" muss ein Objekt mit "entity" sein';
   }
-  // No charge_state configured on a select: fall back to the auto option.
-  const auto = targetState(control, 'auto');
-  if (auto !== undefined) {
-    return auto.trim().toLowerCase() !== state.trim().toLowerCase();
+
+  const { entity, charge_state, auto_state } = control as ChargeModeControlConfig;
+
+  if (typeof entity !== 'string' || entity.length === 0) {
+    return '"charge_mode_control" braucht "entity"';
   }
-  return false;
+  if (!isWritableChargeMode(control)) {
+    return `"charge_mode_control.entity" muss select, input_select, switch oder input_boolean sein (ist: ${entity})`;
+  }
+
+  // Switch-like entities are binary, so on/off are sensible defaults. A select
+  // has no such default: both options have to be named.
+  if (SELECT_DOMAINS.has(domainOf(entity))) {
+    const missing = [
+      charge_state === undefined ? 'charge_state' : null,
+      auto_state === undefined ? 'auto_state' : null,
+    ].filter((name): name is string => name !== null);
+
+    if (missing.length > 0) {
+      return `"charge_mode_control" braucht ${missing.join(' und ')} für ${entity}`;
+    }
+  }
+
+  return null;
 }
 
 /** Writes the charge mode, picking the service from the entity's domain. */

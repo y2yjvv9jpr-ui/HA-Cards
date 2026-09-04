@@ -6,6 +6,7 @@ import {
   isWritableChargeMode,
   isWritableNumber,
   isWritableSwitch,
+  validateChargeModeControl,
   writeChargeMode,
   writeNumber,
   writeSwitch,
@@ -49,6 +50,15 @@ const POWER_DEADBAND_W = 25;
  * would queue a service call per step.
  */
 const WRITE_DEBOUNCE_MS = 500;
+
+/**
+ * How long an optimistic value may survive without the entity confirming it.
+ *
+ * Without this the override is only released on a match, so a device that
+ * refuses the change (or answers with a third state) leaves the control
+ * permanently detached from its entity until the dashboard is reloaded.
+ */
+const SETTLE_TIMEOUT_MS = 8000;
 
 /** Remaining-time states that mean "nothing to show". */
 const NO_TIME_STATES = new Set([
@@ -128,6 +138,9 @@ export class DesStorageCard extends LitElement {
   /** Pending debounced slider writes, keyed by which slider they belong to. */
   private _writeTimers = new Map<'threshold' | 'target', number>();
 
+  /** Deadlines after which an unconfirmed optimistic value is dropped. */
+  private _settleTimers = new Map<string, number>();
+
   constructor() {
     super();
     this._expanded = false;
@@ -148,6 +161,11 @@ export class DesStorageCard extends LitElement {
     }
     if (!config.name) {
       throw new Error('des-storage-card: "name" ist erforderlich');
+    }
+
+    if (config.variant === 'battery' && config.charge_mode_control !== undefined) {
+      const problem = validateChargeModeControl(config.charge_mode_control);
+      if (problem !== null) throw new Error(`des-storage-card: ${problem}`);
     }
 
     if (config.variant === 'thermal_group') {
@@ -179,6 +197,28 @@ export class DesStorageCard extends LitElement {
     super.disconnectedCallback();
     for (const timer of this._writeTimers.values()) window.clearTimeout(timer);
     this._writeTimers.clear();
+    for (const timer of this._settleTimers.values()) window.clearTimeout(timer);
+    this._settleTimers.clear();
+  }
+
+  /** Drops an optimistic value that the entity never confirmed. */
+  private _holdOptimistic(key: string, release: () => void): void {
+    this._clearSettle(key);
+    this._settleTimers.set(
+      key,
+      window.setTimeout(() => {
+        this._settleTimers.delete(key);
+        release();
+      }, SETTLE_TIMEOUT_MS),
+    );
+  }
+
+  private _clearSettle(key: string): void {
+    const timer = this._settleTimers.get(key);
+    if (timer !== undefined) {
+      window.clearTimeout(timer);
+      this._settleTimers.delete(key);
+    }
   }
 
   /**
@@ -202,6 +242,7 @@ export class DesStorageCard extends LitElement {
         )
       ) {
         this._thresholdLocal = null;
+        this._clearSettle('threshold');
       }
 
       if (
@@ -215,6 +256,7 @@ export class DesStorageCard extends LitElement {
         )
       ) {
         this._targetLocal = null;
+        this._clearSettle('target');
       }
 
       const control = config.charge_mode_control;
@@ -222,7 +264,10 @@ export class DesStorageCard extends LitElement {
         const state = resolveText(control.entity, this.hass);
         if (state.kind === 'value') {
           const actual = isChargeState(control, state.value) ? 'charge' : 'auto';
-          if (actual === this._chargeModeLocal) this._chargeModeLocal = null;
+          if (actual === this._chargeModeLocal) {
+            this._chargeModeLocal = null;
+            this._clearSettle('chargeMode');
+          }
         }
       }
       return;
@@ -241,6 +286,7 @@ export class DesStorageCard extends LitElement {
       if (actual === local) {
         next[index] = null;
         changed = true;
+        this._clearSettle(`item:${index}`);
       }
     });
     if (changed) this._itemModesLocal = next;
@@ -415,15 +461,22 @@ export class DesStorageCard extends LitElement {
       : null;
   }
 
-  private _chargeMode(config: DesStorageCardConfig): ChargeMode {
+  /**
+   * `null` means "cannot say" - the control is bound to an entity the card
+   * cannot read right now, so no segment is highlighted. Showing a confident
+   * "Laden" for an entity that never answered is how a wrong entity id stayed
+   * invisible before.
+   */
+  private _chargeMode(config: DesStorageCardConfig): ChargeMode | null {
     if (this._chargeModeLocal !== null) return this._chargeModeLocal;
 
     const control = config.charge_mode_control;
     if (control?.entity) {
+      // A configured control owns the state; never fall back to charge_mode,
+      // which would report a stale static value as if it were live.
       const state = resolveText(control.entity, this.hass);
-      if (state.kind === 'value') {
-        return isChargeState(control, state.value) ? 'charge' : 'auto';
-      }
+      if (state.kind !== 'value') return null;
+      return isChargeState(control, state.value) ? 'charge' : 'auto';
     }
 
     const resolved = resolveText(config.charge_mode, this.hass);
@@ -796,12 +849,17 @@ export class DesStorageCard extends LitElement {
   /** One segmented control, used for both charge mode and item modes. */
   private _renderSegmented<T extends string>(
     options: ReadonlyArray<{ value: T; label: string }>,
-    active: T,
+    active: T | null,
     onSelect: (value: T) => void,
     ariaLabel: string,
   ): TemplateResult {
     return html`
-      <div class="seg" role="group" aria-label=${ariaLabel}>
+      <div
+        class="seg ${active === null ? 'unknown' : ''}"
+        role="group"
+        aria-label=${ariaLabel}
+        title=${active === null ? 'Zustand nicht lesbar' : nothing}
+      >
         ${options.map(
           ({ value, label }) => html`
             <button
@@ -870,7 +928,11 @@ export class DesStorageCard extends LitElement {
     const control = this._config?.charge_mode_control;
     if (!control?.entity || !isWritableChargeMode(control)) return;
 
+    this._holdOptimistic('chargeMode', () => {
+      this._chargeModeLocal = null;
+    });
     void this._write(writeChargeMode(this.hass, control, mode), () => {
+      this._clearSettle('chargeMode');
       this._chargeModeLocal = null;
     });
   }
@@ -912,7 +974,12 @@ export class DesStorageCard extends LitElement {
       which,
       window.setTimeout(() => {
         this._writeTimers.delete(which);
+        this._holdOptimistic(which, () => {
+          if (which === 'threshold') this._thresholdLocal = null;
+          else this._targetLocal = null;
+        });
         void this._write(writeNumber(this.hass, entityId, value), () => {
+          this._clearSettle(which);
           if (which === 'threshold') this._thresholdLocal = null;
           else this._targetLocal = null;
         });
@@ -929,10 +996,15 @@ export class DesStorageCard extends LitElement {
     // "Auto" hands control back to the surplus automation - nothing to call.
     if (mode === 'auto' || !isWritableSwitch(entityId)) return;
 
-    void this._write(writeSwitch(this.hass, entityId as string, mode === 'on'), () => {
+    const release = () => {
       const revert = [...this._itemModesLocal];
       revert[index] = null;
       this._itemModesLocal = revert;
+    };
+    this._holdOptimistic(`item:${index}`, release);
+    void this._write(writeSwitch(this.hass, entityId as string, mode === 'on'), () => {
+      this._clearSettle(`item:${index}`);
+      release();
     });
   }
 
@@ -1358,6 +1430,10 @@ export class DesStorageCard extends LitElement {
       border-left: 1px solid var(--divider-color, rgba(127, 127, 127, 0.28));
       color: var(--secondary-text-color);
       cursor: pointer;
+    }
+
+    .seg.unknown {
+      opacity: 0.5;
     }
 
     .seg button:first-child {

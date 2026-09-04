@@ -25,7 +25,7 @@ npm install
 npm run build
 ```
 
-Ergebnis: `dist/daniels-energy-cards.js` (~72 kB, gzip ~19 kB; Lit und **beide**
+Ergebnis: `dist/daniels-energy-cards.js` (~74 kB, gzip ~19 kB; Lit und **beide**
 Karten sind mit eingebettet).
 
 Weitere Skripte:
@@ -190,8 +190,20 @@ Der Service richtet sich nach der Domain der Entität:
 | `select`, `input_select`    | `select_option`        | **Pflicht** — die Options-Strings |
 | `switch`, `input_boolean`   | `turn_on` / `turn_off` | optional, Standard `on` / `off`   |
 
-Das aktive Segment wird aus dem State abgeleitet: State == `charge_state`
-→ **Laden**, sonst **Auto**.
+Das aktive Segment wird aus dem State abgeleitet: **nur** ein Treffer auf
+`charge_state` bedeutet **Laden**, alles andere **Auto**. Ein dritter Zustand
+(die Zendure kennt z. B. `Standby`) ist damit korrekt *kein* Laden — aus
+„nicht `auto_state`“ wird nicht mehr auf Laden geschlossen.
+
+Für ein `select`/`input_select` sind **beide** Optionen Pflicht; fehlt eine,
+meldet die Karte beim Laden einen Konfigurationsfehler statt still den
+falschen Zustand anzuzeigen. Die Options-Strings müssen exakt so lauten wie
+in Entwicklerwerkzeuge → Zustände (Groß-/Kleinschreibung und Leerzeichen am
+Rand werden dabei ignoriert).
+
+Lässt sich die Entität gerade nicht lesen, ist **kein** Segment aktiv und der
+Umschalter wird abgeblendet — eine falsche Entity-ID fällt so sofort auf,
+statt als selbstbewusstes „Laden“ durchzugehen.
 
 **Aufbau**
 
@@ -573,6 +585,12 @@ gemacht wurde (Automation, zweites Dashboard).
 **Fehlschlag.** Wird der Service-Call abgelehnt, verwirft die Karte die lokale
 Überschreibung und zeigt wieder den echten Entity-Wert. Der Fehler landet
 zusätzlich in der Browser-Konsole.
+
+**Zeitgrenze.** Bestätigt die Entität den geschriebenen Wert nicht innerhalb
+von 8 Sekunden — etwa weil das Gerät den Befehl annimmt, aber auf einem
+anderen Zustand landet — gibt die Karte die optimistische Anzeige trotzdem
+frei. Ohne diese Grenze bliebe das Bedienelement bis zum Neuladen von seiner
+Entität abgekoppelt.
 
 ## Entity-Anbindung
 
