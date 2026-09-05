@@ -12,6 +12,9 @@ import type {
 
 const PERIOD_ORDER: ReadonlyArray<StatsPeriod> = ['day', 'week', 'month', 'year'];
 const PERIOD_SET: ReadonlySet<StatsPeriod> = new Set(PERIOD_ORDER);
+
+/** Grid rows the card occupies in a HA sections view. */
+const GRID_ROWS = 4;
 const PERIOD_LABEL: Record<StatsPeriod, string> = {
   day: 'Tag',
   week: 'Woche',
@@ -111,6 +114,11 @@ export class DesStatsCard extends LitElement {
       ? METRICS.filter((m) => this._periodValues(period)[m.key] !== null).length
       : 0;
     return 2 + Math.ceil(rows / 2);
+  }
+
+  /** HA sections view: full-width, fixed height. */
+  getGridOptions(): { columns: string; rows: number; min_rows: number } {
+    return { columns: 'full', rows: GRID_ROWS, min_rows: GRID_ROWS };
   }
 
   static getStubConfig(): DesStatsCardConfig {

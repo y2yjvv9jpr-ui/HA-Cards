@@ -51,6 +51,10 @@ const TARGET_RANGE: SliderRange = { min: 50, max: 100, step: 5 };
 
 const MAX_ITEMS = 5;
 
+/** Grid rows in a HA sections view: a battery is short, a group grows per item. */
+const GRID_ROWS_BATTERY = 2;
+const THERMAL_GRID_BASE = 1;
+
 /** Below this many watts the battery counts as idle. `idle_threshold_w` wins. */
 const DEFAULT_IDLE_THRESHOLD_W = 20;
 
@@ -383,6 +387,18 @@ export class DesStorageCard extends LitElement {
       return 1 + (this._config.items?.length ?? 0);
     }
     return this._expanded ? 3 : 2;
+  }
+
+  /**
+   * HA sections view: full-width, fixed height. A battery is short; a thermal
+   * group grows with its item count (3 items → 4 rows).
+   */
+  getGridOptions(): { columns: string; rows: number; min_rows: number } {
+    const rows =
+      this._config?.variant === 'thermal_group'
+        ? THERMAL_GRID_BASE + (this._config.items?.length ?? 0)
+        : GRID_ROWS_BATTERY;
+    return { columns: 'full', rows, min_rows: rows };
   }
 
   static getStubConfig(): DesStorageCardConfig {

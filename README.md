@@ -363,8 +363,18 @@ Die Karte füllt die Höhe, die ihr Container ihr zuweist (`ha-card` steht auf
 `height: 100%`, der Inhalt ist eine Flex-Spalte). Der Inhalt bleibt dabei oben,
 die Bedienzeile rutscht an die Untergrenze der Karte.
 
-Damit lassen sich mehrere Karten einer Reihe im **Sections-Dashboard** auf
-dieselbe Höhe bringen: allen Karten der Reihe dieselben `grid_options` geben.
+> **Rastergröße wird automatisch gemeldet.** Jede Karte implementiert
+> `getGridOptions()` und meldet der **Sektionen-Ansicht** von sich aus eine
+> volle Spaltenbreite (`columns: full`) und eine feste Zeilenzahl aus ihrer
+> eingeklappten Bauhöhe (Rastereinheit 56 px + 8 px Abstand). Karten einer Reihe
+> stehen damit **ohne** `grid_options` im Dashboard-YAML sauber und gleich hoch
+> im Raster; aufgeklappte Inhalte (z. B. die Akku-Bedienzeile) dürfen über die
+> gemeldete Höhe hinauswachsen. Zum Übersteuern reicht weiterhin ein eigenes
+> `grid_options` an der Karte.
+
+Alternativ (oder in der klassischen **Masonry**-Ansicht) lassen sich mehrere
+Karten einer Reihe auch manuell auf dieselbe Höhe bringen: allen Karten der Reihe
+dieselben `grid_options` geben.
 
 ```yaml
 type: grid

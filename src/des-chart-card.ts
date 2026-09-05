@@ -15,6 +15,9 @@ const DEFAULT_LABEL: Record<StatsPeriod, string> = {
   year: 'Jahr',
 };
 
+/** Grid rows the card occupies in a HA sections view (header + chart). */
+const GRID_ROWS = 6;
+
 /** The embedded card element accepts a `hass` assignment; that is all we need. */
 interface EmbeddedCard extends HTMLElement {
   hass?: HomeAssistant;
@@ -73,7 +76,12 @@ export class DesChartCard extends LitElement {
   }
 
   getCardSize(): number {
-    return 6;
+    return GRID_ROWS;
+  }
+
+  /** HA sections view: full-width, fixed height (header + chart). */
+  getGridOptions(): { columns: string; rows: number; min_rows: number } {
+    return { columns: 'full', rows: GRID_ROWS, min_rows: GRID_ROWS };
   }
 
   static getStubConfig(): DesChartCardConfig {
@@ -282,15 +290,22 @@ export class DesChartCard extends LitElement {
     css`
       :host {
         display: block;
+        height: 100%;
       }
 
       ha-card {
+        height: 100%;
         box-sizing: border-box;
+        display: flex;
+        flex-direction: column;
         background: var(--card-background-color, var(--ha-card-background, #fff));
         color: var(--primary-text-color);
       }
 
       .card {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
         padding: 12px 16px;
       }
 
