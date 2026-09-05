@@ -1,15 +1,14 @@
 import { css } from 'lit';
 
 /**
- * Shared look of the expand/collapse chevron across the cards (storage,
- * inverter, house). Only the icon itself is shared here; the *focusable*
- * wrapper differs per card (the whole main row on the storage card, a centred
- * chevron row on the others), so each card keeps its own focus rule — see the
- * note on the focus fix below.
+ * Shared look and behaviour of the expand/collapse chevron across the cards
+ * (storage, inverter, house). All three now use the same centred
+ * `.chevron-row` wrapper, so both the icon and the row live here rather than
+ * being copied into each card.
  *
  * Focus fix: a mouse click must not leave the focus ring standing, while
- * keyboard focus must stay visible. Each card pairs its focusable wrapper's
- * `:focus { outline: none }` with a `:focus-visible` outline for exactly that.
+ * keyboard focus must stay visible - hence `:focus { outline: none }` paired
+ * with a `:focus-visible` outline.
  */
 export const chevronStyles = css`
   .chevron {
@@ -23,5 +22,27 @@ export const chevronStyles = css`
 
   .chevron.open {
     transform: rotate(180deg);
+  }
+
+  .chevron-row {
+    display: flex;
+    justify-content: center;
+    margin-top: 8px;
+  }
+
+  .chevron-row.clickable {
+    cursor: pointer;
+    outline: none;
+  }
+
+  /* A mouse click must not leave the ring standing; keyboard focus keeps it. */
+  .chevron-row.clickable:focus {
+    outline: none;
+  }
+
+  .chevron-row.clickable:focus-visible {
+    outline: 2px solid var(--primary-color, #03a9f4);
+    outline-offset: 2px;
+    border-radius: 6px;
   }
 `;

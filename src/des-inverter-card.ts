@@ -768,7 +768,7 @@ export class DesInverterCard extends LitElement {
       box-sizing: border-box;
       display: flex;
       flex-direction: column;
-      background: var(--card-background-color, var(--ha-card-background, #fff));
+      background: var(--ha-card-background, var(--card-background-color, #fff));
       color: var(--primary-text-color);
     }
 
@@ -956,30 +956,6 @@ export class DesInverterCard extends LitElement {
       text-align: right;
       white-space: nowrap;
       min-width: 52px;
-    }
-
-    /* --- chevron --- */
-
-    .chevron-row {
-      display: flex;
-      justify-content: center;
-      margin-top: 8px;
-    }
-
-    .chevron-row.clickable {
-      cursor: pointer;
-      outline: none;
-    }
-
-    /* A mouse click must not leave the ring standing; keyboard focus keeps it. */
-    .chevron-row.clickable:focus {
-      outline: none;
-    }
-
-    .chevron-row.clickable:focus-visible {
-      outline: 2px solid var(--primary-color, #03a9f4);
-      outline-offset: 2px;
-      border-radius: 6px;
     }
 
     /* --- expanded details --- */

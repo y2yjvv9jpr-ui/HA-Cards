@@ -767,6 +767,28 @@ const Oe = S`
   .chevron.open {
     transform: rotate(180deg);
   }
+
+  .chevron-row {
+    display: flex;
+    justify-content: center;
+    margin-top: 8px;
+  }
+
+  .chevron-row.clickable {
+    cursor: pointer;
+    outline: none;
+  }
+
+  /* A mouse click must not leave the ring standing; keyboard focus keeps it. */
+  .chevron-row.clickable:focus {
+    outline: none;
+  }
+
+  .chevron-row.clickable:focus-visible {
+    outline: 2px solid var(--primary-color, #03a9f4);
+    outline-offset: 2px;
+    border-radius: 6px;
+  }
 `, Ne = S`
   /* Only while open does the host lift above its neighbours. */
   :host([expanded]) {
@@ -780,21 +802,38 @@ const Oe = S`
     overflow: visible;
   }
 
+  /* While open the card gives up its bottom rounding, so the seam to the
+     panel is a straight line instead of two curves meeting. */
+  :host([expanded]) ha-card {
+    border-bottom-left-radius: 0;
+    border-bottom-right-radius: 0;
+  }
+
   .overlay {
     position: absolute;
-    left: 0;
-    right: 0;
+    /* An absolutely positioned child is laid out against ha-card's *padding*
+       box, so left/right:0 would inset the panel by the card's border width
+       on each side - that was the visible step at both edges. Pulling it out
+       by exactly that width lines the two border boxes up. */
+    left: calc(-1 * var(--ha-card-border-width, 1px));
+    right: calc(-1 * var(--ha-card-border-width, 1px));
+    /* Starts at the top of the card's bottom border and paints over it, so no
+       hairline shows at the seam. */
     top: 100%;
     box-sizing: border-box;
     padding: 12px 16px;
-    background: var(--card-background-color, var(--ha-card-background, #fff));
+    /* Same order ha-card itself uses, otherwise a theme that sets only
+       --ha-card-background gives the two boxes different colours. */
+    background: var(--ha-card-background, var(--card-background-color, #fff));
     border: var(--ha-card-border-width, 1px) solid
-      var(--ha-card-border-color, var(--divider-color, rgba(0, 0, 0, 0.12)));
+      var(--ha-card-border-color, var(--divider-color, #e0e0e0));
     /* It joins the card above, so no top edge; rounded only at the bottom. */
     border-top: none;
     border-radius: 0 0 var(--ha-card-border-radius, 12px)
       var(--ha-card-border-radius, 12px);
-    box-shadow: var(--ha-card-box-shadow, 0 8px 24px rgba(0, 0, 0, 0.35));
+    /* Whatever shadow the card has - "none" in stock HA. A shadow of its own
+       would make the panel read as a second, detached box. */
+    box-shadow: var(--ha-card-box-shadow, none);
     animation: overlay-in 0.12s ease-out;
   }
 
@@ -1601,7 +1640,7 @@ ee.properties = {
       box-sizing: border-box;
       display: flex;
       flex-direction: column;
-      background: var(--card-background-color, var(--ha-card-background, #fff));
+      background: var(--ha-card-background, var(--card-background-color, #fff));
       color: var(--primary-text-color);
     }
 
@@ -1809,30 +1848,6 @@ ee.properties = {
 
     .power.neutral {
       color: var(--secondary-text-color);
-    }
-
-    /* --- chevron --- */
-
-    .chevron-row {
-      display: flex;
-      justify-content: center;
-      margin-top: 8px;
-    }
-
-    .chevron-row.clickable {
-      cursor: pointer;
-      outline: none;
-    }
-
-    /* A mouse click must not leave the ring standing; keyboard focus keeps it. */
-    .chevron-row.clickable:focus {
-      outline: none;
-    }
-
-    .chevron-row.clickable:focus-visible {
-      outline: 2px solid var(--primary-color, #03a9f4);
-      outline-offset: 2px;
-      border-radius: 6px;
     }
 
     /* --- battery controls (collapsed by default) --- */
@@ -2496,7 +2511,7 @@ te.properties = {
       box-sizing: border-box;
       display: flex;
       flex-direction: column;
-      background: var(--card-background-color, var(--ha-card-background, #fff));
+      background: var(--ha-card-background, var(--card-background-color, #fff));
       color: var(--primary-text-color);
     }
 
@@ -2684,30 +2699,6 @@ te.properties = {
       text-align: right;
       white-space: nowrap;
       min-width: 52px;
-    }
-
-    /* --- chevron --- */
-
-    .chevron-row {
-      display: flex;
-      justify-content: center;
-      margin-top: 8px;
-    }
-
-    .chevron-row.clickable {
-      cursor: pointer;
-      outline: none;
-    }
-
-    /* A mouse click must not leave the ring standing; keyboard focus keeps it. */
-    .chevron-row.clickable:focus {
-      outline: none;
-    }
-
-    .chevron-row.clickable:focus-visible {
-      outline: 2px solid var(--primary-color, #03a9f4);
-      outline-offset: 2px;
-      border-radius: 6px;
     }
 
     /* --- expanded details --- */
@@ -3128,7 +3119,7 @@ re.properties = {
       box-sizing: border-box;
       display: flex;
       flex-direction: column;
-      background: var(--card-background-color, var(--ha-card-background, #fff));
+      background: var(--ha-card-background, var(--card-background-color, #fff));
       color: var(--primary-text-color);
     }
 
@@ -3322,30 +3313,6 @@ re.properties = {
       color: var(--secondary-text-color);
       font-variant-numeric: tabular-nums;
       white-space: nowrap;
-    }
-
-    /* --- chevron --- */
-
-    .chevron-row {
-      display: flex;
-      justify-content: center;
-      margin-top: 8px;
-    }
-
-    .chevron-row.clickable {
-      cursor: pointer;
-      outline: none;
-    }
-
-    /* A mouse click must not leave the ring standing; keyboard focus keeps it. */
-    .chevron-row.clickable:focus {
-      outline: none;
-    }
-
-    .chevron-row.clickable:focus-visible {
-      outline: 2px solid var(--primary-color, #03a9f4);
-      outline-offset: 2px;
-      border-radius: 6px;
     }
 
     /* --- expanded "Heute" block --- */
@@ -3925,7 +3892,7 @@ ie.properties = {
     `
 ];
 let ke = ie;
-const Rr = "0.3.1", Ir = [
+const Rr = "0.3.2", Ir = [
   {
     type: "des-storage-card",
     element: ye,

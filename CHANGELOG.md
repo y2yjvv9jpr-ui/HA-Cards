@@ -4,6 +4,33 @@ Alle nennenswerten Änderungen an diesem Projekt werden hier festgehalten.
 Format grob nach [Keep a Changelog](https://keepachangelog.com/de/1.1.0/),
 Versionierung nach [SemVer](https://semver.org/lang/de/).
 
+## [0.3.2]
+
+### Behoben
+
+- **Alle Karten mit Aufklapp-Überlagerung** (`des-house-card`,
+  `des-inverter-card`, `des-storage-card`): Die Überlagerung schließt jetzt
+  bündig an die Karte an. Ursache war die Positionierung: ein absolut
+  positioniertes Kind wird gegen die *Padding-Box* von `ha-card` gelegt, sodass
+  `left/right: 0` die Überlagerung auf jeder Seite um die Rahmenstärke der Karte
+  einrückte — das war der sichtbare Absatz. Sie wird nun um genau diese Breite
+  herausgezogen, sodass beide Rahmen-Boxen fluchten.
+- Dazu passend: gleicher Hintergrund wie `ha-card` (in derselben
+  Variablen-Reihenfolge, sonst weichen die Farben in Themes ab, die nur
+  `--ha-card-background` setzen), gleiche Rahmenfarbe, und derselbe Schatten wie
+  die Karte statt eines eigenen — ein eigener Schatten ließ die Überlagerung als
+  zweite, abgesetzte Box erscheinen.
+- Beim Aufklappen gibt die Karte ihre untere Rundung ab, damit an der Nahtstelle
+  keine zwei Kurven aufeinandertreffen; beim Zuklappen kommt sie zurück. Die
+  Überlagerung beginnt auf dem Unterrand der Karte und deckt ihn ab, sodass dort
+  auch keine Haarlinie steht.
+
+### Geändert
+
+- Die `.chevron-row`-Regeln inklusive des Fokusrahmens (`:focus-visible` statt
+  `:focus`, also kein Rahmen nach Maus- oder Touch-Klick) lagen dreimal
+  identisch in den Karten und stehen jetzt einmal in `src/chevron.ts`.
+
 ## [0.3.1]
 
 ### Geändert
