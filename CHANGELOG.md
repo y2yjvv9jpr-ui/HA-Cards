@@ -4,7 +4,6 @@ Alle nennenswerten Änderungen an diesem Projekt werden hier festgehalten.
 Format grob nach [Keep a Changelog](https://keepachangelog.com/de/1.1.0/),
 Versionierung nach [SemVer](https://semver.org/lang/de/).
 
-<<<<<<< HEAD
 ## [0.3.1]
 
 ### Geändert
@@ -44,17 +43,6 @@ Versionierung nach [SemVer](https://semver.org/lang/de/).
   Datenbasis, gerundet auf 5 min, außerhalb als „< 10 min“ bzw. „> 48 h“. Im
   Zustand „Bereit“ entfällt die Restzeit. Konfigurierte Entitäten werden
   unverändert und ungeglättet übernommen.
-=======
-## [0.2.3]
-
-### Geändert
-
-- **des-storage-card (thermal_group):** Der Status-Punkt vor dem Item-Namen ist
-  um 1 px angehoben, damit er optisch mittig zur Textzeile sitzt. Punkt und
-  Name liegen weiterhin in einem Flex-Container mit `align-items: center`;
-  umgesetzt als `transform`, damit Zeilenhöhe und Flex-Layout unberührt
-  bleiben.
->>>>>>> 84c2ee9c84bd29f4fbd58208bbedbbf1668a5895
 
 ## [0.2.2]
 
