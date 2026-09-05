@@ -1031,13 +1031,14 @@ fest `day → week → month → year`.
   dem eingebetteten Element `--ha-card-background: transparent`,
   `--ha-card-border-width: 0`, `--ha-card-box-shadow: none` und `margin: 0`. Der
   Innenabstand kommt nur von dieser Karte.
-- **Das Chart füllt die Kartenhöhe.** Die Höhe wird aus der Karte abgeleitet:
-  verfügbare Kartenhöhe minus Kopfzeile, Metazeile und Innenabstände. Ein
-  `ResizeObserver` auf der `ha-card` greift auch dann, wenn sich nur das Raster
-  ändert und nicht das Fenster. Das laufende Chart wird über `updateOptions`
-  auf die neue Höhe gesetzt, **nicht** neu erzeugt — ein Neuaufbau würde die
-  Historie erneut laden. Die Legende bleibt innerhalb dieser Höhe; unter der
-  Karte bleibt kein Leerraum und es entsteht kein Scrollbalken.
+- **Das Chart füllt die Kartenhöhe.** Kopfzeile und Metazeile behalten ihre
+  Größe, der Chart-Container nimmt als Flex-Kind den Rest — die Höhe kommt also
+  aus dem Raster, nicht aus dem Inhalt. Ein `ResizeObserver` **auf dem
+  Container** greift auch dann, wenn sich nur das Raster ändert und nicht das
+  Fenster. Das laufende Chart wird über `updateOptions` auf die neue Höhe
+  gesetzt, **nicht** neu erzeugt — ein Neuaufbau würde die Historie erneut
+  laden. Die Legende bleibt innerhalb dieser Höhe; unter der Karte bleibt kein
+  Leerraum und es entsteht kein Scrollbalken.
 
 > **`apex_config.chart.height` wird ignoriert.** Bekommt die Karte eine Höhe vom
 > Raster (Sections-View, `grid_options.rows`), gewinnt die berechnete Höhe.

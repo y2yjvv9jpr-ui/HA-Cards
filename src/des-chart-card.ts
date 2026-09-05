@@ -21,13 +21,14 @@ const GRID_MIN_ROWS = 3;
 const GRID_COLUMNS = 24;
 
 /**
- * Chart height when the card has no height to give - a classic (masonry) view,
- * where nothing constrains the card and the leftover measures as zero.
+ * Chart height in a view that imposes none - a classic (masonry) view. It is
+ * the container's CSS `height`, which flex overrides wherever the card *is*
+ * given a height, so no code has to tell the two cases apart.
  */
 const FALLBACK_CHART_HEIGHT = 220;
 
-/** Below this many pixels of leftover we assume there is no imposed height. */
-const MIN_MEASURED_HEIGHT = 80;
+/** Ignore sub-pixel jitter, so measuring can never chase its own writes. */
+const HEIGHT_EPSILON_PX = 2;
 
 /** The embedded card element accepts a `hass` assignment; that is all we need. */
 interface EmbeddedCard extends HTMLElement {
@@ -78,6 +79,8 @@ export class DesChartCard extends LitElement {
   /** Last height handed to the chart, so a resize that changes nothing is free. */
   private _chartHeight?: number;
   private _resizeObserver?: ResizeObserver;
+  /** The element the observer is currently watching. */
+  private _observedChart?: HTMLElement;
 
   constructor() {
     super();
@@ -124,6 +127,7 @@ export class DesChartCard extends LitElement {
     this._teardownChart();
     this._resizeObserver?.disconnect();
     this._resizeObserver = undefined;
+    this._observedChart = undefined;
   }
 
   override firstUpdated(): void {
@@ -135,19 +139,23 @@ export class DesChartCard extends LitElement {
         .then(() => this.requestUpdate())
         .catch(() => undefined);
     }
-    this._observeCardSize();
   }
 
   /**
-   * Watches ha-card rather than the window: a sections grid can change the
-   * card's height without the window ever resizing.
+   * Watches the chart container, not ha-card or the window: the container is
+   * what flex sizes from the grid, and a sections grid can resize it without
+   * the window ever changing.
    */
-  private _observeCardSize(): void {
-    if (this._resizeObserver || typeof ResizeObserver === 'undefined') return;
-    const card = this.renderRoot?.querySelector('ha-card');
-    if (!card) return;
-    this._resizeObserver = new ResizeObserver(() => this._applyChartHeight());
-    this._resizeObserver.observe(card);
+  private _observeChartSize(container: HTMLElement | null): void {
+    if (typeof ResizeObserver === 'undefined') return;
+    if (this._observedChart === (container ?? undefined)) return;
+
+    this._resizeObserver?.disconnect();
+    this._observedChart = container ?? undefined;
+    if (!container) return;
+
+    this._resizeObserver ??= new ResizeObserver(() => this._applyChartHeight());
+    this._resizeObserver.observe(container);
   }
 
   // =========================================================================
@@ -243,50 +251,33 @@ export class DesChartCard extends LitElement {
   // =========================================================================
 
   protected override updated(): void {
+    const container = this.renderRoot?.querySelector('#chart') as HTMLElement | null;
+    this._observeChartSize(container);
     this._applyChartHeight();
     this._syncChart();
   }
 
   /**
-   * Height left for the chart: the card's content box minus everything else in
-   * it. The embedded card is taken out of flow (see `.chart .embedded`), so the
-   * chart's own height can never feed back into this measurement.
+   * Takes the height flex handed the container and passes it to the chart.
+   *
+   * The container is never sized from here. It is a flex child with
+   * `min-height: 0`, so the grid's height wins over the content; measuring it
+   * and then writing to it would be measuring our own output.
    */
-  private _measureChartHeight(): number {
-    const inner = this.renderRoot?.querySelector('.card') as HTMLElement | null;
-    const chart = this.renderRoot?.querySelector('#chart') as HTMLElement | null;
-    if (!inner || !chart) return FALLBACK_CHART_HEIGHT;
+  private _applyChartHeight(): void {
+    const container = this.renderRoot?.querySelector('#chart') as HTMLElement | null;
+    if (!container) return;
 
-    const innerStyle = getComputedStyle(inner);
-    let available =
-      inner.clientHeight -
-      parseFloat(innerStyle.paddingTop) -
-      parseFloat(innerStyle.paddingBottom);
-
-    for (const child of Array.from(inner.children) as HTMLElement[]) {
-      const style = getComputedStyle(child);
-      available -= parseFloat(style.marginTop) + parseFloat(style.marginBottom);
-      if (child !== chart) available -= child.offsetHeight;
+    const height = container.clientHeight;
+    if (height <= 0) return;
+    if (
+      this._chartHeight !== undefined &&
+      Math.abs(height - this._chartHeight) <= HEIGHT_EPSILON_PX
+    ) {
+      return;
     }
 
-    // A classic view imposes no height, so nothing is left over to divide up.
-    return available >= MIN_MEASURED_HEIGHT
-      ? Math.floor(available)
-      : FALLBACK_CHART_HEIGHT;
-  }
-
-  /** Sizes the container and pushes the height into the live chart. */
-  private _applyChartHeight(): void {
-    const chart = this.renderRoot?.querySelector('#chart') as HTMLElement | null;
-    if (!chart) return;
-
-    const height = this._measureChartHeight();
-    // Also guards the observer: re-measuring after our own write yields the
-    // same number, so the loop stops here.
-    if (height === this._chartHeight) return;
-
     this._chartHeight = height;
-    chart.style.height = `${height}px`;
     this._resizeApex(height);
   }
 
@@ -439,18 +430,26 @@ export class DesChartCard extends LitElement {
         box-sizing: border-box;
         display: flex;
         flex-direction: column;
+        /* Caps the card at the height the grid gave it - without this the
+           chart pushes the card open instead of fitting into it. */
+        overflow: hidden;
         background: var(--card-background-color, var(--ha-card-background, #fff));
         color: var(--primary-text-color);
       }
 
+      /* min-height:0 on every flex level, otherwise the default
+         min-height:auto stops these boxes shrinking below their content and
+         the grid height is ignored. */
       .card {
-        flex: 1;
+        flex: 1 1 auto;
+        min-height: 0;
         display: flex;
         flex-direction: column;
         padding: 12px 16px;
       }
 
       .header {
+        flex: 0 0 auto;
         display: flex;
         align-items: center;
         justify-content: space-between;
@@ -468,6 +467,7 @@ export class DesChartCard extends LitElement {
       }
 
       .meta {
+        flex: 0 0 auto;
         margin-top: 4px;
         font-size: 12px;
         color: var(--secondary-text-color);
@@ -476,10 +476,16 @@ export class DesChartCard extends LitElement {
         text-overflow: ellipsis;
       }
 
-      /* Height comes from JS, see _applyChartHeight(). overflow:hidden keeps a
-         chart that briefly overshoots - the legend, mostly - from producing a
-         scrollbar. */
+      /* Takes whatever height is left. The height below is only a start size:
+         in a view that imposes a height, flex grows or shrinks the container
+         from it; in a classic view nothing does, so it stays 220px. That is
+         what makes the fallback work without any code branching on view type.
+         overflow:hidden keeps a chart that briefly overshoots - the legend,
+         mostly - from producing a scrollbar. */
       .chart {
+        flex: 1 1 auto;
+        min-height: 0;
+        height: 220px;
         position: relative;
         margin-top: 8px;
         overflow: hidden;

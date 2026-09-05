@@ -4,6 +4,27 @@ Alle nennenswerten Änderungen an diesem Projekt werden hier festgehalten.
 Format grob nach [Keep a Changelog](https://keepachangelog.com/de/1.1.0/),
 Versionierung nach [SemVer](https://semver.org/lang/de/).
 
+## [0.4.1]
+
+### Behoben
+
+- **des-chart-card:** Chart und Legende liefen in der Sections-View unten über
+  den Kartenrand — die Höhe kam aus dem Inhalt statt aus dem Raster. Ursache
+  war das voreingestellte `min-height: auto` der Flex-Kinder: `.card` konnte
+  nicht unter seine Inhaltshöhe schrumpfen, der Chart drückte die Karte also
+  auf, und die Messung las genau diese aufgedrückte Höhe zurück.
+- Jede Flex-Ebene hat jetzt `min-height: 0`, `ha-card` zusätzlich
+  `overflow: hidden`; Kopfzeile und Metazeile stehen auf `flex: 0 0 auto`, der
+  Chart-Container auf `flex: 1 1 auto`. Damit gewinnt die Rasterhöhe über den
+  Inhalt.
+- Gemessen wird jetzt der `clientHeight` des Chart-Containers statt der
+  `ha-card`, und der `ResizeObserver` hängt am Container. Der Container wird
+  aus dem Code **nicht** mehr bemaßt — sonst wäre die Messung die eigene
+  Ausgabe. Eine neue Höhe wird nur bei mehr als 2 px Unterschied gesetzt.
+- Der 220-px-Fallback ohne Rasterhöhe ist jetzt schlicht die CSS-`height` des
+  Containers: wo die Karte eine Höhe bekommt, überschreibt Flex sie, wo nicht,
+  bleibt sie stehen. Damit muss kein Code mehr die Sichtart unterscheiden.
+
 ## [0.4.0]
 
 ### Geändert
