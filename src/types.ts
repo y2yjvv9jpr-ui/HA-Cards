@@ -126,7 +126,7 @@ export interface DesStorageCardConfig {
   temp_c?: NumberValue | null;
   /** Minimum state of charge in percent; start value of the slider. */
   threshold_pct?: NumberValue;
-  /** Target state of charge for forced charging; start value of the slider. */
+  /** Charge limit (max. SoC), valid in every mode; start value of the slider. */
   charge_target_pct?: NumberValue;
   /** Start value of the charge-mode control (display only). */
   charge_mode?: TextValue;

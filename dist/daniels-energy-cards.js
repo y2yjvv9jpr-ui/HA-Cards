@@ -95,8 +95,8 @@ let N = class extends HTMLElement {
       this[t] = o;
     } };
     return { get: s, set(o) {
-      const a = s?.call(this);
-      n?.call(this, o), this.requestUpdate(e, a, r);
+      const c = s?.call(this);
+      n?.call(this, o), this.requestUpdate(e, c, r);
     }, configurable: !0, enumerable: !0 };
   }
   static getPropertyOptions(e) {
@@ -181,8 +181,8 @@ let N = class extends HTMLElement {
     if (s !== void 0 && this._$Em !== s) {
       const n = r.getPropertyOptions(s), o = typeof n.converter == "function" ? { fromAttribute: n.converter } : n.converter?.fromAttribute !== void 0 ? n.converter : ve;
       this._$Em = s;
-      const a = o.fromAttribute(t, n.type);
-      this[s] = a ?? this._$Ej?.get(s) ?? a, this._$Em = null;
+      const c = o.fromAttribute(t, n.type);
+      this[s] = c ?? this._$Ej?.get(s) ?? c, this._$Em = null;
     }
   }
   requestUpdate(e, t, r, s = !1, n) {
@@ -218,8 +218,8 @@ let N = class extends HTMLElement {
       }
       const r = this.constructor.elementProperties;
       if (r.size > 0) for (const [s, n] of r) {
-        const { wrapped: o } = n, a = this[s];
-        o !== !0 || this._$AL.has(s) || a === void 0 || this.C(s, void 0, n, a);
+        const { wrapped: o } = n, c = this[s];
+        o !== !0 || this._$AL.has(s) || c === void 0 || this.C(s, void 0, n, c);
       }
     }
     let e = !1;
@@ -264,7 +264,7 @@ N.elementStyles = [], N.shadowRootOptions = { mode: "open" }, N[F("elementProper
  */
 const Ce = globalThis, We = (i) => i, Q = Ce.trustedTypes, He = Q ? Q.createPolicy("lit-html", { createHTML: (i) => i }) : void 0, st = "$lit$", A = `lit$${Math.random().toFixed(9).slice(2)}$`, it = "?" + A, Et = `<${it}>`, M = document, W = () => M.createComment(""), H = (i) => i === null || typeof i != "object" && typeof i != "function", Pe = Array.isArray, At = (i) => Pe(i) || typeof i?.[Symbol.iterator] == "function", he = `[ 	
 \f\r]`, I = /<(?:(!--|\/[^a-zA-Z])|(\/?[a-zA-Z][^>\s]*)|(\/?$))/g, Be = /-->/g, je = />/g, C = RegExp(`>|${he}(?:([^\\s"'>=/]+)(${he}*=${he}*(?:[^ 	
-\f\r"'\`<>=]|("|')|))|$)`, "g"), Ve = /'/g, Ke = /"/g, nt = /^(?:script|style|textarea|title)$/i, ot = (i) => (e, ...t) => ({ _$litType$: i, strings: e, values: t }), c = ot(1), St = ot(2), R = Symbol.for("lit-noChange"), d = Symbol.for("lit-nothing"), Ge = /* @__PURE__ */ new WeakMap(), P = M.createTreeWalker(M, 129);
+\f\r"'\`<>=]|("|')|))|$)`, "g"), Ve = /'/g, Ke = /"/g, nt = /^(?:script|style|textarea|title)$/i, ot = (i) => (e, ...t) => ({ _$litType$: i, strings: e, values: t }), a = ot(1), St = ot(2), R = Symbol.for("lit-noChange"), d = Symbol.for("lit-nothing"), Ge = /* @__PURE__ */ new WeakMap(), P = M.createTreeWalker(M, 129);
 function at(i, e) {
   if (!Pe(i) || !i.hasOwnProperty("raw")) throw Error("invalid template strings array");
   return He !== void 0 ? He.createHTML(e) : e;
@@ -272,12 +272,12 @@ function at(i, e) {
 const Ct = (i, e) => {
   const t = i.length - 1, r = [];
   let s, n = e === 2 ? "<svg>" : e === 3 ? "<math>" : "", o = I;
-  for (let a = 0; a < t; a++) {
-    const l = i[a];
+  for (let c = 0; c < t; c++) {
+    const l = i[c];
     let u, p, h = -1, m = 0;
     for (; m < l.length && (o.lastIndex = m, p = o.exec(l), p !== null); ) m = o.lastIndex, o === I ? p[1] === "!--" ? o = Be : p[1] !== void 0 ? o = je : p[2] !== void 0 ? (nt.test(p[2]) && (s = RegExp("</" + p[2], "g")), o = C) : p[3] !== void 0 && (o = C) : o === C ? p[0] === ">" ? (o = s ?? I, h = -1) : p[1] === void 0 ? h = -2 : (h = o.lastIndex - p[2].length, u = p[1], o = p[3] === void 0 ? C : p[3] === '"' ? Ke : Ve) : o === Ke || o === Ve ? o = C : o === Be || o === je ? o = I : (o = C, s = void 0);
-    const b = o === C && i[a + 1].startsWith("/>") ? " " : "";
-    n += o === I ? l + Et : h >= 0 ? (r.push(u), l.slice(0, h) + st + l.slice(h) + A + b) : l + A + (h === -2 ? a : b);
+    const b = o === C && i[c + 1].startsWith("/>") ? " " : "";
+    n += o === I ? l + Et : h >= 0 ? (r.push(u), l.slice(0, h) + st + l.slice(h) + A + b) : l + A + (h === -2 ? c : b);
   }
   return [at(i, n + (i[t] || "<?>") + (e === 2 ? "</svg>" : e === 3 ? "</math>" : "")), r];
 };
@@ -286,12 +286,12 @@ class B {
     let s;
     this.parts = [];
     let n = 0, o = 0;
-    const a = e.length - 1, l = this.parts, [u, p] = Ct(e, t);
+    const c = e.length - 1, l = this.parts, [u, p] = Ct(e, t);
     if (this.el = B.createElement(u, r), P.currentNode = this.el.content, t === 2 || t === 3) {
       const h = this.el.content.firstChild;
       h.replaceWith(...h.childNodes);
     }
-    for (; (s = P.nextNode()) !== null && l.length < a; ) {
+    for (; (s = P.nextNode()) !== null && l.length < c; ) {
       if (s.nodeType === 1) {
         if (s.hasAttributes()) for (const h of s.getAttributeNames()) if (h.endsWith(st)) {
           const m = p[o++], b = s.getAttribute(h).split(A), v = /([.?@])?(.*)/.exec(m);
@@ -337,11 +337,11 @@ class Pt {
   u(e) {
     const { el: { content: t }, parts: r } = this._$AD, s = (e?.creationScope ?? M).importNode(t, !0);
     P.currentNode = s;
-    let n = P.nextNode(), o = 0, a = 0, l = r[0];
+    let n = P.nextNode(), o = 0, c = 0, l = r[0];
     for (; l !== void 0; ) {
       if (o === l.index) {
         let u;
-        l.type === 2 ? u = new V(n, n.nextSibling, this, e) : l.type === 1 ? u = new l.ctor(n, l.name, l.strings, this, e) : l.type === 6 && (u = new Ot(n, this, e)), this._$AV.push(u), l = r[++a];
+        l.type === 2 ? u = new V(n, n.nextSibling, this, e) : l.type === 1 ? u = new l.ctor(n, l.name, l.strings, this, e) : l.type === 6 && (u = new Ot(n, this, e)), this._$AV.push(u), l = r[++c];
       }
       o !== l?.index && (n = P.nextNode(), o++);
     }
@@ -426,9 +426,9 @@ class ae {
     let o = !1;
     if (n === void 0) e = z(this, e, t, 0), o = !H(e) || e !== this._$AH && e !== R, o && (this._$AH = e);
     else {
-      const a = e;
+      const c = e;
       let l, u;
-      for (e = n[0], l = 0; l < n.length - 1; l++) u = z(this, a[r + l], t, l), u === R && (u = this._$AH[l]), o ||= !H(u) || u !== this._$AH[l], u === d ? e = d : e !== d && (e += (u ?? "") + n[l + 1]), this._$AH[l] = u;
+      for (e = n[0], l = 0; l < n.length - 1; l++) u = z(this, c[r + l], t, l), u === R && (u = this._$AH[l]), o ||= !H(u) || u !== this._$AH[l], u === d ? e = d : e !== d && (e += (u ?? "") + n[l + 1]), this._$AH[l] = u;
     }
     o && !s && this.j(e);
   }
@@ -729,7 +729,7 @@ const Oe = S`
   }
 `;
 function ee(i, e, t, r, s = !1) {
-  return c`
+  return a`
     <div
       class="seg ${s || e === null ? "unknown" : ""}"
       role="group"
@@ -737,7 +737,7 @@ function ee(i, e, t, r, s = !1) {
       title=${s ? "Nicht verfügbar" : e === null ? "Zustand nicht lesbar" : d}
     >
       ${i.map(
-    ({ value: o, label: a }) => c`
+    ({ value: o, label: c }) => a`
           <button
             type="button"
             class=${e === o ? "active" : ""}
@@ -747,7 +747,7 @@ function ee(i, e, t, r, s = !1) {
       l.stopPropagation(), t(o);
     }}
           >
-            ${a}
+            ${c}
           </button>
         `
   )}
@@ -972,10 +972,10 @@ const te = class te extends k {
     let r = !1;
     const s = [...this._itemModesLocal];
     t.forEach((n, o) => {
-      const a = s[o];
-      if (!a) return;
+      const c = s[o];
+      if (!c) return;
       const l = this._itemModeFromEntity(n);
-      l === null || l !== a || (s[o] = null, r = !0, this._clearSettle(`item:${o}`));
+      l === null || l !== c || (s[o] = null, r = !0, this._clearSettle(`item:${o}`));
     }), r && (this._itemModesLocal = s);
   }
   /** True when the slot is entity-bound and already carries exactly `local`. */
@@ -1027,12 +1027,12 @@ const te = class te extends k {
     const e = this._config;
     if (!e) return d;
     const t = e.variant === "battery" && e.controls !== !1;
-    return c`
+    return a`
       <ha-card>
         <div class="card">
           ${e.variant === "battery" ? this._renderBattery(e) : this._renderThermalGroup(e)}
         </div>
-        ${t && this._expanded ? c`<div class="overlay">${this._renderBatteryControls(e)}</div>` : d}
+        ${t && this._expanded ? a`<div class="overlay">${this._renderBatteryControls(e)}</div>` : d}
       </ha-card>
     `;
   }
@@ -1162,17 +1162,17 @@ const te = class te extends k {
   // variant: battery
   // =========================================================================
   _renderBattery(e) {
-    const t = f(e.soc, this.hass), r = f(e.capacity_kwh, this.hass), s = this._power(e), n = this._energy(e, t, r), o = this._status(e, s), a = this._backup(e), l = this._timeRemaining(e, s), u = w(e.time_at, this.hass), p = [l, u.kind === "value" ? u.value : null].filter(
+    const t = f(e.soc, this.hass), r = f(e.capacity_kwh, this.hass), s = this._power(e), n = this._energy(e, t, r), o = this._status(e, s), c = this._backup(e), l = this._timeRemaining(e, s), u = w(e.time_at, this.hass), p = [l, u.kind === "value" ? u.value : null].filter(
       (m) => m !== null
     ), h = e.controls !== !1;
-    return c`
+    return a`
       <div class="header">
         <div class="head-left">
           <span class="name">${e.name}</span>
           <span class="meta">${this._renderBatteryMeta(e, r)}</span>
         </div>
         <div class="badges">
-          ${a === "none" ? d : this._renderBackupBadge(a)}
+          ${c === "none" ? d : this._renderBackupBadge(c)}
           ${this._renderBadge(pt[o], `status-${o}`)}
         </div>
       </div>
@@ -1190,17 +1190,17 @@ const te = class te extends k {
           <span class="soc">
             ${t.kind === "value" ? `${_(t.value)} %` : this._dash()}
           </span>
-          ${n.kind === "unset" ? d : c`<span class="energy">
+          ${n.kind === "unset" ? d : a`<span class="energy">
                 ${n.kind === "value" ? `${y(n.value)} kWh` : this._dash()}
               </span>`}
         </div>
         <div class="timing">
-          ${s.kind === "unset" ? d : c`<div class=${this._powerClass(s, this._idleThreshold(e))}>
+          ${s.kind === "unset" ? d : a`<div class=${this._powerClass(s, this._idleThreshold(e))}>
                 ${s.kind === "value" ? this._formatPower(s.value) : this._dash()}
               </div>`}
-          ${p.length === 0 ? d : c`<div class="muted">${p.join(" · ")}</div>`}
+          ${p.length === 0 ? d : a`<div class="muted">${p.join(" · ")}</div>`}
         </div>
-        ${h ? c`<ha-icon
+        ${h ? a`<ha-icon
               class="chevron ${this._expanded ? "open" : ""}"
               icon="mdi:chevron-down"
             ></ha-icon>` : d}
@@ -1212,11 +1212,27 @@ const te = class te extends k {
    * up. The charge-mode control sits to their right, centred over both rows.
    */
   _renderBatteryControls(e) {
-    const t = this._chargeMode(e), r = t === "charge", s = this._chargeTarget(e), n = this._threshold(e), o = this._rangeFor(e.charge_target_pct, pe), a = this._rangeFor(e.threshold_pct, Y);
-    return c`
+    const t = this._chargeMode(e), r = this._chargeTarget(e), s = this._threshold(e), n = this._rangeFor(e.charge_target_pct, pe), o = this._rangeFor(e.threshold_pct, Y);
+    return a`
       <div class="controls">
         <div class="ctl-rows">
-          <span class="ctl-label ${r ? "" : "disabled"}">Ladeziel</span>
+          <span class="ctl-label">Ladegrenze</span>
+          <input
+            class="slider"
+            type="range"
+            min=${n.min}
+            max=${n.max}
+            step=${n.step}
+            .value=${String(r ?? n.min)}
+            aria-label="Ladegrenze"
+            @input=${this._onTargetInput}
+            @change=${this._onTargetChange}
+          />
+          <span class="ctl-value">
+            ${r === null ? this._dash() : `${_e(r, n.step)} %`}
+          </span>
+
+          <span class="ctl-label">min. SoC</span>
           <input
             class="slider"
             type="range"
@@ -1224,35 +1240,18 @@ const te = class te extends k {
             max=${o.max}
             step=${o.step}
             .value=${String(s ?? o.min)}
-            ?disabled=${!r}
-            aria-label="Ladeziel"
-            @input=${this._onTargetInput}
-            @change=${this._onTargetChange}
-          />
-          <span class="ctl-value ${r ? "" : "disabled"}">
-            ${s === null ? this._dash() : `${_e(s, o.step)} %`}
-          </span>
-
-          <span class="ctl-label">min. SoC</span>
-          <input
-            class="slider"
-            type="range"
-            min=${a.min}
-            max=${a.max}
-            step=${a.step}
-            .value=${String(n ?? a.min)}
             aria-label="Minimaler Ladestand"
             @input=${this._onThresholdInput}
             @change=${this._onThresholdChange}
           />
           <span class="ctl-value">
-            ${n === null ? this._dash() : `${_e(n, a.step)} %`}
+            ${s === null ? this._dash() : `${_e(s, o.step)} %`}
           </span>
         </div>
         ${ee(
       er,
       t,
-      (l) => this._setChargeMode(l),
+      (c) => this._setChargeMode(c),
       "Lademodus"
     )}
       </div>
@@ -1261,23 +1260,23 @@ const te = class te extends k {
   /** "6,6 kWh · 23,5 °C · min. 20 % SoC" - unset segments are dropped. */
   _renderBatteryMeta(e, t) {
     const r = f(e.temp_c, this.hass), s = this._threshold(e), n = [];
-    return t.kind === "value" ? n.push(`${y(t.value)} kWh`) : t.kind === "unavailable" && n.push(c`${this._dash()} kWh`), r.kind === "value" ? n.push(
-      c`<span class=${ar(r.value)}>
+    return t.kind === "value" ? n.push(`${y(t.value)} kWh`) : t.kind === "unavailable" && n.push(a`${this._dash()} kWh`), r.kind === "value" ? n.push(
+      a`<span class=${ar(r.value)}>
           ${y(r.value)} °C
         </span>`
-    ) : r.kind === "unavailable" && n.push(c`${this._dash()} °C`), n.push(
-      s === null ? c`min. ${this._dash()} SoC` : `min. ${_e(
+    ) : r.kind === "unavailable" && n.push(a`${this._dash()} °C`), n.push(
+      s === null ? a`min. ${this._dash()} SoC` : `min. ${_e(
         s,
         this._rangeFor(e.threshold_pct, Y).step
       )} % SoC`
-    ), c`${n.map(
-      (o, a) => a === 0 ? o : c` · ${o}`
+    ), a`${n.map(
+      (o, c) => c === 0 ? o : a` · ${o}`
     )}`;
   }
   /** Upright battery; the fill grows from the bottom. */
   _renderBatteryIcon(e) {
-    const t = e.kind === "value" ? x(e.value, 0, 100) : 0, r = e.kind !== "value" ? "transparent" : t > 50 ? "var(--success-color, #2e7d32)" : t >= 20 ? "var(--warning-color, #ff9800)" : "var(--error-color, #d32f2f)", s = 6, n = 26, o = n * t / 100, a = s + (n - o);
-    return c`
+    const t = e.kind === "value" ? x(e.value, 0, 100) : 0, r = e.kind !== "value" ? "transparent" : t > 50 ? "var(--success-color, #2e7d32)" : t >= 20 ? "var(--warning-color, #ff9800)" : "var(--error-color, #d32f2f)", s = 6, n = 26, o = n * t / 100, c = s + (n - o);
+    return a`
       <svg
         class="battery"
         viewBox="0 0 22 36"
@@ -1308,7 +1307,7 @@ const te = class te extends k {
         />
         <rect
           x="4"
-          y=${a}
+          y=${c}
           width="14"
           height=${o}
           rx="1.5"
@@ -1321,10 +1320,10 @@ const te = class te extends k {
   // variant: thermal_group
   // =========================================================================
   _renderThermalGroup(e) {
-    const t = e.items ?? [], r = t.map((l) => f(l.power_w, this.hass)), s = t.map((l) => f(l.energy_kwh, this.hass)), n = this._sum(s), o = this._sum(r), a = r.filter(
+    const t = e.items ?? [], r = t.map((l) => f(l.power_w, this.hass)), s = t.map((l) => f(l.energy_kwh, this.hass)), n = this._sum(s), o = this._sum(r), c = r.filter(
       (l) => l.kind === "value" && l.value > 0
     ).length;
-    return c`
+    return a`
       <div class="header">
         <div class="head-left">
           <span class="name">${e.name}</span>
@@ -1332,8 +1331,8 @@ const te = class te extends k {
         <div class="badges">
           <!-- Heating charges the heat store, so it reads as "charging". -->
           ${this._renderBadge(
-      a > 0 ? `${_(a)} heizen` : "Aus",
-      a > 0 ? "status-charging" : "status-off"
+      c > 0 ? `${_(c)} heizen` : "Aus",
+      c > 0 ? "status-charging" : "status-off"
     )}
         </div>
       </div>
@@ -1371,7 +1370,7 @@ const te = class te extends k {
   }
   _renderItem(e, t, r, s) {
     const n = r.kind === "value" && r.value > 0;
-    return c`
+    return a`
       <div class="item">
         <span class="item-name">${e.name}</span>
         <span class="item-energy">
@@ -1394,14 +1393,14 @@ const te = class te extends k {
   // =========================================================================
   /** Muted placeholder for a value the card could not read. */
   _dash() {
-    return c`<span class="unavail">–</span>`;
+    return a`<span class="unavail">–</span>`;
   }
   /**
    * The label sits in its own element so it can be nudged down optically.
    * Metric centring alone reads as too high - see `.badge-label` in the styles.
    */
   _renderBadge(e, t) {
-    return c`<span class="badge ${t}">
+    return a`<span class="badge ${t}">
       <span class="badge-label">${e}</span>
     </span>`;
   }
@@ -1477,8 +1476,8 @@ const te = class te extends k {
     const r = [...this._itemModesLocal];
     r[e] = t, this._itemModesLocal = r;
     const s = this._config?.items?.[e], n = () => {
-      const a = [...this._itemModesLocal];
-      a[e] = null, this._itemModesLocal = a;
+      const c = [...this._itemModesLocal];
+      c[e] = null, this._itemModesLocal = c;
     };
     if (s?.mode_entity) {
       if (!q(s.mode_entity)) return;
@@ -2119,7 +2118,7 @@ const re = class re extends k {
       grid: this._num(e.grid_power_entities?.[l], "power"),
       inverter: this._num(e.inverter_power_entities?.[l], "power"),
       voltage: this._num(e.grid_voltage_entities?.[l], "plain")
-    }), a = this._blocks();
+    }), c = this._blocks();
     return {
       model: e.model ?? "",
       todayProduction: this._num(e.today_production_entity, "energy"),
@@ -2134,10 +2133,10 @@ const re = class re extends k {
       strings: n,
       phases: [o(0), o(1), o(2)],
       imbalance: this._imbalance(t, r),
-      showStrings: a.strings,
-      showPhases: a.phases,
-      showDcItem: a.dc,
-      showFreqItem: a.freq
+      showStrings: c.strings,
+      showPhases: c.phases,
+      showDcItem: c.dc,
+      showFreqItem: c.freq
     };
   }
   /** Per-string amber flags; skipped when a power is missing (would be NaN). */
@@ -2145,7 +2144,7 @@ const re = class re extends k {
     const r = this._config;
     if (r?.imbalance_warn === !1) return [!1, !1];
     if (e === null || t === null) return [!1, !1];
-    const s = r?.imbalance_ratio ?? ur, n = r?.imbalance_min_w ?? pr, o = (a, l) => a < s * l && l > n;
+    const s = r?.imbalance_ratio ?? ur, n = r?.imbalance_min_w ?? pr, o = (c, l) => c < s * l && l > n;
     return [o(e, t), o(t, e)];
   }
   // =========================================================================
@@ -2154,7 +2153,7 @@ const re = class re extends k {
   render() {
     if (!this._config) return d;
     const t = this._view(), r = t.showStrings || t.showPhases || this._hasFooter(t);
-    return c`
+    return a`
       <ha-card>
         <div class="card">${this._renderCollapsed(t, r)}</div>
         ${this._expanded && r ? this._renderExpanded(t) : d}
@@ -2167,7 +2166,7 @@ const re = class re extends k {
   // --- collapsed (always visible) ------------------------------------------
   _renderCollapsed(e, t) {
     const r = this._config;
-    return c`
+    return a`
       <div class="header">
         <div class="head-left">
           <span class="name">${r.name}</span>
@@ -2179,7 +2178,7 @@ const re = class re extends k {
       ${this._renderPowerRow(e)}
       ${e.showStrings ? this._renderStringBars(e) : d}
 
-      ${t ? c`<div
+      ${t ? a`<div
             class="chevron-row clickable"
             role="button"
             tabindex="0"
@@ -2198,30 +2197,30 @@ const re = class re extends k {
   /** "{model} · {today} kWh heute · {total} kWh gesamt"; model dropped if empty. */
   _renderMeta(e) {
     const t = [];
-    return e.model && t.push(c`${e.model}`), t.push(c`${this._unit(e.todayProduction, y, "kWh")} heute`), t.push(
-      c`${this._unit(e.totalProduction, _, "kWh")} gesamt`
-    ), c`${t.map((r, s) => s === 0 ? r : c` · ${r}`)}`;
+    return e.model && t.push(a`${e.model}`), t.push(a`${this._unit(e.todayProduction, y, "kWh")} heute`), t.push(
+      a`${this._unit(e.totalProduction, _, "kWh")} gesamt`
+    ), a`${t.map((r, s) => s === 0 ? r : a` · ${r}`)}`;
   }
   /** fault beats alarm beats device state; "OK"/absent means no fault. */
   _renderPill(e) {
-    const t = (a) => {
-      if (a === null) return null;
-      const l = a.trim();
+    const t = (c) => {
+      if (c === null) return null;
+      const l = c.trim();
       return l.length > 0 && l.toLowerCase() !== "ok" ? l : null;
     }, r = t(e.fault), s = t(e.alarm), [n, o] = r ? [`Fault: ${r}`, "pill-fault"] : s ? [`Alarm: ${s}`, "pill-alarm"] : [e.deviceState, "pill-ok"];
-    return c`<span class="pill ${o}">
+    return a`<span class="pill ${o}">
       <span class="pill-label">${n}</span>
     </span>`;
   }
   _renderPowerRow(e) {
     const t = e.pvPower !== null && e.pvPower > 0, r = this._kwpTotal, s = e.pvPower !== null && r > 0 ? x(e.pvPower / (r * 1e3) * 100, 0, 999) : null;
-    return c`
+    return a`
       <div class="power-row">
         <div class="pv">
           <span class="pv-value ${t ? "producing" : "idle"}">
             ${this._unit(e.pvPower, _, "W")}
           </span>
-          ${s === null ? d : c`<span class="pv-share">
+          ${s === null ? d : a`<span class="pv-share">
                 ${_(s)} % von ${It(r)} kWp
               </span>`}
         </div>
@@ -2234,16 +2233,16 @@ const re = class re extends k {
   }
   _renderStringBars(e) {
     const t = this._kwpString;
-    return c`
+    return a`
       <div class="strings">
         ${e.strings.map((r, s) => {
-      const n = (t[s] ?? 0) * 1e3, o = r.power !== null && n > 0 ? x(r.power / n * 100, 0, 100) : 0, a = e.imbalance[s];
-      return c`
+      const n = (t[s] ?? 0) * 1e3, o = r.power !== null && n > 0 ? x(r.power / n * 100, 0, 100) : 0, c = e.imbalance[s];
+      return a`
             <div class="string-row">
               <span class="string-label">PV${s + 1}</span>
               <div class="bar">
                 <div
-                  class="bar-fill ${a ? "warn" : ""}"
+                  class="bar-fill ${c ? "warn" : ""}"
                   style="width: ${o}%"
                 ></div>
               </div>
@@ -2258,7 +2257,7 @@ const re = class re extends k {
   }
   // --- expanded ------------------------------------------------------------
   _renderExpanded(e) {
-    return c`
+    return a`
       <div class="overlay details">
         ${e.showStrings ? this._renderStringsTable(e) : d}
         ${e.showPhases ? this._renderPhasesTable(e) : d}
@@ -2268,13 +2267,13 @@ const re = class re extends k {
   }
   // A. Strings — voltage / current per MPPT input.
   _renderStringsTable(e) {
-    return c`
+    return a`
       <div class="grid strings-grid">
         <span class="col-head">Strings</span>
         <span class="col-head num">Spannung</span>
         <span class="col-head num">Strom</span>
         ${e.strings.map(
-      (t, r) => c`
+      (t, r) => a`
             <span class="row-label">PV${r + 1}</span>
             <span class="num">${this._unit(t.voltage, y, "V")}</span>
             <span class="num">${this._unit(t.current, y, "A")}</span>
@@ -2288,17 +2287,17 @@ const re = class re extends k {
     const t = this._config?.invert_grid ? -1 : 1, r = e.phases.map(
       (o) => o.grid === null ? null : o.grid * t
     ), s = me(r), n = me(e.phases.map((o) => o.inverter));
-    return c`
+    return a`
       <div class="grid phases-grid">
         <span class="col-head">Phasen</span>
         <span class="col-head num">Netz</span>
         <span class="col-head num">WR-Ausgang</span>
         <span class="col-head num">Spannung</span>
 
-        ${e.phases.map((o, a) => {
-      const l = r[a];
-      return c`
-            <span class="row-label">${_r[a]}</span>
+        ${e.phases.map((o, c) => {
+      const l = r[c];
+      return a`
+            <span class="row-label">${_r[c]}</span>
             <span class="num ${this._gridClass(l)}">
               ${this._unit(l, qe, "W")}
             </span>
@@ -2318,15 +2317,15 @@ const re = class re extends k {
   }
   // C. Footer — DC temperature (optional) and grid frequency.
   _renderFooter(e) {
-    return c`
+    return a`
       <div class="footer">
-        ${e.showDcItem ? c`<div class="foot-item">
+        ${e.showDcItem ? a`<div class="foot-item">
               <span class="foot-label">DC-Temperatur</span>
               <span class="foot-value">
                 ${this._unit(e.dcTemp, y, "°C")}
               </span>
             </div>` : d}
-        ${e.showFreqItem ? c`<div class="foot-item">
+        ${e.showFreqItem ? a`<div class="foot-item">
               <span class="foot-label">Netzfrequenz</span>
               <span class="foot-value">
                 ${this._unit(e.gridFrequency, (t) => y(t, 2), "Hz")}
@@ -2340,7 +2339,7 @@ const re = class re extends k {
   // =========================================================================
   /** Formatted "value unit", or a muted "–" when the value is missing. */
   _unit(e, t, r) {
-    return e === null ? c`<span class="unavail">–</span>` : c`${t(e)} ${r}`;
+    return e === null ? a`<span class="unavail">–</span>` : a`${t(e)} ${r}`;
   }
   /** negative = feed-in (green), positive = import (red), zero/null = muted. */
   _gridClass(e) {
@@ -2348,7 +2347,7 @@ const re = class re extends k {
   }
   /** Inline thermometer glyph, so the card needs no external icon set. */
   _thermometer() {
-    return c`<svg
+    return a`<svg
       class="thermo"
       viewBox="0 0 24 24"
       width="14"
@@ -2823,11 +2822,11 @@ const se = class se extends k {
     };
   }
   _view() {
-    const e = this._config, t = this._rawInputs(), r = e.invert_grid ? -1 : 1, n = (t.gridRaw === null ? null : t.gridRaw * r) ?? 0, o = Math.max(n, 0), a = Math.max(-n, 0), l = (e.storage_positive ?? "discharge") === "charge", u = t.storage.reduce((v, E) => E === null ? v : v + Math.max(l ? -E : E, 0), 0);
+    const e = this._config, t = this._rawInputs(), r = e.invert_grid ? -1 : 1, n = (t.gridRaw === null ? null : t.gridRaw * r) ?? 0, o = Math.max(n, 0), c = Math.max(-n, 0), l = (e.storage_positive ?? "discharge") === "charge", u = t.storage.reduce((v, E) => E === null ? v : v + Math.max(l ? -E : E, 0), 0);
     let p = 0, h = 0, m = 0, b;
     if (t.pvPower !== null) {
       const v = t.storage.reduce((G, de) => de === null ? G : G + Math.max(l ? de : -de, 0), 0);
-      m = Math.max(t.pvPower - a - v, 0), p = u, h = o;
+      m = Math.max(t.pvPower - c - v, 0), p = u, h = o;
       const E = m + p + h;
       b = (G) => E > 0 ? x(G / E * 100, 0, 100) : 0;
     } else {
@@ -2837,7 +2836,7 @@ const se = class se extends k {
     return {
       load: t.load,
       gridIn: o,
-      gridOut: a,
+      gridOut: c,
       solarShare: m,
       storageShare: p,
       gridShare: h,
@@ -2864,7 +2863,7 @@ const se = class se extends k {
     const e = this._config;
     if (!e) return d;
     const t = this._view();
-    return c`
+    return a`
       <ha-card>
         <div class="card">${this._renderCollapsed(e, t)}</div>
         ${this._expanded && t.hasToday ? this._renderExpanded(t) : d}
@@ -2873,7 +2872,7 @@ const se = class se extends k {
   }
   // --- collapsed (always visible) ------------------------------------------
   _renderCollapsed(e, t) {
-    return c`
+    return a`
       <div class="header">
         <div class="head-left">
           <span class="name">${e.name}</span>
@@ -2886,7 +2885,7 @@ const se = class se extends k {
       ${this._renderMixBar(t)}
       ${this._renderLegend(t)}
 
-      ${t.hasToday ? c`<div
+      ${t.hasToday ? a`<div
             class="chevron-row clickable"
             role="button"
             tabindex="0"
@@ -2904,7 +2903,7 @@ const se = class se extends k {
   }
   /** "{today_consumption} kWh heute · {autarkie} % autark". */
   _renderMeta(e) {
-    return c`${this._unit(e.todayConsumption, y, "kWh")} heute ·
+    return a`${this._unit(e.todayConsumption, y, "kWh")} heute ·
     ${this._unit(e.autarky, _, "%")} autark`;
   }
   /**
@@ -2914,12 +2913,12 @@ const se = class se extends k {
    */
   _renderPill(e) {
     const t = this._config?.grid_min_w ?? vr, r = e.gridIn + e.gridOut, [s, n] = e.gridOut >= t ? [`Einspeisung ${_(e.gridOut)} W`, "pill-feed"] : e.gridIn >= t ? [`Netzbezug ${_(e.gridIn)} W`, "pill-draw"] : [`Netz ${_(r)} W`, "pill-idle"];
-    return c`<span class="pill ${n}">
+    return a`<span class="pill ${n}">
       <span class="pill-label">${s}</span>
     </span>`;
   }
   _renderPowerRow(e) {
-    return c`
+    return a`
       <div class="power-row">
         <div class="load">
           <span class="load-value">${this._unit(e.load, _, "W")}</span>
@@ -2929,7 +2928,7 @@ const se = class se extends k {
     `;
   }
   _renderMixBar(e) {
-    return c`
+    return a`
       <div
         class="mix"
         role="img"
@@ -2953,10 +2952,10 @@ const se = class se extends k {
       },
       { cls: "grid", label: "Netz", power: e.gridShare, pct: e.gridPct }
     ];
-    return c`
+    return a`
       <div class="legend">
         ${t.map(
-      (r) => c`
+      (r) => a`
             <div class="legend-row">
               <span class="swatch ${r.cls}"></span>
               <span class="legend-label">${r.label}</span>
@@ -2970,7 +2969,7 @@ const se = class se extends k {
   }
   // --- expanded ------------------------------------------------------------
   _renderExpanded(e) {
-    return c`
+    return a`
       <div class="overlay">
         <div class="today">
           ${this._todayRow("Verbrauch", e.todayConsumption, "")}
@@ -2982,7 +2981,7 @@ const se = class se extends k {
   }
   /** One "Heute" row, or nothing when its value is missing. */
   _todayRow(e, t, r) {
-    return t === null ? d : c`
+    return t === null ? d : a`
       <span class="today-label">${e}</span>
       <span class="today-value ${r}">${y(t)} kWh</span>
     `;
@@ -2992,7 +2991,7 @@ const se = class se extends k {
   // =========================================================================
   /** Formatted "value unit", or a muted "–" when the value is missing. */
   _unit(e, t, r) {
-    return e === null ? c`<span class="unavail">–</span>` : c`${t(e)} ${r}`;
+    return e === null ? a`<span class="unavail">–</span>` : a`${t(e)} ${r}`;
   }
   _toggleExpanded() {
     this._expanded = !this._expanded, this._expanded ? this._closer.activate() : this._closer.deactivate();
@@ -3399,20 +3398,20 @@ const ie = class ie extends k {
     const e = this._config;
     if (!e) return d;
     const t = this._availablePeriods(), r = this._effectivePeriod(t), s = r ? this._periodValues(r) : null, n = s ? this._ratio(s.import, s.consumption) : null, o = s ? this._ratio(s.export, s.production) : null;
-    return c`
+    return a`
       <ha-card>
         <div class="card">
           <div class="header">
             <span class="name">${e.name}</span>
             ${t.length > 0 && r ? ee(
-      t.map((a) => ({ value: a, label: kr[a] })),
+      t.map((c) => ({ value: c, label: kr[c] })),
       r,
-      (a) => this._setPeriod(a),
+      (c) => this._setPeriod(c),
       "Zeitraum"
     ) : d}
           </div>
 
-          ${n === null && o === null ? d : c`<div class="meta">
+          ${n === null && o === null ? d : a`<div class="meta">
                 ${this._pct(n)} % autark · ${this._pct(o)} %
                 Eigenverbrauch
               </div>`}
@@ -3426,13 +3425,13 @@ const ie = class ie extends k {
     const r = O.map((s) => e[s.key]).filter(
       (s) => s !== null
     ).reduce((s, n) => Math.max(s, n), 0);
-    return c`
+    return a`
       <div class="rows">
         ${O.map((s) => {
       const n = e[s.key];
       if (n === null) return d;
       const o = r > 0 ? x(n / r * 100, 0, 100) : 0;
-      return c`
+      return a`
             <span class="row-label">${s.label}</span>
             <div class="bar">
               <div
@@ -3448,7 +3447,7 @@ const ie = class ie extends k {
   }
   /** Whole-number percent, or a muted "–" when it cannot be computed. */
   _pct(e) {
-    return e === null ? c`<span class="unavail">–</span>` : c`${_(e)}`;
+    return e === null ? a`<span class="unavail">–</span>` : a`${_(e)}`;
   }
   _setPeriod(e) {
     this._period = e;
@@ -3664,7 +3663,7 @@ const ke = ["day", "week", "month", "year"], Ar = new Set(ke), Sr = {
     const e = this._config;
     if (!e) return d;
     const t = this._available(), r = this._effectivePeriod(t), s = this._isDemo ? null : this._config?.periods?.[r]?.meta;
-    return c`
+    return a`
       <ha-card>
         <div class="card">
           <div class="header">
@@ -3676,14 +3675,14 @@ const ke = ["day", "week", "month", "year"], Ar = new Set(ke), Sr = {
       "Zeitraum"
     )}
           </div>
-          ${s ? c`<div class="meta">${s}</div>` : d}
+          ${s ? a`<div class="meta">${s}</div>` : d}
           ${this._renderChartArea(r)}
         </div>
       </ha-card>
     `;
   }
   _renderChartArea(e) {
-    return this._isDemo || this._chartConfig(e) === null ? c`<div class="hint">Keine Chart-Config</div>` : this._apexAvailable() ? c`<div class="chart" id="chart"></div>` : c`<div class="hint">apexcharts-card nicht installiert</div>`;
+    return this._isDemo || this._chartConfig(e) === null ? a`<div class="hint">Keine Chart-Config</div>` : this._apexAvailable() ? a`<div class="chart" id="chart"></div>` : a`<div class="hint">apexcharts-card nicht installiert</div>`;
   }
   _setPeriod(e) {
     this._period = e;
@@ -3714,8 +3713,8 @@ const ke = ["day", "week", "month", "year"], Ar = new Set(ke), Sr = {
     let o;
     try {
       o = n.createCardElement(this._embedConfig(t));
-    } catch (a) {
-      console.error("des-chart-card: Chart konnte nicht erzeugt werden", a);
+    } catch (c) {
+      console.error("des-chart-card: Chart konnte nicht erzeugt werden", c);
       return;
     }
     s === this._mountToken && (o.classList.add("embedded"), o.hass = this.hass, e.replaceChildren(o), this._chartEl = o, this._chartPeriod = r);
@@ -3821,7 +3820,7 @@ ne.properties = {
     `
 ];
 let Ee = ne;
-const Pr = "0.2.0", Mr = [
+const Pr = "0.2.1", Mr = [
   {
     type: "des-storage-card",
     element: be,

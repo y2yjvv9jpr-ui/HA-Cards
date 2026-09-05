@@ -739,7 +739,6 @@ export class DesStorageCard extends LitElement {
    */
   private _renderBatteryControls(config: DesStorageCardConfig): TemplateResult {
     const mode = this._chargeMode(config);
-    const targetActive = mode === 'charge';
     const target = this._chargeTarget(config);
     const threshold = this._threshold(config);
     const targetRange = this._rangeFor(config.charge_target_pct, TARGET_RANGE);
@@ -748,7 +747,7 @@ export class DesStorageCard extends LitElement {
     return html`
       <div class="controls">
         <div class="ctl-rows">
-          <span class="ctl-label ${targetActive ? '' : 'disabled'}">Ladeziel</span>
+          <span class="ctl-label">Ladegrenze</span>
           <input
             class="slider"
             type="range"
@@ -756,12 +755,11 @@ export class DesStorageCard extends LitElement {
             max=${targetRange.max}
             step=${targetRange.step}
             .value=${String(target ?? targetRange.min)}
-            ?disabled=${!targetActive}
-            aria-label="Ladeziel"
+            aria-label="Ladegrenze"
             @input=${this._onTargetInput}
             @change=${this._onTargetChange}
           />
-          <span class="ctl-value ${targetActive ? '' : 'disabled'}">
+          <span class="ctl-value">
             ${target === null
               ? this._dash()
               : `${formatForStep(target, targetRange.step)} %`}

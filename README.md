@@ -140,7 +140,7 @@ eine Entity-ID.
 | `energy_kwh`                 | number \| Entity             | **Optional** — ohne Angabe aus `soc × capacity_kwh / 100` berechnet.               |
 | `temp_c`                     | number \| Entity \| `null`   | Akkutemperatur. Bei `null` entfällt das Segment in der Meta-Zeile.                 |
 | `threshold_pct`              | number \| Entity             | Minimaler Ladestand; Slider 10–80/5 oder aus der Entität, siehe unten.             |
-| `charge_target_pct`          | number \| Entity             | Ladeziel für erzwungenes Laden; Slider 50–100/5 oder aus der Entität.               |
+| `charge_target_pct`          | number \| Entity             | Ladegrenze (max. SoC), in allen Modi gültig; Slider 50–100/5 oder aus der Entität.  |
 | `charge_mode`                | `auto` \| `charge` \| Entity | Anzeige des Lademodus, wenn kein `charge_mode_control` gesetzt ist.                |
 | `charge_mode_control`        | Objekt                       | Bindet **Laden \| Auto** an eine Entität, siehe unten. Ohne dieses Feld bleibt der Umschalter lokal. |
 | `time_remaining`             | string \| Entity             | Restzeit. Hat Vorrang vor den beiden folgenden.                                   |
@@ -250,30 +250,33 @@ statt als selbstbewusstes „Laden“ durchzugehen.
   fluchten; rechts daneben, über beide Zeilen zentriert, der Umschalter
   **Laden | Auto**:
 
-  | Zeile | Label      | Slider              | Bereich          |
-  | ----- | ---------- | ------------------- | ---------------- |
-  | 1     | „Ladeziel“ | `charge_target_pct` | 50–100, Schritt 5 |
-  | 2     | „min. SoC“ | `threshold_pct`     | 10–80, Schritt 5  |
+  | Zeile | Label        | Slider              | Bereich          |
+  | ----- | ------------ | ------------------- | ---------------- |
+  | 1     | „Ladegrenze“ | `charge_target_pct` | 50–100, Schritt 5 |
+  | 2     | „min. SoC“   | `threshold_pct`     | 10–80, Schritt 5  |
 
   **Slider-Grenzen** — hängt der Slider an einer `number`- oder
   `input_number`-Entität, übernimmt er deren `min`, `max` und `step` aus den
   Entitätsattributen. Das ist nicht nur Kosmetik: ein Wert außerhalb dieser
   Grenzen würde beim Schreiben ohnehin abgelehnt. Fehlt ein Attribut, greift
-  dafür einzeln der Kartendefault (Ladeziel 50–100/5, min. SoC 10–80/5); bei
+  dafür einzeln der Kartendefault (Ladegrenze 50–100/5, min. SoC 10–80/5); bei
   statischer Konfiguration gelten die Defaults komplett. Das Raster zählt ab
   `min`, nicht ab null, und die Wertanzeige bekommt so viele Nachkommastellen,
   wie `step` verlangt.
 
-  Der Ladeziel-Slider ist **nur im Modus `charge` aktiv** und sonst ausgegraut —
-  ein Ladeziel ohne erzwungenes Laden hat keine Wirkung. Der `min. SoC`-Slider
-  ist immer aktiv und aktualisiert auch das Segment in der Kopfzeile.
+  Der Ladegrenze-Slider ist in **allen Modi** bedienbar, unabhängig vom
+  Umschalter **Laden | Auto** — die Ladegrenze ist eine Gerätegrenze (max. SoC),
+  die dauerhaft gilt (z. B. beim Zendure). Ist `charge_target_pct` als fester
+  Zahlenwert konfiguriert (keine Entität), bewegt sich der Slider wie gehabt nur
+  lokal und löst keinen Service-Call aus. Der `min. SoC`-Slider ist ebenfalls
+  immer aktiv und aktualisiert auch das Segment in der Kopfzeile.
 
 **Lademodus** — der Umschalter zeigt den *aktuellen* Modus als aktives Segment
 (gleiche Optik wie bei `thermal_group`):
 
 | `charge_mode` | Aktives Segment | Bedeutung                                  |
 | ------------- | --------------- | ------------------------------------------ |
-| `auto`        | „Auto“          | Normalbetrieb, Ladeziel-Slider ausgegraut  |
+| `auto`        | „Auto“          | Normalbetrieb                              |
 | `charge`      | „Laden“         | Laden erzwungen, ggf. aus dem Netz         |
 
 **Temperatur-Ampel** — das °C-Segment in der Kopfzeile färbt sich nach Wert:
@@ -1057,7 +1060,7 @@ lokal — es bewegt sich, löst aber keinen Service-Call aus.
 | Bedienelement          | gebunden an           | Service                                     |
 | ---------------------- | --------------------- | ------------------------------------------- |
 | Slider **min. SoC**    | `threshold_pct`       | `number.set_value` / `input_number.set_value` |
-| Slider **Ladeziel**    | `charge_target_pct`   | dito                                        |
+| Slider **Ladegrenze**  | `charge_target_pct`   | dito                                        |
 | **Laden \| Auto**      | `charge_mode_control` | `select_option` bzw. `turn_on`/`turn_off`   |
 | **An/Auto/Aus**        | `items[].mode_entity` | `input_number.set_value` mit 1 / 2 / 3      |
 | **An** / **Aus**       | `items[].switch_entity` | `switch.turn_on` / `switch.turn_off` (ohne `mode_entity`) |
