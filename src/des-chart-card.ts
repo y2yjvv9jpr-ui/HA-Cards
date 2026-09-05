@@ -15,9 +15,9 @@ const DEFAULT_LABEL: Record<StatsPeriod, string> = {
   year: 'Jahr',
 };
 
-/** Grid size in a HA sections view (12-column grid): two thirds wide, taller. */
+/** Grid size in a HA sections view (column_span 3 → 36 columns): two thirds wide. */
 const GRID_ROWS = 6;
-const GRID_COLUMNS = 8;
+const GRID_COLUMNS = 24;
 
 /** The embedded card element accepts a `hass` assignment; that is all we need. */
 interface EmbeddedCard extends HTMLElement {

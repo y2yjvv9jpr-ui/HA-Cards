@@ -20,9 +20,9 @@ type Scale = 'power' | 'energy' | 'plain';
 /** Grid deadband (W) below which the pill stays neutral. `grid_min_w` wins. */
 const DEFAULT_GRID_MIN_W = 40;
 
-/** Grid size in a HA sections view (12-column grid): a third wide. */
+/** Grid size in a HA sections view (column_span 3 → 36 columns): a third wide. */
 const GRID_ROWS = 4;
-const GRID_COLUMNS = 4;
+const GRID_COLUMNS = 12;
 
 /**
  * The raw numbers the mix is computed from, whatever the source. In entity

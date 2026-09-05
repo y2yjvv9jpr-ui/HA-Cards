@@ -51,9 +51,9 @@ const TARGET_RANGE: SliderRange = { min: 50, max: 100, step: 5 };
 
 const MAX_ITEMS = 5;
 
-/** Grid size in a HA sections view (12-column grid): a third wide. Rows: a
-    battery is short, a thermal group grows per item. */
-const GRID_COLUMNS = 4;
+/** Grid size in a HA sections view (column_span 3 → 36 columns): a third wide.
+    Rows: a battery is short, a thermal group grows per item. */
+const GRID_COLUMNS = 12;
 const GRID_ROWS_BATTERY = 2;
 const THERMAL_GRID_BASE = 1;
 

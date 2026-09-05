@@ -773,7 +773,7 @@ const Oe = M`
   idle: "Bereit",
   heating: "Heizt",
   off: "Aus"
-}, Y = { min: 10, max: 80, step: 5 }, pe = { min: 50, max: 100, step: 5 }, Ye = 5, jt = 4, Vt = 2, Gt = 1, qt = 20, Kt = 1, Yt = 500, Zt = 8e3, Jt = /* @__PURE__ */ new Set([
+}, Y = { min: 10, max: 80, step: 5 }, pe = { min: 50, max: 100, step: 5 }, Ye = 5, jt = 12, Vt = 2, Gt = 1, qt = 20, Kt = 1, Yt = 500, Zt = 8e3, Jt = /* @__PURE__ */ new Set([
   "not charging",
   "not discharging",
   "unknown",
@@ -1842,7 +1842,7 @@ const or = /* @__PURE__ */ new Set([
   "normal",
   "alarm",
   "night"
-]), ar = 12.5, lr = 6.5, cr = 6, dr = 0.5, hr = 500, Ze = 4, ur = 4, pr = ["L1", "L2", "L3"], gr = {
+]), ar = 12.5, lr = 6.5, cr = 6, dr = 0.5, hr = 500, Ze = 4, ur = 12, pr = ["L1", "L2", "L3"], gr = {
   normal: {
     model: "Growatt MOD 10KTL3-X",
     todayProduction: 24.6,
@@ -2633,7 +2633,7 @@ const mr = /* @__PURE__ */ new Set([
   "normal",
   "night",
   "export"
-]), _r = 40, Je = 4, fr = 4, vr = {
+]), _r = 40, Je = 4, fr = 12, vr = {
   // Measured mode (pvPower set): 2.840 W solar / 72 %, 710 W storage / 18 %,
   // 400 W grid / 10 %. pv 2840 − feed-in 0 − charging 0 = 2840 W solar.
   normal: {
@@ -3209,7 +3209,7 @@ se.properties = {
   `
 ];
 let xe = se;
-const X = ["day", "week", "month", "year"], wr = new Set(X), Xe = 4, br = 4, xr = {
+const X = ["day", "week", "month", "year"], wr = new Set(X), Xe = 4, br = 12, xr = {
   day: "Tag",
   week: "Woche",
   month: "Monat",
@@ -3526,7 +3526,7 @@ const ke = ["day", "week", "month", "year"], kr = new Set(ke), Er = {
   week: "Woche",
   month: "Monat",
   year: "Jahr"
-}, fe = 6, Sr = 8, ne = class ne extends k {
+}, fe = 6, Sr = 24, ne = class ne extends k {
   constructor() {
     super(), this._mountToken = 0, this._awaitingApex = !1, this._period = null;
   }

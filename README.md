@@ -366,11 +366,11 @@ die Bedienzeile rutscht an die Untergrenze der Karte.
 > **Rastergröße wird automatisch gemeldet.** Jede Karte implementiert
 > `getGridOptions()` und meldet der **Sektionen-Ansicht** von sich aus eine
 > Spaltenbreite und eine feste Zeilenzahl aus ihrer eingeklappten Bauhöhe
-> (Rastereinheit 56 px + 8 px Abstand). Bezogen auf das 12-Spalten-Raster einer
-> Sektion belegen Speicher-, Wechselrichter-, Haus- und Statistikkarte je **ein
-> Drittel** (`columns: 4`), die Chartkarte **zwei Drittel** (`columns: 8`) — eine
-> Reihe aus drei schmalen Karten oder aus Chart plus einer schmalen Karte geht
-> also glatt auf. Karten stehen damit **ohne** `grid_options` im Dashboard-YAML
+> (Rastereinheit 56 px + 8 px Abstand). Bezogen auf eine Sektion mit
+> `column_span: 3` (36 Rasterspalten) belegen Speicher-, Wechselrichter-, Haus-
+> und Statistikkarte je **ein Drittel** (`columns: 12`), die Chartkarte **zwei
+> Drittel** (`columns: 24`) — eine Reihe aus drei schmalen Karten oder aus Chart
+> plus einer schmalen Karte geht also glatt auf. Karten stehen damit **ohne** `grid_options` im Dashboard-YAML
 > sauber und gleich hoch im Raster; aufgeklappte Inhalte (z. B. die
 > Akku-Bedienzeile) dürfen über die gemeldete Höhe hinauswachsen. Zum
 > Übersteuern reicht weiterhin ein eigenes `grid_options` an der Karte.

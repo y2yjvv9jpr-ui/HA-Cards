@@ -27,9 +27,9 @@ const DEFAULT_KWP_PV2 = 6.0;
 const DEFAULT_IMBALANCE_RATIO = 0.5;
 const DEFAULT_IMBALANCE_MIN_W = 500;
 
-/** Grid size in a HA sections view (12-column grid): a third wide. */
+/** Grid size in a HA sections view (column_span 3 → 36 columns): a third wide. */
 const GRID_ROWS = 4;
-const GRID_COLUMNS = 4;
+const GRID_COLUMNS = 12;
 
 const PHASE_LABELS = ['L1', 'L2', 'L3'] as const;
 

@@ -13,9 +13,9 @@ import type {
 const PERIOD_ORDER: ReadonlyArray<StatsPeriod> = ['day', 'week', 'month', 'year'];
 const PERIOD_SET: ReadonlySet<StatsPeriod> = new Set(PERIOD_ORDER);
 
-/** Grid size in a HA sections view (12-column grid): a third wide. */
+/** Grid size in a HA sections view (column_span 3 → 36 columns): a third wide. */
 const GRID_ROWS = 4;
-const GRID_COLUMNS = 4;
+const GRID_COLUMNS = 12;
 const PERIOD_LABEL: Record<StatsPeriod, string> = {
   day: 'Tag',
   week: 'Woche',
