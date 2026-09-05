@@ -682,6 +682,7 @@ Klick auf das Chevron klappt ihn auf.
 | `demo_state`        | `normal` \| `night` \| `export` | Demo-Datensatz — **nur** wirksam, wenn kein Entity-Feld gesetzt ist. Standard `normal`. |
 | `invert_grid`       | boolean                        | Dreht das Vorzeichen der Netzleistung. Standard `false` (positiv = Bezug).    |
 | `storage_positive`  | `discharge` \| `charge`         | Bedeutung eines **positiven** Speicherwerts. Standard `discharge`.            |
+| `grid_min_w`        | number (W)                     | Totzone der Netz-Pille. Standard `40`.                                        |
 
 **Entity-Felder** (lesend). Jedes ist optional. Die erwartete Einheit ist die
 Basiseinheit — abweichende Einheiten werden über `unit_of_measurement`
@@ -745,8 +746,15 @@ nicht lesbar, zeigt sie „–“.
 **Aufbau — eingeklappt**
 
 - **Kopfzeile** — Name links, darunter gedämpft `… kWh heute · … % autark`.
-  Rechts **eine** Pille: grün `Einspeisung … W` (Einspeisung), sonst rot
-  `Netzbezug … W` (Bezug), sonst gedämpft `Netz 0 W`.
+  Rechts **eine** Pille: grün `Einspeisung … W` (Einspeisung ab `grid_min_w`),
+  rot `Netzbezug … W` (Bezug ab `grid_min_w`), sonst gedämpft `Netz … W`.
+
+  **Totzone `grid_min_w`** (Standard `40` W) — solange `|Netzleistung|` unter
+  diesem Wert bleibt, ist die Pille neutral (gedämpft wie „Bereit“ der
+  Speicherkarte) und zeigt den kleinen Ist-Wert als `Netz … W` statt rot oder
+  grün. Ein Deye-Hybridwechselrichter zieht im Betrieb praktisch immer etwas
+  aus dem Netz; diese Totzone verhindert, dass dieser Grundbezug die Pille
+  dauerhaft rot färbt. Der Mix-Balken und die Prozente bleiben davon unberührt.
 - **Leistungszeile** — der Verbrauch groß in neutraler Textfarbe, daneben klein
   gedämpft „Verbrauch“.
 - **Mix-Balken** — ein gestapelter Balken (8 px, abgerundet) in der Reihenfolge

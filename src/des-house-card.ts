@@ -17,6 +17,9 @@ const DEMO_STATES: ReadonlySet<HouseDemoState> = new Set([
 /** How a resolved entity value is rescaled onto the unit the card expects. */
 type Scale = 'power' | 'energy' | 'plain';
 
+/** Grid deadband (W) below which the pill stays neutral. `grid_min_w` wins. */
+const DEFAULT_GRID_MIN_W = 40;
+
 /**
  * The raw numbers the mix is computed from, whatever the source. In entity
  * mode a field the card could not read is `null`; in demo mode nothing is null.
@@ -88,7 +91,7 @@ const DEMO_DATA: Record<HouseDemoState, RawInputs> = {
 
 interface HouseView {
   load: number | null;
-  /** Grid power after `invert_grid`; null when unreadable (pill shows "Netz 0 W"). */
+  /** Grid draw/feed after `invert_grid`; both 0 when grid is unreadable. */
   gridIn: number;
   gridOut: number;
   solarShare: number;
@@ -381,14 +384,22 @@ export class DesHouseCard extends LitElement {
     ${this._unit(view.autarky, formatInt, '%')} autark`;
   }
 
-  /** feed-in (green) beats draw (red) beats an idle "Netz 0 W" (muted). */
+  /**
+   * feed-in (green) beats draw (red) beats a neutral "Netz … W". Grid flow
+   * within ±`grid_min_w` reads neutral, since a hybrid inverter always trickles
+   * a little from the grid and that should not paint the pill red.
+   */
   private _renderPill(view: HouseView): TemplateResult {
+    const gridMin = this._config?.grid_min_w ?? DEFAULT_GRID_MIN_W;
+    // One of gridIn/gridOut is always 0, so their sum is the flow magnitude.
+    const magnitude = view.gridIn + view.gridOut;
+
     const [text, modifier] =
-      view.gridOut > 0
+      view.gridOut >= gridMin
         ? [`Einspeisung ${formatInt(view.gridOut)} W`, 'pill-feed']
-        : view.gridIn > 0
+        : view.gridIn >= gridMin
           ? [`Netzbezug ${formatInt(view.gridIn)} W`, 'pill-draw']
-          : ['Netz 0 W', 'pill-idle'];
+          : [`Netz ${formatInt(magnitude)} W`, 'pill-idle'];
 
     return html`<span class="pill ${modifier}">
       <span class="pill-label">${text}</span>

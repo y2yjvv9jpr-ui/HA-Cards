@@ -325,6 +325,15 @@ export interface DesHouseCardConfig {
   invert_grid?: boolean;
   /** Whether a positive storage power means discharging or charging. Default `discharge`. */
   storage_positive?: StoragePositive;
+  /**
+   * Grid deadband in W for the status pill only. Default `40`.
+   *
+   * While `|grid|` stays below this, the pill reads a neutral "Netz … W"
+   * instead of Netzbezug/Einspeisung - a hybrid inverter always draws a little
+   * from the grid, and that trickle should not paint the pill red. The mix bar
+   * and its percentages are unaffected.
+   */
+  grid_min_w?: number;
 
   // --- entity binding (read-only) -----------------------------------------
 
