@@ -51,7 +51,9 @@ const TARGET_RANGE: SliderRange = { min: 50, max: 100, step: 5 };
 
 const MAX_ITEMS = 5;
 
-/** Grid rows in a HA sections view: a battery is short, a group grows per item. */
+/** Grid size in a HA sections view (12-column grid): a third wide. Rows: a
+    battery is short, a thermal group grows per item. */
+const GRID_COLUMNS = 4;
 const GRID_ROWS_BATTERY = 2;
 const THERMAL_GRID_BASE = 1;
 
@@ -390,15 +392,15 @@ export class DesStorageCard extends LitElement {
   }
 
   /**
-   * HA sections view: full-width, fixed height. A battery is short; a thermal
-   * group grows with its item count (3 items → 4 rows).
+   * HA sections view: a third of the section wide, fixed height. A battery is
+   * short; a thermal group grows with its item count (3 items → 4 rows).
    */
-  getGridOptions(): { columns: string; rows: number; min_rows: number } {
+  getGridOptions(): { columns: number; rows: number; min_rows: number } {
     const rows =
       this._config?.variant === 'thermal_group'
         ? THERMAL_GRID_BASE + (this._config.items?.length ?? 0)
         : GRID_ROWS_BATTERY;
-    return { columns: 'full', rows, min_rows: rows };
+    return { columns: GRID_COLUMNS, rows, min_rows: rows };
   }
 
   static getStubConfig(): DesStorageCardConfig {

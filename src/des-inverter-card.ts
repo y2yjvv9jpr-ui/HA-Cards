@@ -27,8 +27,9 @@ const DEFAULT_KWP_PV2 = 6.0;
 const DEFAULT_IMBALANCE_RATIO = 0.5;
 const DEFAULT_IMBALANCE_MIN_W = 500;
 
-/** Grid rows the collapsed card occupies in a HA sections view. */
+/** Grid size in a HA sections view (12-column grid): a third wide. */
 const GRID_ROWS = 4;
+const GRID_COLUMNS = 4;
 
 const PHASE_LABELS = ['L1', 'L2', 'L3'] as const;
 
@@ -209,9 +210,9 @@ export class DesInverterCard extends LitElement {
     return rows;
   }
 
-  /** HA sections view: full-width, fixed height from the collapsed layout. */
-  getGridOptions(): { columns: string; rows: number; min_rows: number } {
-    return { columns: 'full', rows: GRID_ROWS, min_rows: GRID_ROWS };
+  /** HA sections view: a third of the section, fixed height. */
+  getGridOptions(): { columns: number; rows: number; min_rows: number } {
+    return { columns: GRID_COLUMNS, rows: GRID_ROWS, min_rows: GRID_ROWS };
   }
 
   static getStubConfig(): DesInverterCardConfig {

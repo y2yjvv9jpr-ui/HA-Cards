@@ -20,8 +20,9 @@ type Scale = 'power' | 'energy' | 'plain';
 /** Grid deadband (W) below which the pill stays neutral. `grid_min_w` wins. */
 const DEFAULT_GRID_MIN_W = 40;
 
-/** Grid rows the collapsed card occupies in a HA sections view. */
+/** Grid size in a HA sections view (12-column grid): a third wide. */
 const GRID_ROWS = 4;
+const GRID_COLUMNS = 4;
 
 /**
  * The raw numbers the mix is computed from, whatever the source. In entity
@@ -176,9 +177,9 @@ export class DesHouseCard extends LitElement {
     return rows;
   }
 
-  /** HA sections view: full-width, fixed height from the collapsed layout. */
-  getGridOptions(): { columns: string; rows: number; min_rows: number } {
-    return { columns: 'full', rows: GRID_ROWS, min_rows: GRID_ROWS };
+  /** HA sections view: a third of the section, fixed height. */
+  getGridOptions(): { columns: number; rows: number; min_rows: number } {
+    return { columns: GRID_COLUMNS, rows: GRID_ROWS, min_rows: GRID_ROWS };
   }
 
   static getStubConfig(): DesHouseCardConfig {

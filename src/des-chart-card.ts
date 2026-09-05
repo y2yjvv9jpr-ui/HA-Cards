@@ -15,8 +15,9 @@ const DEFAULT_LABEL: Record<StatsPeriod, string> = {
   year: 'Jahr',
 };
 
-/** Grid rows the card occupies in a HA sections view (header + chart). */
+/** Grid size in a HA sections view (12-column grid): two thirds wide, taller. */
 const GRID_ROWS = 6;
+const GRID_COLUMNS = 8;
 
 /** The embedded card element accepts a `hass` assignment; that is all we need. */
 interface EmbeddedCard extends HTMLElement {
@@ -79,9 +80,9 @@ export class DesChartCard extends LitElement {
     return GRID_ROWS;
   }
 
-  /** HA sections view: full-width, fixed height (header + chart). */
-  getGridOptions(): { columns: string; rows: number; min_rows: number } {
-    return { columns: 'full', rows: GRID_ROWS, min_rows: GRID_ROWS };
+  /** HA sections view: two thirds of the section wide, fixed height. */
+  getGridOptions(): { columns: number; rows: number; min_rows: number } {
+    return { columns: GRID_COLUMNS, rows: GRID_ROWS, min_rows: GRID_ROWS };
   }
 
   static getStubConfig(): DesChartCardConfig {
