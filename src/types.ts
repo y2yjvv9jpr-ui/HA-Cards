@@ -398,33 +398,36 @@ export interface DesStatsCardConfig {
 }
 
 // ===========================================================================
-// des-period-card
+// des-chart-card
 // ===========================================================================
 
-/** One segment of the period switcher; `label` falls back to `value`. */
-export interface PeriodOption {
-  value: string;
+/** One period's embedded chart plus its labels. */
+export interface ChartPeriodConfig {
+  /** Segment label; falls back to Tag/Woche/Monat/Jahr. */
   label?: string;
+  /** Muted line under the header for this period. */
+  meta?: string;
+  /**
+   * A full `apexcharts-card` config **without** `type`. The card adds
+   * `type: custom:apexcharts-card` and forces `header.show: false`. A period
+   * without a `chart` is dropped from the switcher.
+   */
+  chart?: Record<string, unknown>;
 }
 
 /**
- * A header-only card - title plus a segment switcher, like the stats card's
- * head - that writes the picked option into an `input_select`. The active
- * segment always follows the entity's state (never the local click), so
- * several cards or devices bound to the same helper stay in sync. Without an
- * `entity` it shows a static Tag/Woche/Monat/Jahr demo with "Tag" active.
+ * A header with a local (component-state) period switcher over an embedded
+ * `apexcharts-card`, one chart config per period. The chart element is built
+ * through Home Assistant's own card helpers, so no chart library is bundled.
+ * Without a `periods` block the card shows a Tag/Woche/Monat/Jahr demo header
+ * and a "Keine Chart-Config" hint.
  */
-export interface DesPeriodCardConfig {
+export interface DesChartCardConfig {
   type: string;
   name: string;
-  /** `input_select` (or `select`) the switcher reads from and writes to. */
-  entity?: string;
-  /** Segments; when omitted the entity's own `options` are used, in order. */
-  options?: PeriodOption[];
-  /** Static muted line under the header. */
-  meta?: string;
-  /** Muted line from an entity's state + unit; wins over `meta`. */
-  meta_entity?: string;
+  /** Period selected on load; falls back to the first available one. Default `day`. */
+  default_period?: StatsPeriod;
+  periods?: Partial<Record<StatsPeriod, ChartPeriodConfig>>;
 }
 
 /** Minimal shape of the Home Assistant object handed to a card. */

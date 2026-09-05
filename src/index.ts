@@ -2,7 +2,7 @@ import { DesStorageCard } from './des-storage-card';
 import { DesInverterCard } from './des-inverter-card';
 import { DesHouseCard } from './des-house-card';
 import { DesStatsCard } from './des-stats-card';
-import { DesPeriodCard } from './des-period-card';
+import { DesChartCard } from './des-chart-card';
 
 const VERSION = '0.2.0';
 
@@ -43,11 +43,11 @@ const CARDS: ReadonlyArray<CardRegistration> = [
       'Energiestatistik je Zeitraum (Tag/Woche/Monat/Jahr): Verbrauch, Produktion, Import, Export, Laden, Entladen.',
   },
   {
-    type: 'des-period-card',
-    element: DesPeriodCard,
-    name: 'Daniels Zeitraumkarte',
+    type: 'des-chart-card',
+    element: DesChartCard,
+    name: 'Daniels Chartkarte',
     description:
-      'Kopfzeile mit Zeitraum-Umschalter, der eine input_select-Entity schreibt (z. B. über einer Chart-Karte).',
+      'Kopfzeile mit Zeitraum-Umschalter und eingebettetem ApexCharts-Chart je Zeitraum.',
   },
 ];
 
@@ -80,5 +80,5 @@ export {
   DesInverterCard,
   DesHouseCard,
   DesStatsCard,
-  DesPeriodCard,
+  DesChartCard,
 };

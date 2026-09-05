@@ -11,7 +11,7 @@ Aktuell enthalten:
 | `custom:des-inverter-card` | Wechselrichter-Übersicht — PV-Leistung, Strings, Phasen    |
 | `custom:des-house-card`    | Hauskarte — Verbrauch und Stromherkunft (Solar/Speicher/Netz) |
 | `custom:des-stats-card`    | Statistikkarte — sechs Energiewerte je Zeitraum (Tag/Woche/Monat/Jahr) |
-| `custom:des-period-card`   | Zeitraumkarte — Kopfzeile mit Umschalter, schreibt ein `input_select`  |
+| `custom:des-chart-card`    | Chartkarte — Zeitraum-Umschalter über eingebettetem ApexCharts-Chart   |
 
 > **Phase 3 — lesend und schreibend.** Jedes Wertfeld nimmt einen statischen
 > Wert **oder** eine Entity-ID. Die Karte liest aus `hass.states`, rendert bei
@@ -28,7 +28,7 @@ npm install
 npm run build
 ```
 
-Ergebnis: `dist/daniels-energy-cards.js` (~115 kB, gzip ~28 kB; Lit und **alle
+Ergebnis: `dist/daniels-energy-cards.js` (~117 kB, gzip ~28 kB; Lit und **alle
 fünf** Karten sind mit eingebettet).
 
 Weitere Skripte:
@@ -100,7 +100,7 @@ hinzufügen (**Einstellungen → Dashboards → ⋮ → Ressourcen**):
 
 Die Karten erscheinen danach auch im Karten-Picker als „Daniels Speicherkarte“,
 „Daniels Wechselrichterkarte“, „Daniels Hauskarte“, „Daniels Statistikkarte“ und
-„Daniels Zeitraumkarte“. Einen visuellen Editor gibt es bewusst nicht — die
+„Daniels Chartkarte“. Einen visuellen Editor gibt es bewusst nicht — die
 Konfiguration erfolgt in YAML.
 
 ---
@@ -927,74 +927,95 @@ Verbrauch-Balken bei 100 % und die Produktion bei 86 %.
 
 ---
 
-## Zeitraumkarte (`des-period-card`)
+## Chartkarte (`des-chart-card`)
 
-Eine reine **Kopfzeile** — Titel links, segmentierter Umschalter rechts, optional
-eine gedämpfte Metazeile darunter — die aussieht wie der Kopf der Statistikkarte.
-Der Umschalter **schreibt** die gewählte Option per `input_select.select_option`
-in eine Entität. Gedacht, um direkt **über** einer Chart-Karte zu sitzen, die
-denselben `input_select` als Zeitraum-Helfer auswertet.
+**Eine** Karte: Kopfzeile wie bei der Statistikkarte (Titel links, segmentierter
+Umschalter rechts, gedämpfte Metazeile darunter), darunter ein **eingebettetes
+ApexCharts-Chart**. Je Zeitraum liegt eine vollständige
+[`apexcharts-card`](https://github.com/RomRider/apexcharts-card)-Konfiguration in
+der Card-Config; die Karte erzeugt das Chart-Element über die offiziellen
+HA-Card-Helper (`window.loadCardHelpers()` → `helpers.createCardElement()`).
+**Keine eigene Chart-Bibliothek** und keine zusätzliche Bundle-Abhängigkeit —
+`apexcharts-card` muss separat installiert sein (HACS).
 
-Das aktive Segment folgt **immer dem Zustand der Entität**, nicht dem lokalen
-Klick — so bleiben mehrere Karten oder Geräte, die denselben Helfer nutzen,
-synchron. Es wird **nicht** optimistisch umgeschaltet: aktiv wird erst, was die
-Entität nach dem Service-Call zurückmeldet.
+Der Umschalter ist **lokaler Component-State** (kein `input_select`): beim Wechsel
+wird das Chart des gewählten Zeitraums neu erzeugt und mit `hass` versorgt.
 
-| Option        | Typ                       | Beschreibung                                                                    |
-| ------------- | ------------------------- | ------------------------------------------------------------------------------- |
-| `name`        | string                    | **Pflicht.** Titel links.                                                       |
-| `entity`      | Entity (`input_select`)   | Wird gelesen **und** geschrieben. Ohne sie zeigt die Karte einen Demo-Umschalter. |
-| `options`     | Liste `{ value, label? }` | Segmente; fehlt sie, werden die `options` der Entität in ihrer Reihenfolge genutzt (Label = value). |
-| `meta`        | string                    | Statische, gedämpfte Zeile unter dem Kopf.                                       |
-| `meta_entity` | Entity                    | Gedämpfte Zeile aus Zustand + Einheit der Entität; hat Vorrang vor `meta`.        |
+| Option           | Typ                            | Beschreibung                                                        |
+| ---------------- | ------------------------------ | ------------------------------------------------------------------ |
+| `name`           | string                         | **Pflicht.** Titel links.                                          |
+| `default_period` | `day` \| `week` \| `month` \| `year` | Zeitraum beim Laden; fällt auf den ersten verfügbaren zurück. Standard `day`. |
+| `periods`        | Objekt (siehe unten)           | Je Zeitraum `label`, `meta` und `chart`.                            |
 
-**Verhalten**
+Je Zeitraum unter `periods.<day\|week\|month\|year>`:
 
-- **Klick** auf ein Segment ruft `input_select.select_option` mit
-  `{ entity_id, option: value }` auf. Kein optimistisches Umschalten.
-- Ist `entity` **nicht verfügbar** (`unavailable`/`unknown`), wird der Umschalter
-  gedämpft und ist nicht klickbar.
-- Fehlt `options`, kommen die Segmente aus dem `options`-Attribut der Entität.
-- Unter dem Umschalter (bzw. der Metazeile) hat die Karte **keine** zusätzliche
-  Bauhöhe und keinen zusätzlichen unteren Innenabstand — eine direkt darunter
-  gestapelte Chart-Karte schließt bündig an.
+| Feld    | Typ                          | Beschreibung                                                              |
+| ------- | ---------------------------- | ------------------------------------------------------------------------ |
+| `label` | string                       | Segment-Beschriftung. Standard `Tag`/`Woche`/`Monat`/`Jahr`.              |
+| `meta`  | string                       | Gedämpfte Metazeile für diesen Zeitraum.                                  |
+| `chart` | `apexcharts-card`-Config **ohne `type`** | Wird eingebettet; die Karte ergänzt `type` und erzwingt `header.show: false`. |
 
-**Beispiel-YAML** — über einer ApexCharts-Karte:
+Ein Zeitraum **ohne `chart`** erscheint nicht im Umschalter; die Reihenfolge ist
+fest `day → week → month → year`.
+
+**Darstellung**
+
+- Kopfzeile exakt wie die Statistikkarte (Titel/Umschalter auf einer Zeile,
+  Metazeile darunter über die volle Breite).
+- Das Chart sitzt bündig unter der Metazeile — **ohne** eigenen Kartenrahmen,
+  Hintergrund oder Schatten: die Karte erzwingt `header.show=false` und setzt auf
+  dem eingebetteten Element `--ha-card-background: transparent`,
+  `--ha-card-border-width: 0`, `--ha-card-box-shadow: none` und `margin: 0`. Der
+  Innenabstand kommt nur von dieser Karte.
+- Ist `apexcharts-card` **nicht** installiert (Element nicht registriert), zeigt
+  die Karte statt des Charts die gedämpfte Zeile „apexcharts-card nicht
+  installiert“.
+- **Ohne `periods`** läuft die Karte im Demo-Modus: Kopfzeile mit vier Segmenten
+  und der Hinweiszeile „Keine Chart-Config“.
+
+**Beispiel-YAML** — Verbrauch nach Quelle, ein Chart je Zeitraum:
 
 ```yaml
-type: vertical-stack
-cards:
-  - type: custom:des-period-card
-    name: Verbrauch nach Quelle
-    entity: input_select.pv_helper_chart_zeitraum
-    meta: kWh je Abschnitt
-    # options weggelassen → die vier Optionen des input_select werden genutzt
-  - type: custom:apexcharts-card
-    # … Chart, das input_select.pv_helper_chart_zeitraum auswertet …
-```
-
-Mit expliziten Segmenten und einer Entität als Metazeile:
-
-```yaml
-type: custom:des-period-card
-name: Zeitraum
-entity: input_select.pv_helper_chart_zeitraum
-options:
-  - value: Tag
+type: custom:des-chart-card
+name: Verbrauch nach Quelle
+default_period: day
+periods:
+  day:
     label: Tag
-  - value: Woche
+    meta: kWh je Stunde
+    chart:
+      graph_span: 24h
+      span:
+        start: day
+      series:
+        - entity: sensor.haus_solar_kwh
+          type: column
+        - entity: sensor.haus_speicher_kwh
+          type: column
+        - entity: sensor.haus_netz_kwh
+          type: column
+  week:
     label: Woche
-  - value: Monat
-    label: Monat
-meta_entity: sensor.chart_summe
+    meta: kWh je Tag
+    chart:
+      graph_span: 7d
+      span:
+        start: week
+      series:
+        - entity: sensor.haus_solar_kwh
+          type: column
+        - entity: sensor.haus_speicher_kwh
+          type: column
+        - entity: sensor.haus_netz_kwh
+          type: column
 ```
 
-Ohne `entity` läuft die Karte im Demo-Modus und zeigt **Tag / Woche / Monat /
-Jahr** mit „Tag“ aktiv:
+Ohne `periods` zeigt dieselbe Karte den Demo-Kopf (Tag/Woche/Monat/Jahr) mit dem
+Hinweis „Keine Chart-Config“:
 
 ```yaml
-type: custom:des-period-card
-name: Zeitraum
+type: custom:des-chart-card
+name: Chart
 ```
 
 ---
@@ -1094,11 +1115,11 @@ src/
   des-inverter-card.ts Wechselrichterkarte (Entity-Binding + Demo-Fallback)
   des-house-card.ts    Hauskarte (Verbrauch und Stromherkunft, Entity + Demo)
   des-stats-card.ts    Statistikkarte (sechs Energiewerte je Zeitraum, Entity + Demo)
-  des-period-card.ts   Zeitraumkarte (Kopfzeile mit Umschalter, schreibt input_select)
+  des-chart-card.ts    Chartkarte (Zeitraum-Umschalter + eingebettetes ApexCharts-Chart)
   types.ts             Config-Schema und HA-Typen
   resolve.ts           Statischer Wert ↔ Entity: Auflösung über hass.states
   service.ts           Schreibpfad: Domain → Service-Call
-  segmented.ts         Segmentierter Umschalter (Storage-, Statistik-, Zeitraumkarte)
+  segmented.ts         Segmentierter Umschalter (Storage-, Statistik-, Chartkarte)
   chevron.ts           Gemeinsamer Chevron-Stil (Storage-, Wechselrichter-, Hauskarte)
   format.ts            Zahlenformatierung (de-DE)
 vite.config.ts         Lib-Build → dist/daniels-energy-cards.js
