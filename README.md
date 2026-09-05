@@ -664,6 +664,7 @@ umgerechnet (`kW`/`MW` → W, `Wh`/`MWh` → kWh).
 
 | Feld                       | Erwartet     | Ziel                                                              |
 | -------------------------- | ------------ | ---------------------------------------------------------------- |
+| `pv_power_entity`          | W            | PV-Gesamtleistung. Gesetzt → **gemessener** Solar-Anteil (siehe unten). |
 | `load_power_entity`        | W            | Hausverbrauch — die große Zahl.                                   |
 | `grid_power_entity`        | W            | Netzleistung (Vorzeichen, siehe `invert_grid`).                  |
 | `storage_power_entities`   | Liste, W     | Speicher, die das Haus versorgen; je Eintrag signierte Leistung.  |
@@ -684,7 +685,7 @@ Entladung (Anteil, der ins Haus fließt) geht in die Mix-Rechnung ein.
 grid       = grid_raw · (invert_grid ? −1 : 1)
 gridIn     = max(grid, 0)                       # Netzbezug
 gridOut    = max(−grid, 0)                      # Einspeisung
-storageDis = Σ max(±entity, 0)                  # Vorzeichen je storage_positive
+storageDis = Σ max(±entity, 0)                  # Entladung, Vorzeichen je storage_positive
 speicher   = min(storageDis, load)
 netz       = min(gridIn, load − speicher)
 solar      = max(load − speicher − netz, 0)
@@ -692,6 +693,25 @@ solar      = max(load − speicher − netz, 0)
 
 Die Prozente sind `Anteil / load`. Ist `load ≤ 0` (oder nicht lesbar), sind alle
 Anteile 0 % und der Balken bleibt leer; die große Zahl zeigt dann „–“.
+
+**Gemessener Solar-Anteil** — ist `pv_power_entity` gesetzt und lesbar, ersetzt
+die Karte die „Solar = Rest"-Ableitung durch die tatsächlich gemessene
+PV-Leistung:
+
+```
+storageLad = Σ max(∓entity, 0)                  # Ladeanteil, Vorzeichen je storage_positive
+solar      = max(pvPower − gridOut − storageLad, 0)   # PV minus Einspeisung minus Speicherladung
+speicher   = storageDis                         # wie oben
+netz       = gridIn
+quellen    = solar + speicher + netz
+```
+
+Die Prozente sind hier `Anteil / quellen` (nicht mehr `/ load`); bei
+`quellen ≤ 0` sind alle 0 %. Die Legende zeigt die **gemessenen** W-Werte — ihre
+Summe kann daher vom Verbrauch abweichen (z. B. wenn ein Teil der PV-Leistung in
+Wandlungsverlusten oder einem nicht erfassten Verbraucher steckt). Ist
+`pv_power_entity` nicht gesetzt (oder gerade nicht lesbar), gilt unverändert die
+`load`-basierte Ableitung oben.
 
 **Autarkie heute** — ohne `autarky_entity` rechnet die Karte
 `1 − import / consumption` (ganzzahlige %). Ist der Tagesverbrauch `≤ 0` oder
@@ -731,6 +751,7 @@ name: Haus
 invert_grid: false
 storage_positive: discharge
 
+pv_power_entity: sensor.inverter_pv_power   # optional; schaltet auf gemessenen Solar-Anteil
 load_power_entity: sensor.inverter_load_power
 grid_power_entity: sensor.inverter_external_power
 storage_power_entities:
@@ -969,6 +990,7 @@ src/
   resolve.ts           Statischer Wert ↔ Entity: Auflösung über hass.states
   service.ts           Schreibpfad: Domain → Service-Call
   segmented.ts         Segmentierter Umschalter (Storage- und Statistikkarte)
+  chevron.ts           Gemeinsamer Chevron-Stil (Storage-, Wechselrichter-, Hauskarte)
   format.ts            Zahlenformatierung (de-DE)
 vite.config.ts         Lib-Build → dist/daniels-energy-cards.js
 hacs.json              HACS-Manifest (Typ Dashboard)

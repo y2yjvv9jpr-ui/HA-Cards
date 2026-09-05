@@ -1,6 +1,7 @@
 import { LitElement, html, css, nothing, type TemplateResult } from 'lit';
 import { formatFixed, formatInt, clamp } from './format';
 import { entityUnit, isEntityId, resolveNumber } from './resolve';
+import { chevronStyles } from './chevron';
 import type {
   DesHouseCardConfig,
   HomeAssistant,
@@ -26,6 +27,8 @@ interface RawInputs {
   load: number | null;
   gridRaw: number | null;
   storage: Array<number | null>;
+  /** Total PV power; when non-null the solar share is measured, not derived. */
+  pvPower: number | null;
   todayConsumption: number | null;
   todayImport: number | null;
   todayExport: number | null;
@@ -39,11 +42,13 @@ interface RawInputs {
  * `invert_grid` (which defaults to `false`): positive = draw, negative = feed.
  */
 const DEMO_DATA: Record<HouseDemoState, RawInputs> = {
-  // Solar-dominated: 2.840 W solar / 72 %, 710 W storage / 18 %, 400 W grid / 10 %.
+  // Measured mode (pvPower set): 2.840 W solar / 72 %, 710 W storage / 18 %,
+  // 400 W grid / 10 %. pv 2840 − feed-in 0 − charging 0 = 2840 W solar.
   normal: {
     load: 3950,
     gridRaw: 400,
-    storage: [710, -240],
+    storage: [710, 0],
+    pvPower: 2840,
     todayConsumption: 23.4,
     todayImport: 4.4,
     todayExport: 3.1,
@@ -54,16 +59,19 @@ const DEMO_DATA: Record<HouseDemoState, RawInputs> = {
     load: 620,
     gridRaw: 0,
     storage: [620, 0],
+    pvPower: 0,
     todayConsumption: 23.4,
     todayImport: 4.4,
     todayExport: 3.1,
     autarky: null,
   },
-  // Surplus solar: the house is fully self-supplied (100 % solar) and feeds the grid.
+  // Surplus solar: 5.000 W PV, 3.800 W of it fed to the grid, 1.200 W into the
+  // house (100 % solar). Fully self-supplied.
   export: {
     load: 1200,
     gridRaw: -3800,
     storage: [0, 0],
+    pvPower: 5000,
     todayConsumption: 23.4,
     todayImport: 4.4,
     todayExport: 3.1,
@@ -180,6 +188,7 @@ export class DesHouseCard extends LitElement {
     const c = this._config;
     if (!c) return false;
     return (
+      present(c.pv_power_entity) ||
       present(c.load_power_entity) ||
       present(c.grid_power_entity) ||
       nonEmptyArray(c.storage_power_entities) ||
@@ -224,6 +233,7 @@ export class DesHouseCard extends LitElement {
       load: this._num(c.load_power_entity, 'power'),
       gridRaw: this._num(c.grid_power_entity, 'power'),
       storage: (c.storage_power_entities ?? []).map((e) => this._num(e, 'power')),
+      pvPower: this._num(c.pv_power_entity, 'power'),
       todayConsumption: this._num(c.today_consumption_entity, 'energy'),
       todayImport: this._num(c.today_import_entity, 'energy'),
       todayExport: this._num(c.today_export_entity, 'energy'),
@@ -248,18 +258,35 @@ export class DesHouseCard extends LitElement {
       return sum + Math.max(chargeMode ? -v : v, 0);
     }, 0);
 
-    // Missing load counts as 0 W for the mix; `load ≤ 0` empties every segment.
-    const lv = raw.load !== null && raw.load > 0 ? raw.load : 0;
     let storageShare = 0;
     let gridShare = 0;
     let solarShare = 0;
-    if (lv > 0) {
-      storageShare = Math.min(storageDischarge, lv);
-      gridShare = Math.min(gridIn, lv - storageShare);
-      solarShare = Math.max(lv - storageShare - gridShare, 0);
+    let pct: (share: number) => number;
+
+    if (raw.pvPower !== null) {
+      // Measured mode: solar is what PV delivers minus what leaves the house
+      // again (feed-in + storage charging); the shares are relative to the sum
+      // of the sources, which may differ from the metered consumption.
+      const storageChargeW = raw.storage.reduce<number>((sum, v) => {
+        if (v === null) return sum;
+        return sum + Math.max(chargeMode ? v : -v, 0);
+      }, 0);
+      solarShare = Math.max(raw.pvPower - gridOut - storageChargeW, 0);
+      storageShare = storageDischarge;
+      gridShare = gridIn;
+      const sources = solarShare + storageShare + gridShare;
+      pct = (share) => (sources > 0 ? clamp((share / sources) * 100, 0, 100) : 0);
+    } else {
+      // Derived mode: solar is the remainder of the metered load. Missing load
+      // counts as 0 W, and `load ≤ 0` empties every segment.
+      const lv = raw.load !== null && raw.load > 0 ? raw.load : 0;
+      if (lv > 0) {
+        storageShare = Math.min(storageDischarge, lv);
+        gridShare = Math.min(gridIn, lv - storageShare);
+        solarShare = Math.max(lv - storageShare - gridShare, 0);
+      }
+      pct = (share) => (lv > 0 ? clamp((share / lv) * 100, 0, 100) : 0);
     }
-    const pct = (share: number): number =>
-      lv > 0 ? clamp((share / lv) * 100, 0, 100) : 0;
 
     return {
       load: raw.load,
@@ -480,7 +507,9 @@ export class DesHouseCard extends LitElement {
     }
   }
 
-  static override styles = css`
+  static override styles = [
+    chevronStyles,
+    css`
     :host {
       display: block;
       height: 100%;
@@ -700,22 +729,15 @@ export class DesHouseCard extends LitElement {
       outline: none;
     }
 
+    /* A mouse click must not leave the ring standing; keyboard focus keeps it. */
+    .chevron-row.clickable:focus {
+      outline: none;
+    }
+
     .chevron-row.clickable:focus-visible {
       outline: 2px solid var(--primary-color, #03a9f4);
       outline-offset: 2px;
       border-radius: 6px;
-    }
-
-    .chevron {
-      --mdc-icon-size: 22px;
-      width: 22px;
-      height: 22px;
-      color: var(--secondary-text-color);
-      transition: transform 0.18s ease-in-out;
-    }
-
-    .chevron.open {
-      transform: rotate(180deg);
     }
 
     /* --- expanded "Heute" block --- */
@@ -752,5 +774,6 @@ export class DesHouseCard extends LitElement {
     .today-value.feed {
       color: var(--success-color, #2e7d32);
     }
-  `;
+  `,
+  ];
 }

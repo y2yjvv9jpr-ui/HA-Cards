@@ -314,6 +314,13 @@ export interface DesHouseCardConfig {
 
   // --- entity binding (read-only) -----------------------------------------
 
+  /**
+   * Total PV power in W. When set (and readable) the solar share is measured
+   * as `pv − feed-in − storage charging` and the mix is scaled by the sum of
+   * the sources instead of by the metered consumption. Unset: solar is the
+   * remainder of the load.
+   */
+  pv_power_entity?: string;
   /** House consumption in W. */
   load_power_entity?: string;
   /** Grid power in W (signed; see `invert_grid`). */

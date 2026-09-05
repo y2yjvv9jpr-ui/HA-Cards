@@ -18,6 +18,7 @@ import {
   writeSwitch,
 } from './service';
 import { renderSegmented, segmentedStyles } from './segmented';
+import { chevronStyles } from './chevron';
 import type {
   BackupState,
   ChargeMode,
@@ -1108,6 +1109,7 @@ export class DesStorageCard extends LitElement {
 
   static override styles = [
     segmentedStyles,
+    chevronStyles,
     css`
     /* The card fills whatever height the sections grid hands it, so several
        cards in one row can be levelled with grid_options.rows. */
@@ -1277,6 +1279,11 @@ export class DesStorageCard extends LitElement {
       outline: none;
     }
 
+    /* A mouse click must not leave the ring standing; keyboard focus keeps it. */
+    .main.clickable:focus {
+      outline: none;
+    }
+
     .main.clickable:focus-visible {
       outline: 2px solid var(--primary-color, #03a9f4);
       outline-offset: 3px;
@@ -1350,19 +1357,6 @@ export class DesStorageCard extends LitElement {
 
     .power.neutral {
       color: var(--secondary-text-color);
-    }
-
-    .chevron {
-      --mdc-icon-size: 22px;
-      width: 22px;
-      height: 22px;
-      color: var(--secondary-text-color);
-      flex-shrink: 0;
-      transition: transform 0.18s ease-in-out;
-    }
-
-    .chevron.open {
-      transform: rotate(180deg);
     }
 
     /* --- battery controls (collapsed by default) --- */
