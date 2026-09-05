@@ -1001,6 +1001,10 @@ HA-Card-Helper (`window.loadCardHelpers()` → `helpers.createCardElement()`).
 Der Umschalter ist **lokaler Component-State** (kein `input_select`): beim Wechsel
 wird das Chart des gewählten Zeitraums neu erzeugt und mit `hass` versorgt.
 
+Im Sections-View belegt die Karte 24 von 36 Spalten und standardmäßig
+**4 Zeilen**, mindestens 3 (`min_rows`). Über `grid_options.rows` lässt sich die
+Höhe frei wählen — das Chart wächst mit.
+
 | Option           | Typ                            | Beschreibung                                                        |
 | ---------------- | ------------------------------ | ------------------------------------------------------------------ |
 | `name`           | string                         | **Pflicht.** Titel links.                                          |
@@ -1013,7 +1017,7 @@ Je Zeitraum unter `periods.<day\|week\|month\|year>`:
 | ------- | ---------------------------- | ------------------------------------------------------------------------ |
 | `label` | string                       | Segment-Beschriftung. Standard `Tag`/`Woche`/`Monat`/`Jahr`.              |
 | `meta`  | string                       | Gedämpfte Metazeile für diesen Zeitraum.                                  |
-| `chart` | `apexcharts-card`-Config **ohne `type`** | Wird eingebettet; die Karte ergänzt `type` und erzwingt `header.show: false`. |
+| `chart` | `apexcharts-card`-Config **ohne `type`** | Wird eingebettet; die Karte ergänzt `type`, erzwingt `header.show: false` und setzt die Chart-Höhe (siehe unten). |
 
 Ein Zeitraum **ohne `chart`** erscheint nicht im Umschalter; die Reihenfolge ist
 fest `day → week → month → year`.
@@ -1027,6 +1031,19 @@ fest `day → week → month → year`.
   dem eingebetteten Element `--ha-card-background: transparent`,
   `--ha-card-border-width: 0`, `--ha-card-box-shadow: none` und `margin: 0`. Der
   Innenabstand kommt nur von dieser Karte.
+- **Das Chart füllt die Kartenhöhe.** Die Höhe wird aus der Karte abgeleitet:
+  verfügbare Kartenhöhe minus Kopfzeile, Metazeile und Innenabstände. Ein
+  `ResizeObserver` auf der `ha-card` greift auch dann, wenn sich nur das Raster
+  ändert und nicht das Fenster. Das laufende Chart wird über `updateOptions`
+  auf die neue Höhe gesetzt, **nicht** neu erzeugt — ein Neuaufbau würde die
+  Historie erneut laden. Die Legende bleibt innerhalb dieser Höhe; unter der
+  Karte bleibt kein Leerraum und es entsteht kein Scrollbalken.
+
+> **`apex_config.chart.height` wird ignoriert.** Bekommt die Karte eine Höhe vom
+> Raster (Sections-View, `grid_options.rows`), gewinnt die berechnete Höhe.
+> Ohne Rasterhöhe — etwa in einer klassischen Masonry-View — greift ein
+> Festwert von **220 px**. Die Höhe über die Card-Config zu steuern ist damit
+> nicht mehr vorgesehen; stelle sie über `grid_options.rows` ein.
 - Ist `apexcharts-card` **nicht** installiert (Element nicht registriert), zeigt
   die Karte statt des Charts die gedämpfte Zeile „apexcharts-card nicht
   installiert“.

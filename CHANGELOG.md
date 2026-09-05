@@ -4,6 +4,23 @@ Alle nennenswerten Änderungen an diesem Projekt werden hier festgehalten.
 Format grob nach [Keep a Changelog](https://keepachangelog.com/de/1.1.0/),
 Versionierung nach [SemVer](https://semver.org/lang/de/).
 
+## [0.4.0]
+
+### Geändert
+
+- **des-chart-card:** Das Chart füllt jetzt die Kartenhöhe, statt eine feste
+  Höhe aus der Config zu behalten und darunter Leerraum zu lassen. Die Höhe wird
+  aus der Karte abgeleitet (verfügbare Höhe minus Kopfzeile, Metazeile und
+  Innenabstände) und über einen `ResizeObserver` auf der `ha-card` nachgeführt —
+  der greift auch, wenn sich nur das Raster ändert und nicht das Fenster. Das
+  laufende Chart wird per `updateOptions` auf die neue Höhe gesetzt und **nicht**
+  neu erzeugt; ein Neuaufbau würde die Historie erneut laden.
+- **des-chart-card:** `apex_config.chart.height` aus der Config wird dabei
+  überschrieben. Ohne Rasterhöhe — klassische Masonry-View — greift ein Festwert
+  von 220 px.
+- **des-chart-card:** `getGridOptions` liefert jetzt `rows: 4` und `min_rows: 3`
+  statt fest 6 Zeilen.
+
 ## [0.3.2]
 
 ### Behoben

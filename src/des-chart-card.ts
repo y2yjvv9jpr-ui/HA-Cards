@@ -16,13 +16,40 @@ const DEFAULT_LABEL: Record<StatsPeriod, string> = {
 };
 
 /** Grid size in a HA sections view (column_span 3 → 36 columns): two thirds wide. */
-const GRID_ROWS = 6;
+const GRID_ROWS = 4;
+const GRID_MIN_ROWS = 3;
 const GRID_COLUMNS = 24;
+
+/**
+ * Chart height when the card has no height to give - a classic (masonry) view,
+ * where nothing constrains the card and the leftover measures as zero.
+ */
+const FALLBACK_CHART_HEIGHT = 220;
+
+/** Below this many pixels of leftover we assume there is no imposed height. */
+const MIN_MEASURED_HEIGHT = 80;
 
 /** The embedded card element accepts a `hass` assignment; that is all we need. */
 interface EmbeddedCard extends HTMLElement {
   hass?: HomeAssistant;
 }
+
+/**
+ * The ApexCharts instance the embedded card keeps. Only `updateOptions` is
+ * used, and the lookup below verifies it before calling - resizing through the
+ * live instance avoids tearing the chart down and refetching its history on
+ * every grid resize.
+ */
+interface ApexInstance {
+  updateOptions(
+    options: Record<string, unknown>,
+    redrawPaths?: boolean,
+    animate?: boolean,
+  ): unknown;
+}
+
+/** Property names apexcharts-card has used for its ApexCharts instance. */
+const APEX_INSTANCE_KEYS = ['_apexChart', 'apexChart', '_chart'] as const;
 
 /** Minimal shape of Home Assistant's card-helper bundle. */
 interface CardHelpers {
@@ -48,6 +75,9 @@ export class DesChartCard extends LitElement {
   private _mountToken = 0;
   private _helpersPromise?: Promise<CardHelpers | null>;
   private _awaitingApex = false;
+  /** Last height handed to the chart, so a resize that changes nothing is free. */
+  private _chartHeight?: number;
+  private _resizeObserver?: ResizeObserver;
 
   constructor() {
     super();
@@ -80,9 +110,9 @@ export class DesChartCard extends LitElement {
     return GRID_ROWS;
   }
 
-  /** HA sections view: two thirds of the section wide, fixed height. */
+  /** HA sections view: two thirds wide; the chart grows into the given rows. */
   getGridOptions(): { columns: number; rows: number; min_rows: number } {
-    return { columns: GRID_COLUMNS, rows: GRID_ROWS, min_rows: GRID_ROWS };
+    return { columns: GRID_COLUMNS, rows: GRID_ROWS, min_rows: GRID_MIN_ROWS };
   }
 
   static getStubConfig(): DesChartCardConfig {
@@ -92,6 +122,8 @@ export class DesChartCard extends LitElement {
   override disconnectedCallback(): void {
     super.disconnectedCallback();
     this._teardownChart();
+    this._resizeObserver?.disconnect();
+    this._resizeObserver = undefined;
   }
 
   override firstUpdated(): void {
@@ -103,6 +135,19 @@ export class DesChartCard extends LitElement {
         .then(() => this.requestUpdate())
         .catch(() => undefined);
     }
+    this._observeCardSize();
+  }
+
+  /**
+   * Watches ha-card rather than the window: a sections grid can change the
+   * card's height without the window ever resizing.
+   */
+  private _observeCardSize(): void {
+    if (this._resizeObserver || typeof ResizeObserver === 'undefined') return;
+    const card = this.renderRoot?.querySelector('ha-card');
+    if (!card) return;
+    this._resizeObserver = new ResizeObserver(() => this._applyChartHeight());
+    this._resizeObserver.observe(card);
   }
 
   // =========================================================================
@@ -198,7 +243,82 @@ export class DesChartCard extends LitElement {
   // =========================================================================
 
   protected override updated(): void {
+    this._applyChartHeight();
     this._syncChart();
+  }
+
+  /**
+   * Height left for the chart: the card's content box minus everything else in
+   * it. The embedded card is taken out of flow (see `.chart .embedded`), so the
+   * chart's own height can never feed back into this measurement.
+   */
+  private _measureChartHeight(): number {
+    const inner = this.renderRoot?.querySelector('.card') as HTMLElement | null;
+    const chart = this.renderRoot?.querySelector('#chart') as HTMLElement | null;
+    if (!inner || !chart) return FALLBACK_CHART_HEIGHT;
+
+    const innerStyle = getComputedStyle(inner);
+    let available =
+      inner.clientHeight -
+      parseFloat(innerStyle.paddingTop) -
+      parseFloat(innerStyle.paddingBottom);
+
+    for (const child of Array.from(inner.children) as HTMLElement[]) {
+      const style = getComputedStyle(child);
+      available -= parseFloat(style.marginTop) + parseFloat(style.marginBottom);
+      if (child !== chart) available -= child.offsetHeight;
+    }
+
+    // A classic view imposes no height, so nothing is left over to divide up.
+    return available >= MIN_MEASURED_HEIGHT
+      ? Math.floor(available)
+      : FALLBACK_CHART_HEIGHT;
+  }
+
+  /** Sizes the container and pushes the height into the live chart. */
+  private _applyChartHeight(): void {
+    const chart = this.renderRoot?.querySelector('#chart') as HTMLElement | null;
+    if (!chart) return;
+
+    const height = this._measureChartHeight();
+    // Also guards the observer: re-measuring after our own write yields the
+    // same number, so the loop stops here.
+    if (height === this._chartHeight) return;
+
+    this._chartHeight = height;
+    chart.style.height = `${height}px`;
+    this._resizeApex(height);
+  }
+
+  /** Resizes the mounted chart in place instead of rebuilding it. */
+  private _resizeApex(height: number): void {
+    const instance = this._apexInstance();
+    if (!instance) return;
+    try {
+      void instance.updateOptions({ chart: { height } }, false, false);
+    } catch (error) {
+      // eslint-disable-next-line no-console
+      console.warn('des-chart-card: Chart-Höhe konnte nicht gesetzt werden', error);
+    }
+  }
+
+  /**
+   * The ApexCharts instance inside the embedded card. Private API of a foreign
+   * card, so every candidate is checked for `updateOptions` before use; without
+   * it the card still works, the chart just keeps the height it was built with
+   * until the next remount.
+   */
+  private _apexInstance(): ApexInstance | undefined {
+    const element = this._chartEl as unknown as Record<string, unknown> | undefined;
+    if (!element) return undefined;
+
+    for (const key of APEX_INSTANCE_KEYS) {
+      const candidate = element[key] as ApexInstance | undefined;
+      if (candidate && typeof candidate.updateOptions === 'function') {
+        return candidate;
+      }
+    }
+    return undefined;
   }
 
   private _syncChart(): void {
@@ -249,16 +369,36 @@ export class DesChartCard extends LitElement {
     this._chartPeriod = period;
   }
 
-  /** Adds the card type and forces the embedded card's own header off. */
+  /**
+   * Adds the card type, forces the embedded card's own header off, and sets the
+   * chart height. A height from the user's `apex_config` is deliberately
+   * overwritten - the card's job here is to fill the space it was given.
+   */
   private _embedConfig(cfg: Record<string, unknown>): Record<string, unknown> {
     const header =
       cfg.header && typeof cfg.header === 'object'
         ? (cfg.header as Record<string, unknown>)
         : {};
+    const apex =
+      cfg.apex_config && typeof cfg.apex_config === 'object'
+        ? (cfg.apex_config as Record<string, unknown>)
+        : {};
+    const apexChart =
+      apex.chart && typeof apex.chart === 'object'
+        ? (apex.chart as Record<string, unknown>)
+        : {};
+
     return {
       ...cfg,
       type: 'custom:apexcharts-card',
       header: { ...header, show: false },
+      apex_config: {
+        ...apex,
+        chart: {
+          ...apexChart,
+          height: this._chartHeight ?? FALLBACK_CHART_HEIGHT,
+        },
+      },
     };
   }
 
@@ -336,14 +476,23 @@ export class DesChartCard extends LitElement {
         text-overflow: ellipsis;
       }
 
+      /* Height comes from JS, see _applyChartHeight(). overflow:hidden keeps a
+         chart that briefly overshoots - the legend, mostly - from producing a
+         scrollbar. */
       .chart {
+        position: relative;
         margin-top: 8px;
+        overflow: hidden;
       }
 
       /* The embedded apexcharts-card renders its own ha-card; strip its frame
          so the chart sits flush inside ours. Custom properties pierce the
-         embedded shadow root, so setting them here is enough. */
+         embedded shadow root, so setting them here is enough.
+         Absolutely positioned on purpose: out of flow, it cannot add its own
+         height back into the measurement the height is derived from. */
       .chart .embedded {
+        position: absolute;
+        inset: 0;
         display: block;
         margin: 0;
         --ha-card-background: transparent;
