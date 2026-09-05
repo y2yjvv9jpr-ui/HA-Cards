@@ -4,6 +4,29 @@ Alle nennenswerten Änderungen an diesem Projekt werden hier festgehalten.
 Format grob nach [Keep a Changelog](https://keepachangelog.com/de/1.1.0/),
 Versionierung nach [SemVer](https://semver.org/lang/de/).
 
+## [0.3.0]
+
+### Geändert
+
+- **des-storage-card (battery):** Kapazität und Temperatur stehen jetzt als
+  Pillen in der Kopfzeile, links von Notstrom- und Status-Pille. Die Temperatur
+  behält ihre Farbschwellen, nur eben als Pille. Die Metazeile entfällt damit
+  vollständig, `min. XX % SoC` inklusive — der Wert steht weiterhin am Slider im
+  aufgeklappten Bereich. Die Pillen brechen nicht um; auf schmalen Karten wird
+  stattdessen der Name gekürzt.
+
+### Hinzugefügt
+
+- **des-storage-card (battery):** Restzeit wird geschätzt, wenn für die aktuelle
+  Richtung keine Entität konfiguriert ist — Entladen bis `threshold_pct`, Laden
+  bis `charge_target_pct`, jeweils aus `soc`, `capacity_kwh` und der
+  Anzeigeleistung. Grundlage ist ein exponentielles gleitendes Mittel der
+  Leistung (Zeitkonstante ca. 5 min), damit die Anzeige nicht bei jeder Wolke
+  springt; ein Richtungswechsel setzt das Mittel zurück. Angezeigt ab 60 s
+  Datenbasis, gerundet auf 5 min, außerhalb als „< 10 min“ bzw. „> 48 h“. Im
+  Zustand „Bereit“ entfällt die Restzeit. Konfigurierte Entitäten werden
+  unverändert und ungeglättet übernommen.
+
 ## [0.2.2]
 
 ### Hinzugefügt

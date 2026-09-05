@@ -4,7 +4,7 @@ import { DesHouseCard } from './des-house-card';
 import { DesStatsCard } from './des-stats-card';
 import { DesChartCard } from './des-chart-card';
 
-const VERSION = '0.2.2';
+const VERSION = '0.3.0';
 
 interface CardRegistration {
   type: string;

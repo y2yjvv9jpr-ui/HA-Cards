@@ -129,7 +129,7 @@ eine Entity-ID.
 | Option                       | Typ                          | Beschreibung                                                                     |
 | ---------------------------- | ---------------------------- | -------------------------------------------------------------------------------- |
 | `soc`                        | number (%) \| Entity         | Ladestand; füllt das Batteriesymbol, steht groß daneben.                          |
-| `capacity_kwh`               | number \| Entity             | Kapazität — erstes Segment der Meta-Zeile.                                        |
+| `capacity_kwh`               | number \| Entity             | Kapazität — als Pille in der Kopfzeile.                                            |
 | `power_w`                    | number \| Entity             | **Bevorzugte Leistungsquelle.** Vorzeichen: **negativ = Entladen**, **positiv = Laden**. |
 | `voltage_entity`             | Entity                       | Nur als **Fallback**, wenn `power_w` fehlt: zusammen mit `current_entity` U × I.  |
 | `current_entity`             | Entity                       | siehe `voltage_entity`.                                                           |
@@ -138,14 +138,14 @@ eine Entity-ID.
 | `idle_threshold_w`           | number \| Entity             | Unterhalb dieses Betrags gilt der Akku als „Bereit“. Standard: `20`.                |
 | `status`                     | Status \| Entity             | **Optional** — ohne Angabe aus der Leistung abgeleitet.                            |
 | `energy_kwh`                 | number \| Entity             | **Optional** — ohne Angabe aus `soc × capacity_kwh / 100` berechnet.               |
-| `temp_c`                     | number \| Entity \| `null`   | Akkutemperatur. Bei `null` entfällt das Segment in der Meta-Zeile.                 |
+| `temp_c`                     | number \| Entity \| `null`   | Akkutemperatur als farbige Pille. Bei `null` entfällt sie.                         |
 | `threshold_pct`              | number \| Entity             | Minimaler Ladestand; Slider 10–80/5 oder aus der Entität, siehe unten.             |
 | `charge_target_pct`          | number \| Entity             | Ladegrenze (max. SoC), in allen Modi gültig; Slider 50–100/5 oder aus der Entität.  |
 | `charge_mode`                | `auto` \| `charge` \| Entity | Anzeige des Lademodus, wenn kein `charge_mode_control` gesetzt ist.                |
 | `charge_mode_control`        | Objekt                       | Bindet **Laden \| Auto** an eine Entität, siehe unten. Ohne dieses Feld bleibt der Umschalter lokal. |
 | `time_remaining`             | string \| Entity             | Restzeit. Hat Vorrang vor den beiden folgenden.                                   |
-| `time_remaining_charging`    | string \| Entity             | Restzeit, solange die Leistung positiv ist.                                       |
-| `time_remaining_discharging` | string \| Entity             | Restzeit sonst.                                                                   |
+| `time_remaining_charging`    | string \| Entity             | Restzeit beim Laden. Ohne Angabe schätzt die Karte, siehe unten.                  |
+| `time_remaining_discharging` | string \| Entity             | Restzeit beim Entladen. Ohne Angabe schätzt die Karte.                            |
 | `time_at`                    | string \| Entity             | Zeitpunkt, z. B. `"um 00:12"`.                                                    |
 | `backup`                     | Status \| Objekt             | Notstrom-Badge, siehe unten. Standard `none` (ausgeblendet).                       |
 | `controls`                   | boolean                      | `false` blendet Bedienzeile **und** Chevron aus — reine Anzeigekarte. Standard `true`. |
@@ -199,7 +199,29 @@ Leerlaufstrom. Genau auf der Schwelle zählt es bereits als Laden bzw. Entladen.
 **Restzeit** — ohne `time_remaining` wählt die Karte nach dem Vorzeichen der
 Leistung: positiv → `time_remaining_charging`, sonst
 `time_remaining_discharging`. States wie `Not Charging`, `Not Discharging`,
-`unknown` oder `unavailable` blenden die Zeile aus.
+`unknown` oder `unavailable` blenden die Zeile aus. Ein konfigurierter Wert wird
+unverändert übernommen — das Gerät weiß es besser als jede Schätzung.
+
+**Geschätzte Restzeit** — ist für die aktuelle Richtung *nichts* konfiguriert
+(so bei den Hausakkus), rechnet die Karte selbst:
+
+| Richtung | Rechnung                                                    |
+| -------- | ----------------------------------------------------------- |
+| Entladen | `(soc − threshold_pct) / 100 × capacity_kwh / \|Leistung\|`    |
+| Laden    | `(charge_target_pct − soc) / 100 × capacity_kwh / \|Leistung\|` |
+
+Verwendet wird die Anzeigeleistung der Karte, also inklusive `invert_power` und
+`power_share`. Allerdings **nicht** der Momentanwert, sondern ein exponentielles
+gleitendes Mittel mit rund 5 Minuten Zeitkonstante: eine vorbeiziehende Wolke
+würde die Momentanleistung halbieren und die Restzeit entsprechend springen
+lassen. Bei einem Wechsel Laden ↔ Entladen beginnt das Mittel neu, denn es
+beschreibt dann einen anderen Vorgang; Werte innerhalb der Totzone fließen gar
+nicht ein, weil sie das Mittel gegen null ziehen würden.
+
+Angezeigt wird erst, wenn das Mittel mindestens 60 Sekunden Daten hat. Das
+Ergebnis wird auf volle 5 Minuten gerundet; unter 10 Minuten steht
+„< 10 min“, über 48 Stunden „> 48 h“. Im Zustand „Bereit“ — also unterhalb
+`idle_threshold_w` — entfällt die Restzeit ganz.
 
 **`charge_mode_control`** — macht aus dem Umschalter **Laden | Auto** ein
 schreibendes Bedienelement:
@@ -235,11 +257,12 @@ statt als selbstbewusstes „Laden“ durchzugehen.
 
 **Aufbau**
 
-- **Kopfzeile** — Name, direkt daneben gedämpft
-  `Kapazität · Temperatur · min. SoC` (Temperatur-Segment entfällt bei
-  `temp_c: null`). Rechts die Badges: bei
-  `backup: ready` grün „Notstrom bereit“, bei `backup: active` rot
-  „NOTSTROM AKTIV“, danach das Status-Badge.
+- **Kopfzeile** — Name links, rechts eine Reihe Pillen, von links nach rechts:
+  **Kapazität** (neutral), **Temperatur** (farbig, siehe Ampel unten),
+  **Notstrom** (grün „Notstrom bereit“ bzw. rot „NOTSTROM AKTIV“, nur bei
+  `backup != none`) und das **Status-Badge**. Kapazität und Temperatur
+  entfallen, wenn nicht konfiguriert. Die Pillen brechen nicht um und schrumpfen
+  nicht — auf schmalen Karten wird stattdessen der Name gekürzt.
 - **Hauptzeile** — aufrechtes SVG-Batteriesymbol (Füllstand von unten, grün über
   50 %, gelb 20–50 %, rot darunter), daneben Ladestand und Restenergie auf einer
   Basislinie. Rechts die Leistung farbig, darunter gedämpft
@@ -269,7 +292,7 @@ statt als selbstbewusstes „Laden“ durchzugehen.
   die dauerhaft gilt (z. B. beim Zendure). Ist `charge_target_pct` als fester
   Zahlenwert konfiguriert (keine Entität), bewegt sich der Slider wie gehabt nur
   lokal und löst keinen Service-Call aus. Der `min. SoC`-Slider ist ebenfalls
-  immer aktiv und aktualisiert auch das Segment in der Kopfzeile.
+  immer aktiv.
 
 **Lademodus** — der Umschalter zeigt den *aktuellen* Modus als aktives Segment
 (gleiche Optik wie bei `thermal_group`):
@@ -279,7 +302,7 @@ statt als selbstbewusstes „Laden“ durchzugehen.
 | `auto`        | „Auto“          | Normalbetrieb                              |
 | `charge`      | „Laden“         | Laden erzwungen, ggf. aus dem Netz         |
 
-**Temperatur-Ampel** — das °C-Segment in der Kopfzeile färbt sich nach Wert:
+**Temperatur-Ampel** — die °C-Pille färbt sich nach Wert:
 
 | Bereich          | Farbe    |
 | ---------------- | -------- |

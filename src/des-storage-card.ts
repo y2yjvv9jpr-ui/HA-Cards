@@ -65,6 +65,23 @@ const DEFAULT_IDLE_THRESHOLD_W = 20;
 const DEFAULT_POWER_SHARE = 1;
 
 /**
+ * Smoothing of the power used for the *estimated* remaining time.
+ *
+ * The momentary reading swings far too much for a runtime estimate - a cloud
+ * passing over would halve or double it. An exponential mean over roughly five
+ * minutes tracks real changes while ignoring that noise.
+ */
+const POWER_AVERAGE_TAU_S = 300;
+
+/** The mean needs this much history before an estimate is worth showing. */
+const POWER_AVERAGE_MIN_AGE_MS = 60_000;
+
+/** Estimates are rounded to this, and suppressed outside these bounds. */
+const ESTIMATE_STEP_MIN = 5;
+const ESTIMATE_MIN_MINUTES = 10;
+const ESTIMATE_MAX_HOURS = 48;
+
+/**
  * Sliders write on `change` (pointer release), and that write is debounced:
  * keyboard stepping fires `change` per arrow key, so without this a held key
  * would queue a service call per step.
@@ -157,14 +174,29 @@ function formatForStep(value: number, step: number): string {
 }
 
 /**
- * Traffic-light class for the battery temperature.
+ * "1h 30m" for an estimate, with the coarse ends called out rather than
+ * pretending to a precision the smoothing cannot support.
+ */
+function formatEstimate(hours: number): string | null {
+  if (!Number.isFinite(hours) || hours <= 0) return null;
+  if (hours > ESTIMATE_MAX_HOURS) return `> ${ESTIMATE_MAX_HOURS} h`;
+
+  const minutes =
+    Math.round((hours * 60) / ESTIMATE_STEP_MIN) * ESTIMATE_STEP_MIN;
+  if (minutes < ESTIMATE_MIN_MINUTES) return `< ${ESTIMATE_MIN_MINUTES} min`;
+  return `${Math.floor(minutes / 60)}h ${minutes % 60}m`;
+}
+
+/**
+ * Traffic-light pill modifier for the battery temperature. Same thresholds as
+ * when the value lived in the meta line.
  *
  *   < 4 °C  red · 4-8 °C  yellow · 8-40 °C  neutral · 40-50 °C  yellow · > 50 °C  red
  */
-function temperatureClass(temp: number): string {
-  if (temp < 4 || temp > 50) return 'temp-alert';
-  if (temp < 8 || temp > 40) return 'temp-warn';
-  return '';
+function temperatureBadge(temp: number): string {
+  if (temp < 4 || temp > 50) return 'badge-alert';
+  if (temp < 8 || temp > 40) return 'badge-warn';
+  return 'badge-neutral';
 }
 
 export class DesStorageCard extends LitElement {
@@ -199,6 +231,15 @@ export class DesStorageCard extends LitElement {
 
   /** Closes the controls dropdown on an outside click or Escape while open. */
   private _closer = new OverlayCloser(this, () => this._collapse());
+
+  // Exponential mean of the display power, for the estimated remaining time.
+  // Deliberately not reactive: it only ever changes while handling a `hass`
+  // update, which already triggers the render that reads it.
+  private _powerAverage: number | null = null;
+  /** 1 = charging, -1 = discharging. A flip restarts the mean. */
+  private _averageDirection = 0;
+  private _averageStartedAt = 0;
+  private _averageUpdatedAt = 0;
 
   constructor() {
     super();
@@ -303,6 +344,8 @@ export class DesStorageCard extends LitElement {
     if (!config) return;
 
     if (config.variant === 'battery') {
+      this._updatePowerAverage(config);
+
       if (
         this._thresholdLocal !== null &&
         this._entityMatches(
@@ -535,26 +578,101 @@ export class DesStorageCard extends LitElement {
   }
 
   /**
-   * Remaining time. `time_remaining` wins; otherwise the charging variant is
-   * used while power is positive and the discharging one in every other case.
+   * Feeds the display power into the exponential mean.
+   *
+   * Idle samples are skipped rather than averaged in: a battery resting at a
+   * few watts would drag the mean towards zero and inflate the estimate. A
+   * change of direction starts a fresh mean, because the old one describes
+   * the opposite process.
+   */
+  private _updatePowerAverage(config: DesStorageCardConfig): void {
+    const power = this._power(config);
+    if (power.kind !== 'value') return;
+
+    const threshold = this._idleThreshold(config);
+    const direction = power.value >= threshold ? 1 : power.value <= -threshold ? -1 : 0;
+    if (direction === 0) return;
+
+    const now = Date.now();
+    if (direction !== this._averageDirection || this._powerAverage === null) {
+      this._averageDirection = direction;
+      this._powerAverage = power.value;
+      this._averageStartedAt = now;
+      this._averageUpdatedAt = now;
+      return;
+    }
+
+    const seconds = Math.max(0, (now - this._averageUpdatedAt) / 1000);
+    this._averageUpdatedAt = now;
+    const weight = 1 - Math.exp(-seconds / POWER_AVERAGE_TAU_S);
+    this._powerAverage += weight * (power.value - this._powerAverage);
+  }
+
+  /**
+   * Remaining time.
+   *
+   * A configured entity wins and is shown as-is - the device knows better than
+   * any estimate. Only when nothing is configured for the current direction
+   * does the card work it out from state of charge, capacity and the smoothed
+   * power.
    */
   private _timeRemaining(
     config: DesStorageCardConfig,
     power: Resolved<number>,
   ): string | null {
+    // "Bereit" means there is no process to put a time on.
+    if (
+      power.kind !== 'value' ||
+      Math.abs(power.value) < this._idleThreshold(config)
+    ) {
+      return null;
+    }
+    const charging = power.value > 0;
+
     let source: TextValue | undefined = config.time_remaining;
     if (source === undefined) {
-      source =
-        power.kind === 'value' && power.value > 0
-          ? config.time_remaining_charging
-          : config.time_remaining_discharging;
+      source = charging
+        ? config.time_remaining_charging
+        : config.time_remaining_discharging;
     }
+    if (source === undefined) return this._estimateTimeRemaining(config, charging);
 
     const resolved = resolveText(source, this.hass);
     if (resolved.kind !== 'value') return null;
     return NO_TIME_STATES.has(resolved.value.trim().toLowerCase())
       ? null
       : resolved.value;
+  }
+
+  /**
+   * Discharging: how long until the minimum state of charge.
+   * Charging:    how long until the charge target.
+   *
+   * Uses the smoothed power, and stays silent until that mean has enough
+   * history to mean anything.
+   */
+  private _estimateTimeRemaining(
+    config: DesStorageCardConfig,
+    charging: boolean,
+  ): string | null {
+    if (this._powerAverage === null) return null;
+    if (Date.now() - this._averageStartedAt < POWER_AVERAGE_MIN_AGE_MS) return null;
+
+    const average = Math.abs(this._powerAverage);
+    if (average < this._idleThreshold(config)) return null;
+
+    const soc = resolveNumber(config.soc, this.hass);
+    const capacity = resolveNumber(config.capacity_kwh, this.hass);
+    if (soc.kind !== 'value' || capacity.kind !== 'value') return null;
+
+    const limit = charging ? this._chargeTarget(config) : this._threshold(config);
+    if (limit === null) return null;
+
+    const deltaPercent = charging ? limit - soc.value : soc.value - limit;
+    if (deltaPercent <= 0) return null;
+
+    // kWh divided by kW gives hours.
+    return formatEstimate(((deltaPercent / 100) * capacity.value) / (average / 1000));
   }
 
   private _backup(config: DesStorageCardConfig): BackupState {
@@ -682,9 +800,10 @@ export class DesStorageCard extends LitElement {
       <div class="header">
         <div class="head-left">
           <span class="name">${config.name}</span>
-          <span class="meta">${this._renderBatteryMeta(config, capacity)}</span>
         </div>
         <div class="badges">
+          ${this._renderCapacityBadge(capacity)}
+          ${this._renderTemperatureBadge(config)}
           ${backup === 'none' ? nothing : this._renderBackupBadge(backup)}
           ${this._renderBadge(STATUS_LABEL[status], `status-${status}`)}
         </div>
@@ -793,43 +912,33 @@ export class DesStorageCard extends LitElement {
     `;
   }
 
-  /** "6,6 kWh · 23,5 °C · min. 20 % SoC" - unset segments are dropped. */
-  private _renderBatteryMeta(
-    config: DesStorageCardConfig,
+  /** Capacity as a neutral pill; omitted when not configured. */
+  private _renderCapacityBadge(
     capacity: Resolved<number>,
-  ): TemplateResult {
-    const temp = resolveNumber(config.temp_c, this.hass);
-    const threshold = this._threshold(config);
-    const parts: Array<TemplateResult | string> = [];
-
-    if (capacity.kind === 'value') {
-      parts.push(`${formatFixed(capacity.value)} kWh`);
-    } else if (capacity.kind === 'unavailable') {
-      parts.push(html`${this._dash()} kWh`);
-    }
-
-    if (temp.kind === 'value') {
-      parts.push(
-        html`<span class=${temperatureClass(temp.value)}>
-          ${formatFixed(temp.value)} °C
-        </span>`,
-      );
-    } else if (temp.kind === 'unavailable') {
-      parts.push(html`${this._dash()} °C`);
-    }
-
-    parts.push(
-      threshold === null
-        ? html`min. ${this._dash()} SoC`
-        : `min. ${formatForStep(
-            threshold,
-            this._rangeFor(config.threshold_pct, THRESHOLD_RANGE).step,
-          )} % SoC`,
+  ): TemplateResult | typeof nothing {
+    if (capacity.kind === 'unset') return nothing;
+    return this._renderBadge(
+      capacity.kind === 'value'
+        ? `${formatFixed(capacity.value)} kWh`
+        : html`${this._dash()} kWh`,
+      'badge-neutral',
     );
+  }
 
-    return html`${parts.map((part, index) =>
-      index === 0 ? part : html` · ${part}`,
-    )}`;
+  /** Temperature as a pill, colour-coded on the same thresholds as before. */
+  private _renderTemperatureBadge(
+    config: DesStorageCardConfig,
+  ): TemplateResult | typeof nothing {
+    const temp = resolveNumber(config.temp_c, this.hass);
+    if (temp.kind === 'unset') return nothing;
+    if (temp.kind === 'unavailable') {
+      return this._renderBadge(html`${this._dash()} °C`, 'badge-neutral');
+    }
+
+    return this._renderBadge(
+      `${formatFixed(temp.value)} °C`,
+      temperatureBadge(temp.value),
+    );
   }
 
   /** Upright battery; the fill grows from the bottom. */
@@ -1024,7 +1133,10 @@ export class DesStorageCard extends LitElement {
    * The label sits in its own element so it can be nudged down optically.
    * Metric centring alone reads as too high - see `.badge-label` in the styles.
    */
-  private _renderBadge(label: string, modifier: string): TemplateResult {
+  private _renderBadge(
+    label: TemplateResult | string,
+    modifier: string,
+  ): TemplateResult {
     return html`<span class="badge ${modifier}">
       <span class="badge-label">${label}</span>
     </span>`;
@@ -1241,24 +1353,11 @@ export class DesStorageCard extends LitElement {
       font-weight: 500;
       color: var(--primary-text-color);
       white-space: nowrap;
-      /* On narrow cards the meta line truncates, never the name. */
-      flex-shrink: 0;
-    }
-
-    .meta {
-      font-size: 12px;
-      color: var(--secondary-text-color);
+      /* The pills carry values and must stay whole, so on a narrow card the
+         name is what gives way. */
+      min-width: 0;
       overflow: hidden;
       text-overflow: ellipsis;
-      white-space: nowrap;
-    }
-
-    .temp-warn {
-      color: var(--warning-color, #ff9800);
-    }
-
-    .temp-alert {
-      color: var(--error-color, #d32f2f);
     }
 
     /* Placeholder for values the card could not read. */
@@ -1271,6 +1370,8 @@ export class DesStorageCard extends LitElement {
       display: flex;
       align-items: center;
       gap: 6px;
+      /* Never wrap and never shrink - the name truncates instead. */
+      flex-wrap: nowrap;
       flex-shrink: 0;
     }
 
@@ -1305,7 +1406,8 @@ export class DesStorageCard extends LitElement {
     }
 
     .status-discharging,
-    .status-heating {
+    .status-heating,
+    .badge-warn {
       background: rgba(255, 152, 0, 0.16);
       background: color-mix(
         in srgb,
@@ -1316,7 +1418,8 @@ export class DesStorageCard extends LitElement {
     }
 
     .status-idle,
-    .status-off {
+    .status-off,
+    .badge-neutral {
       background: rgba(127, 127, 127, 0.16);
       background: color-mix(
         in srgb,
@@ -1334,6 +1437,12 @@ export class DesStorageCard extends LitElement {
         transparent
       );
       color: var(--success-color, #2e7d32);
+    }
+
+    .badge-alert {
+      background: rgba(211, 47, 47, 0.16);
+      background: color-mix(in srgb, var(--error-color, #d32f2f) 16%, transparent);
+      color: var(--error-color, #d32f2f);
     }
 
     .backup-active {
