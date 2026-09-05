@@ -960,6 +960,15 @@ export class DesStorageCard extends LitElement {
     return usable.reduce((sum, entry) => sum + entry.value, 0);
   }
 
+  /**
+   * Status dot colour: only the `switch_entity` state counts (`on` → green),
+   * never `power_w` or `mode_entity`. Missing/unavailable reads as off (grey).
+   */
+  private _switchOn(entity: string): boolean {
+    const state = resolveText(entity, this.hass);
+    return state.kind === 'value' && state.value.trim().toLowerCase() === 'on';
+  }
+
   private _renderItem(
     item: ThermalItemConfig,
     index: number,
@@ -970,7 +979,14 @@ export class DesStorageCard extends LitElement {
 
     return html`
       <div class="item">
-        <span class="item-name">${item.name}</span>
+        <div class="item-head">
+          ${item.switch_entity
+            ? html`<span
+                class="dot ${this._switchOn(item.switch_entity) ? 'dot-on' : ''}"
+              ></span>`
+            : nothing}
+          <span class="item-name">${item.name}</span>
+        </div>
         <span class="item-energy">
           ${energy.kind === 'value'
             ? `${formatFixed(energy.value)} kWh`
@@ -1529,9 +1545,33 @@ export class DesStorageCard extends LitElement {
       border-top: 1px solid var(--divider-color, rgba(127, 127, 127, 0.18));
     }
 
+    /* Status dot + name share the first grid cell; the dot's fixed width keeps
+       the name aligned whether the switch is on, off or unreadable. */
+    .item-head {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      min-width: 0;
+    }
+
+    .dot {
+      flex: 0 0 auto;
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--secondary-text-color);
+      opacity: 0.5;
+    }
+
+    .dot.dot-on {
+      background: var(--success-color, #2e7d32);
+      opacity: 1;
+    }
+
     .item-name {
       font-size: 13px;
       color: var(--primary-text-color);
+      min-width: 0;
       overflow: hidden;
       text-overflow: ellipsis;
       white-space: nowrap;

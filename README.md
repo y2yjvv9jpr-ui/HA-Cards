@@ -335,9 +335,15 @@ nach `power_w > 0`.
   Akku — Heizen lädt den Wärmespeicher.
 - **Summenzeile** — Fisch-Icon, Summe aller `energy_kwh` groß mit „heute
   eingespeichert“, rechts die Gesamtleistung (grün, wenn > 0).
-- **Eine Zeile je Eintrag** — Name, Energie, Leistung und ein Umschalter
-  **An | Auto | Aus**. `Auto` überlässt die Entscheidung der Überschusslogik,
-  `An`/`Aus` erzwingen den Zustand.
+- **Eine Zeile je Eintrag** — ein Status-Punkt, der Name, Energie, Leistung und
+  ein Umschalter **An | Auto | Aus**. `Auto` überlässt die Entscheidung der
+  Überschusslogik, `An`/`Aus` erzwingen den Zustand.
+- **Status-Punkt** — ein kleiner runder Punkt links vor dem Namen, sofern
+  `switch_entity` gesetzt ist. Er zeigt allein den Schaltzustand dieser Entität:
+  State `on` → grün (dieselbe Grün-Variable wie der positive Leistungswert),
+  sonst grau gedämpft (auch bei fehlender oder `unavailable` Entität). `power_w`
+  und `mode_entity` spielen dafür keine Rolle; ohne `switch_entity` bleibt die
+  Zeile ohne Punkt.
 
 ### Allgemeines
 

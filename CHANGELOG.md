@@ -4,6 +4,16 @@ Alle nennenswerten Änderungen an diesem Projekt werden hier festgehalten.
 Format grob nach [Keep a Changelog](https://keepachangelog.com/de/1.1.0/),
 Versionierung nach [SemVer](https://semver.org/lang/de/).
 
+## [0.2.2]
+
+### Hinzugefügt
+
+- **des-storage-card (thermal_group):** Je Item ein kleiner Status-Punkt vor dem
+  Namen. Die Farbe folgt allein dem `switch_entity`-State: `on` → grün (wie der
+  positive Leistungswert), sonst grau gedämpft (fehlend/`unavailable` ebenso).
+  Der Punkt erscheint nur, wenn `switch_entity` konfiguriert ist; Badge und
+  Leistungsfärbung bleiben unverändert.
+
 ## [0.2.1]
 
 ### Geändert
