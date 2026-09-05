@@ -1561,6 +1561,11 @@ export class DesStorageCard extends LitElement {
       border-radius: 50%;
       background: var(--secondary-text-color);
       opacity: 0.5;
+      /* Optical correction, not a geometric one: align-items:center already
+         puts the dot on the text's ink centre, but a small circle reads as
+         sitting low next to lining figures. A transform is used so the row
+         height and the flex layout stay untouched. */
+      transform: translateY(-1px);
     }
 
     .dot.dot-on {

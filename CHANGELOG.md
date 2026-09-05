@@ -4,6 +4,16 @@ Alle nennenswerten Änderungen an diesem Projekt werden hier festgehalten.
 Format grob nach [Keep a Changelog](https://keepachangelog.com/de/1.1.0/),
 Versionierung nach [SemVer](https://semver.org/lang/de/).
 
+## [0.2.3]
+
+### Geändert
+
+- **des-storage-card (thermal_group):** Der Status-Punkt vor dem Item-Namen ist
+  um 1 px angehoben, damit er optisch mittig zur Textzeile sitzt. Punkt und
+  Name liegen weiterhin in einem Flex-Container mit `align-items: center`;
+  umgesetzt als `transform`, damit Zeilenhöhe und Flex-Layout unberührt
+  bleiben.
+
 ## [0.2.2]
 
 ### Hinzugefügt
