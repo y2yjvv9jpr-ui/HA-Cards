@@ -267,7 +267,7 @@ export class DesStatsCard extends LitElement {
                 style="width: ${pct}%"
               ></div>
             </div>
-            <span class="row-value">${formatFixed(value)} kWh</span>
+            <span class="row-value">${formatFixed(value, 2)} kWh</span>
           `;
         })}
       </div>
@@ -369,6 +369,8 @@ export class DesStatsCard extends LitElement {
         color: var(--primary-text-color);
         font-variant-numeric: tabular-nums;
         white-space: nowrap;
+        /* Reserve room for two decimals so "1.234,56 kWh" never wraps. */
+        min-width: 72px;
       }
 
       .bar {

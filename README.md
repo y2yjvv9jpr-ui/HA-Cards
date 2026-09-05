@@ -869,7 +869,8 @@ Ist der Nenner `≤ 0` oder fehlt ein Wert, steht an der Stelle „–“. Fehle
 - **Metazeile** — gedämpft, volle Breite:
   `… % autark · … % Eigenverbrauch`.
 - **Sechs Zeilen** im Raster `Label | Balken | Wert`: Label gedämpft, Wert
-  rechtsbündig als `… kWh` mit einer Nachkommastelle. Eine Zeile mit fehlender
+  rechtsbündig als `… kWh` mit zwei Nachkommastellen (z. B. `148,25 kWh`,
+  `0,00 kWh`). Eine Zeile mit fehlender
   Entität wird ausgeblendet. Der Balken (6 px, abgerundet, gedämpfte Schiene)
   füllt sich anteilig zum **größten angezeigten Wert** des Zeitraums; sind alle
   Werte 0, bleiben die Schienen leer.
