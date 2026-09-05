@@ -2,6 +2,7 @@ import { DesStorageCard } from './des-storage-card';
 import { DesInverterCard } from './des-inverter-card';
 import { DesHouseCard } from './des-house-card';
 import { DesStatsCard } from './des-stats-card';
+import { DesPeriodCard } from './des-period-card';
 
 const VERSION = '0.2.0';
 
@@ -41,6 +42,13 @@ const CARDS: ReadonlyArray<CardRegistration> = [
     description:
       'Energiestatistik je Zeitraum (Tag/Woche/Monat/Jahr): Verbrauch, Produktion, Import, Export, Laden, Entladen.',
   },
+  {
+    type: 'des-period-card',
+    element: DesPeriodCard,
+    name: 'Daniels Zeitraumkarte',
+    description:
+      'Kopfzeile mit Zeitraum-Umschalter, der eine input_select-Entity schreibt (z. B. über einer Chart-Karte).',
+  },
 ];
 
 window.customCards = window.customCards ?? [];
@@ -67,4 +75,10 @@ console.info(
   'background:#555;color:#fff;border-radius:0 3px 3px 0;padding:2px 4px',
 );
 
-export { DesStorageCard, DesInverterCard, DesHouseCard, DesStatsCard };
+export {
+  DesStorageCard,
+  DesInverterCard,
+  DesHouseCard,
+  DesStatsCard,
+  DesPeriodCard,
+};

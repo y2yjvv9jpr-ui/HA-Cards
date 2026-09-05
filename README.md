@@ -11,6 +11,7 @@ Aktuell enthalten:
 | `custom:des-inverter-card` | Wechselrichter-Übersicht — PV-Leistung, Strings, Phasen    |
 | `custom:des-house-card`    | Hauskarte — Verbrauch und Stromherkunft (Solar/Speicher/Netz) |
 | `custom:des-stats-card`    | Statistikkarte — sechs Energiewerte je Zeitraum (Tag/Woche/Monat/Jahr) |
+| `custom:des-period-card`   | Zeitraumkarte — Kopfzeile mit Umschalter, schreibt ein `input_select`  |
 
 > **Phase 3 — lesend und schreibend.** Jedes Wertfeld nimmt einen statischen
 > Wert **oder** eine Entity-ID. Die Karte liest aus `hass.states`, rendert bei
@@ -27,8 +28,8 @@ npm install
 npm run build
 ```
 
-Ergebnis: `dist/daniels-energy-cards.js` (~110 kB, gzip ~26 kB; Lit und **alle
-vier** Karten sind mit eingebettet).
+Ergebnis: `dist/daniels-energy-cards.js` (~115 kB, gzip ~28 kB; Lit und **alle
+fünf** Karten sind mit eingebettet).
 
 Weitere Skripte:
 
@@ -98,8 +99,9 @@ hinzufügen (**Einstellungen → Dashboards → ⋮ → Ressourcen**):
    Datei hilft ein Versions-Query wie `/local/daniels-energy-cards.js?v=2`.
 
 Die Karten erscheinen danach auch im Karten-Picker als „Daniels Speicherkarte“,
-„Daniels Wechselrichterkarte“, „Daniels Hauskarte“ und „Daniels Statistikkarte“.
-Einen visuellen Editor gibt es bewusst nicht — die Konfiguration erfolgt in YAML.
+„Daniels Wechselrichterkarte“, „Daniels Hauskarte“, „Daniels Statistikkarte“ und
+„Daniels Zeitraumkarte“. Einen visuellen Editor gibt es bewusst nicht — die
+Konfiguration erfolgt in YAML.
 
 ---
 
@@ -925,6 +927,78 @@ Verbrauch-Balken bei 100 % und die Produktion bei 86 %.
 
 ---
 
+## Zeitraumkarte (`des-period-card`)
+
+Eine reine **Kopfzeile** — Titel links, segmentierter Umschalter rechts, optional
+eine gedämpfte Metazeile darunter — die aussieht wie der Kopf der Statistikkarte.
+Der Umschalter **schreibt** die gewählte Option per `input_select.select_option`
+in eine Entität. Gedacht, um direkt **über** einer Chart-Karte zu sitzen, die
+denselben `input_select` als Zeitraum-Helfer auswertet.
+
+Das aktive Segment folgt **immer dem Zustand der Entität**, nicht dem lokalen
+Klick — so bleiben mehrere Karten oder Geräte, die denselben Helfer nutzen,
+synchron. Es wird **nicht** optimistisch umgeschaltet: aktiv wird erst, was die
+Entität nach dem Service-Call zurückmeldet.
+
+| Option        | Typ                       | Beschreibung                                                                    |
+| ------------- | ------------------------- | ------------------------------------------------------------------------------- |
+| `name`        | string                    | **Pflicht.** Titel links.                                                       |
+| `entity`      | Entity (`input_select`)   | Wird gelesen **und** geschrieben. Ohne sie zeigt die Karte einen Demo-Umschalter. |
+| `options`     | Liste `{ value, label? }` | Segmente; fehlt sie, werden die `options` der Entität in ihrer Reihenfolge genutzt (Label = value). |
+| `meta`        | string                    | Statische, gedämpfte Zeile unter dem Kopf.                                       |
+| `meta_entity` | Entity                    | Gedämpfte Zeile aus Zustand + Einheit der Entität; hat Vorrang vor `meta`.        |
+
+**Verhalten**
+
+- **Klick** auf ein Segment ruft `input_select.select_option` mit
+  `{ entity_id, option: value }` auf. Kein optimistisches Umschalten.
+- Ist `entity` **nicht verfügbar** (`unavailable`/`unknown`), wird der Umschalter
+  gedämpft und ist nicht klickbar.
+- Fehlt `options`, kommen die Segmente aus dem `options`-Attribut der Entität.
+- Unter dem Umschalter (bzw. der Metazeile) hat die Karte **keine** zusätzliche
+  Bauhöhe und keinen zusätzlichen unteren Innenabstand — eine direkt darunter
+  gestapelte Chart-Karte schließt bündig an.
+
+**Beispiel-YAML** — über einer ApexCharts-Karte:
+
+```yaml
+type: vertical-stack
+cards:
+  - type: custom:des-period-card
+    name: Verbrauch nach Quelle
+    entity: input_select.pv_helper_chart_zeitraum
+    meta: kWh je Abschnitt
+    # options weggelassen → die vier Optionen des input_select werden genutzt
+  - type: custom:apexcharts-card
+    # … Chart, das input_select.pv_helper_chart_zeitraum auswertet …
+```
+
+Mit expliziten Segmenten und einer Entität als Metazeile:
+
+```yaml
+type: custom:des-period-card
+name: Zeitraum
+entity: input_select.pv_helper_chart_zeitraum
+options:
+  - value: Tag
+    label: Tag
+  - value: Woche
+    label: Woche
+  - value: Monat
+    label: Monat
+meta_entity: sensor.chart_summe
+```
+
+Ohne `entity` läuft die Karte im Demo-Modus und zeigt **Tag / Woche / Monat /
+Jahr** mit „Tag“ aktiv:
+
+```yaml
+type: custom:des-period-card
+name: Zeitraum
+```
+
+---
+
 ## Schreibverhalten
 
 Grundregel: **jedes Bedienelement schreibt in die Entität, an die es gebunden
@@ -1020,10 +1094,11 @@ src/
   des-inverter-card.ts Wechselrichterkarte (Entity-Binding + Demo-Fallback)
   des-house-card.ts    Hauskarte (Verbrauch und Stromherkunft, Entity + Demo)
   des-stats-card.ts    Statistikkarte (sechs Energiewerte je Zeitraum, Entity + Demo)
+  des-period-card.ts   Zeitraumkarte (Kopfzeile mit Umschalter, schreibt input_select)
   types.ts             Config-Schema und HA-Typen
   resolve.ts           Statischer Wert ↔ Entity: Auflösung über hass.states
   service.ts           Schreibpfad: Domain → Service-Call
-  segmented.ts         Segmentierter Umschalter (Storage- und Statistikkarte)
+  segmented.ts         Segmentierter Umschalter (Storage-, Statistik-, Zeitraumkarte)
   chevron.ts           Gemeinsamer Chevron-Stil (Storage-, Wechselrichter-, Hauskarte)
   format.ts            Zahlenformatierung (de-DE)
 vite.config.ts         Lib-Build → dist/daniels-energy-cards.js

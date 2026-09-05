@@ -397,6 +397,36 @@ export interface DesStatsCardConfig {
   periods?: Partial<Record<StatsPeriod, StatsPeriodConfig>>;
 }
 
+// ===========================================================================
+// des-period-card
+// ===========================================================================
+
+/** One segment of the period switcher; `label` falls back to `value`. */
+export interface PeriodOption {
+  value: string;
+  label?: string;
+}
+
+/**
+ * A header-only card - title plus a segment switcher, like the stats card's
+ * head - that writes the picked option into an `input_select`. The active
+ * segment always follows the entity's state (never the local click), so
+ * several cards or devices bound to the same helper stay in sync. Without an
+ * `entity` it shows a static Tag/Woche/Monat/Jahr demo with "Tag" active.
+ */
+export interface DesPeriodCardConfig {
+  type: string;
+  name: string;
+  /** `input_select` (or `select`) the switcher reads from and writes to. */
+  entity?: string;
+  /** Segments; when omitted the entity's own `options` are used, in order. */
+  options?: PeriodOption[];
+  /** Static muted line under the header. */
+  meta?: string;
+  /** Muted line from an entity's state + unit; wins over `meta`. */
+  meta_entity?: string;
+}
+
 /** Minimal shape of the Home Assistant object handed to a card. */
 export interface HomeAssistant {
   states: Record<

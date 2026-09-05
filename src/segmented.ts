@@ -54,25 +54,36 @@ export const segmentedStyles = css`
     outline: 2px solid var(--primary-color, #03a9f4);
     outline-offset: -2px;
   }
+
+  .seg button:disabled {
+    cursor: not-allowed;
+  }
 `;
 
 /**
  * One segmented control. `active === null` dims the whole control and marks it
  * as "state not readable"; each button stops propagation so a control nested in
- * a clickable region does not also trigger that region.
+ * a clickable region does not also trigger that region. `disabled` dims it the
+ * same way and makes every button unclickable (an unreadable bound entity).
  */
 export function renderSegmented<T extends string>(
   options: ReadonlyArray<{ value: T; label: string }>,
   active: T | null,
   onSelect: (value: T) => void,
   ariaLabel: string,
+  disabled = false,
 ): TemplateResult {
+  const dim = disabled || active === null;
   return html`
     <div
-      class="seg ${active === null ? 'unknown' : ''}"
+      class="seg ${dim ? 'unknown' : ''}"
       role="group"
       aria-label=${ariaLabel}
-      title=${active === null ? 'Zustand nicht lesbar' : nothing}
+      title=${disabled
+        ? 'Nicht verfügbar'
+        : active === null
+          ? 'Zustand nicht lesbar'
+          : nothing}
     >
       ${options.map(
         ({ value, label }) => html`
@@ -80,6 +91,7 @@ export function renderSegmented<T extends string>(
             type="button"
             class=${active === value ? 'active' : ''}
             aria-pressed=${active === value ? 'true' : 'false'}
+            ?disabled=${disabled}
             @click=${(ev: Event) => {
               ev.stopPropagation();
               onSelect(value);
