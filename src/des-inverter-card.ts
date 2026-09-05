@@ -8,6 +8,7 @@ import {
 } from './format';
 import { entityUnit, isEntityId, resolveNumber, resolveText } from './resolve';
 import { chevronStyles } from './chevron';
+import { overlayStyles, OverlayCloser } from './overlay';
 import type {
   DesInverterCardConfig,
   HomeAssistant,
@@ -177,9 +178,22 @@ export class DesInverterCard extends LitElement {
   declare _config?: DesInverterCardConfig;
   declare _expanded: boolean;
 
+  /** Closes the dropdown on an outside click or Escape while it is open. */
+  private _closer = new OverlayCloser(this, () => this._collapse());
+
   constructor() {
     super();
     this._expanded = false;
+  }
+
+  override disconnectedCallback(): void {
+    super.disconnectedCallback();
+    this._closer.deactivate();
+  }
+
+  /** Keeps the `expanded` attribute in sync for the stacking rule. */
+  protected override updated(): void {
+    this.toggleAttribute('expanded', this._expanded);
   }
 
   setConfig(config: DesInverterCardConfig): void {
@@ -452,10 +466,8 @@ export class DesInverterCard extends LitElement {
 
     return html`
       <ha-card>
-        <div class="card">
-          ${this._renderCollapsed(view, hasDetails)}
-          ${this._expanded && hasDetails ? this._renderExpanded(view) : nothing}
-        </div>
+        <div class="card">${this._renderCollapsed(view, hasDetails)}</div>
+        ${this._expanded && hasDetails ? this._renderExpanded(view) : nothing}
       </ha-card>
     `;
   }
@@ -596,7 +608,7 @@ export class DesInverterCard extends LitElement {
 
   private _renderExpanded(view: InverterView): TemplateResult {
     return html`
-      <div class="details">
+      <div class="overlay details">
         ${view.showStrings ? this._renderStringsTable(view) : nothing}
         ${view.showPhases ? this._renderPhasesTable(view) : nothing}
         ${this._hasFooter(view) ? this._renderFooter(view) : nothing}
@@ -725,6 +737,14 @@ export class DesInverterCard extends LitElement {
 
   private _toggleExpanded(): void {
     this._expanded = !this._expanded;
+    if (this._expanded) this._closer.activate();
+    else this._closer.deactivate();
+  }
+
+  private _collapse(): void {
+    if (!this._expanded) return;
+    this._expanded = false;
+    this._closer.deactivate();
   }
 
   private _onKeydown(ev: KeyboardEvent): void {
@@ -736,6 +756,7 @@ export class DesInverterCard extends LitElement {
 
   static override styles = [
     chevronStyles,
+    overlayStyles,
     css`
     :host {
       display: block;
@@ -964,9 +985,6 @@ export class DesInverterCard extends LitElement {
     /* --- expanded details --- */
 
     .details {
-      margin-top: 8px;
-      padding-top: 10px;
-      border-top: 1px solid var(--divider-color, rgba(127, 127, 127, 0.22));
       display: flex;
       flex-direction: column;
       gap: 12px;

@@ -2,6 +2,7 @@ import { LitElement, html, css, nothing, type TemplateResult } from 'lit';
 import { formatFixed, formatInt, clamp } from './format';
 import { entityUnit, isEntityId, resolveNumber } from './resolve';
 import { chevronStyles } from './chevron';
+import { overlayStyles, OverlayCloser } from './overlay';
 import type {
   DesHouseCardConfig,
   HomeAssistant,
@@ -135,9 +136,22 @@ export class DesHouseCard extends LitElement {
   declare _config?: DesHouseCardConfig;
   declare _expanded: boolean;
 
+  /** Closes the dropdown on an outside click or Escape while it is open. */
+  private _closer = new OverlayCloser(this, () => this._collapse());
+
   constructor() {
     super();
     this._expanded = false;
+  }
+
+  override disconnectedCallback(): void {
+    super.disconnectedCallback();
+    this._closer.deactivate();
+  }
+
+  /** Keeps the `expanded` attribute in sync for the stacking rule. */
+  protected override updated(): void {
+    this.toggleAttribute('expanded', this._expanded);
   }
 
   setConfig(config: DesHouseCardConfig): void {
@@ -341,10 +355,8 @@ export class DesHouseCard extends LitElement {
 
     return html`
       <ha-card>
-        <div class="card">
-          ${this._renderCollapsed(config, view)}
-          ${this._expanded && view.hasToday ? this._renderExpanded(view) : nothing}
-        </div>
+        <div class="card">${this._renderCollapsed(config, view)}</div>
+        ${this._expanded && view.hasToday ? this._renderExpanded(view) : nothing}
       </ha-card>
     `;
   }
@@ -478,7 +490,7 @@ export class DesHouseCard extends LitElement {
 
   private _renderExpanded(view: HouseView): TemplateResult {
     return html`
-      <div class="details">
+      <div class="overlay">
         <div class="today">
           ${this._todayRow('Verbrauch', view.todayConsumption, '')}
           ${this._todayRow('Netzbezug', view.todayImport, 'draw')}
@@ -518,6 +530,14 @@ export class DesHouseCard extends LitElement {
 
   private _toggleExpanded(): void {
     this._expanded = !this._expanded;
+    if (this._expanded) this._closer.activate();
+    else this._closer.deactivate();
+  }
+
+  private _collapse(): void {
+    if (!this._expanded) return;
+    this._expanded = false;
+    this._closer.deactivate();
   }
 
   private _onKeydown(ev: KeyboardEvent): void {
@@ -529,6 +549,7 @@ export class DesHouseCard extends LitElement {
 
   static override styles = [
     chevronStyles,
+    overlayStyles,
     css`
     :host {
       display: block;
@@ -761,12 +782,6 @@ export class DesHouseCard extends LitElement {
     }
 
     /* --- expanded "Heute" block --- */
-
-    .details {
-      margin-top: 8px;
-      padding-top: 10px;
-      border-top: 1px solid var(--divider-color, rgba(127, 127, 127, 0.22));
-    }
 
     .today {
       display: grid;

@@ -19,6 +19,7 @@ import {
 } from './service';
 import { renderSegmented, segmentedStyles } from './segmented';
 import { chevronStyles } from './chevron';
+import { overlayStyles, OverlayCloser } from './overlay';
 import type {
   BackupState,
   ChargeMode,
@@ -196,6 +197,9 @@ export class DesStorageCard extends LitElement {
   /** Deadlines after which an unconfirmed optimistic value is dropped. */
   private _settleTimers = new Map<string, number>();
 
+  /** Closes the controls dropdown on an outside click or Escape while open. */
+  private _closer = new OverlayCloser(this, () => this._collapse());
+
   constructor() {
     super();
     this._expanded = false;
@@ -261,6 +265,12 @@ export class DesStorageCard extends LitElement {
     this._writeTimers.clear();
     for (const timer of this._settleTimers.values()) window.clearTimeout(timer);
     this._settleTimers.clear();
+    this._closer.deactivate();
+  }
+
+  /** Keeps the `expanded` attribute in sync for the stacking rule. */
+  protected override updated(): void {
+    this.toggleAttribute('expanded', this._expanded);
   }
 
   /** Drops an optimistic value that the entity never confirmed. */
@@ -423,6 +433,8 @@ export class DesStorageCard extends LitElement {
     const config = this._config;
     if (!config) return nothing;
 
+    const showControls = config.variant === 'battery' && config.controls !== false;
+
     return html`
       <ha-card>
         <div class="card">
@@ -430,6 +442,9 @@ export class DesStorageCard extends LitElement {
             ? this._renderBattery(config)
             : this._renderThermalGroup(config)}
         </div>
+        ${showControls && this._expanded
+          ? html`<div class="overlay">${this._renderBatteryControls(config)}</div>`
+          : nothing}
       </ha-card>
     `;
   }
@@ -715,11 +730,6 @@ export class DesStorageCard extends LitElement {
             ></ha-icon>`
           : nothing}
       </div>
-
-      ${showControls && this._expanded
-        ? html`<div class="grow"></div>
-            ${this._renderBatteryControls(config)}`
-        : nothing}
     `;
   }
 
@@ -1037,6 +1047,14 @@ export class DesStorageCard extends LitElement {
 
   private _toggleExpanded(): void {
     this._expanded = !this._expanded;
+    if (this._expanded) this._closer.activate();
+    else this._closer.deactivate();
+  }
+
+  private _collapse(): void {
+    if (!this._expanded) return;
+    this._expanded = false;
+    this._closer.deactivate();
   }
 
   private _onMainKeydown(ev: KeyboardEvent): void {
@@ -1163,6 +1181,7 @@ export class DesStorageCard extends LitElement {
   static override styles = [
     segmentedStyles,
     chevronStyles,
+    overlayStyles,
     css`
     /* The card fills whatever height the sections grid hands it, so several
        cards in one row can be levelled with grid_options.rows. */
@@ -1185,13 +1204,6 @@ export class DesStorageCard extends LitElement {
       display: flex;
       flex-direction: column;
       padding: 12px 16px;
-    }
-
-    /* Eats the spare height when the card is stretched, so the content stays
-       at the top and the control row sits on the bottom edge. */
-    .grow {
-      flex: 1 1 0;
-      min-height: 12px;
     }
 
     /* --- header --- */
@@ -1418,8 +1430,6 @@ export class DesStorageCard extends LitElement {
       display: flex;
       align-items: center;
       gap: 14px;
-      padding-top: 10px;
-      border-top: 1px solid var(--divider-color, rgba(127, 127, 127, 0.22));
     }
 
     /* Both slider rows share one grid so labels, tracks and values line up. */

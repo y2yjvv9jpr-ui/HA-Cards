@@ -379,6 +379,21 @@ Alternativ (oder in der klassischen **Masonry**-Ansicht) lassen sich mehrere
 Karten einer Reihe auch manuell auf dieselbe Höhe bringen: allen Karten der Reihe
 dieselben `grid_options` geben.
 
+**Aufklappen überlagert Nachbarkarten.** Weil die Zelle in der Sektionen-Ansicht
+eine feste Höhe hat, hätte ein aufgeklappter Detailblock dort keinen Platz und
+würde hinter den darunterliegenden Karten gezeichnet. Die Karten mit Chevron
+(Speicherkarte `battery`, Wechselrichter-, Hauskarte) klappen ihren Detailblock
+daher als **Dropdown** auf: ein absolut positioniertes Panel direkt unter der
+Karte, mit deren Hintergrund, Rahmen und einem Schatten, das über die Karten
+darunter gelegt wird. Es schließt bei einem Klick außerhalb, mit `Esc` oder einem
+erneuten Klick auf das Chevron. Der eingeklappte Zustand — und damit die
+gemeldete Rastergröße — ändert sich dadurch nicht.
+
+> Voraussetzung ist, dass die Sektion das Überlaufen zulässt. Erzwingt eine
+> künftige HA-Version auf dem Zellen-Wrapper `overflow: hidden`, würde das Panel
+> abgeschnitten; das wäre eine Vorgabe der Sektion und wird hier bewusst nicht
+> umgangen.
+
 ```yaml
 type: grid
 cards:
@@ -1134,6 +1149,7 @@ src/
   service.ts           Schreibpfad: Domain → Service-Call
   segmented.ts         Segmentierter Umschalter (Storage-, Statistik-, Chartkarte)
   chevron.ts           Gemeinsamer Chevron-Stil (Storage-, Wechselrichter-, Hauskarte)
+  overlay.ts           Dropdown-Panel für den Detailblock (Storage-, Wechselrichter-, Hauskarte)
   format.ts            Zahlenformatierung (de-DE)
 vite.config.ts         Lib-Build → dist/daniels-energy-cards.js
 hacs.json              HACS-Manifest (Typ Dashboard)
