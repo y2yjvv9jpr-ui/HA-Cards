@@ -4,6 +4,23 @@ Alle nennenswerten Änderungen an diesem Projekt werden hier festgehalten.
 Format grob nach [Keep a Changelog](https://keepachangelog.com/de/1.1.0/),
 Versionierung nach [SemVer](https://semver.org/lang/de/).
 
+## [0.3.1]
+
+### Geändert
+
+- **des-storage-card (battery):** Das Chevron zum Aufklappen sitzt jetzt unten
+  mittig statt rechts neben dem Leistungswert — Position, Stil und Verhalten wie
+  bei `des-house-card` und `des-inverter-card`, das Icon kommt aus dem
+  gemeinsamen `src/chevron.ts`. Leistung und Restzeit rücken dadurch ganz nach
+  rechts. Die Hauptzeile ist kein Klickziel mehr; aufgeklappt wird nur noch über
+  die Chevron-Zeile, ebenfalls wie bei den anderen beiden Karten. Eingeklappt
+  wächst die Karte dadurch um 30 px (8 px Abstand + 22 px Icon), bleibt damit
+  aber innerhalb der bisherigen `grid_options.rows: 2`.
+- **des-storage-card (thermal_group):** Der Status-Punkt vor dem Item-Namen ist
+  um 1 px angehoben, damit er optisch mittig zur Textzeile sitzt. Punkt und Name
+  liegen weiterhin in einem Flex-Container mit `align-items: center`; umgesetzt
+  als `transform`, damit Zeilenhöhe und Flex-Layout unberührt bleiben.
+
 ## [0.3.0]
 
 ### Geändert

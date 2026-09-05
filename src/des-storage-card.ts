@@ -809,14 +809,7 @@ export class DesStorageCard extends LitElement {
         </div>
       </div>
 
-      <div
-        class="main ${showControls ? 'clickable' : ''}"
-        role=${showControls ? 'button' : 'presentation'}
-        tabindex=${showControls ? 0 : -1}
-        aria-expanded=${showControls ? String(this._expanded) : nothing}
-        @click=${showControls ? this._toggleExpanded : nothing}
-        @keydown=${showControls ? this._onMainKeydown : nothing}
-      >
+      <div class="main">
         ${this._renderBatteryIcon(soc)}
         <div class="readout">
           <span class="soc">
@@ -842,13 +835,24 @@ export class DesStorageCard extends LitElement {
             ? nothing
             : html`<div class="muted">${times.join(' · ')}</div>`}
         </div>
-        ${showControls
-          ? html`<ha-icon
+      </div>
+
+      ${showControls
+        ? html`<div
+            class="chevron-row clickable"
+            role="button"
+            tabindex="0"
+            aria-expanded=${String(this._expanded)}
+            aria-label="Details"
+            @click=${this._toggleExpanded}
+            @keydown=${this._onKeydown}
+          >
+            <ha-icon
               class="chevron ${this._expanded ? 'open' : ''}"
               icon="mdi:chevron-down"
-            ></ha-icon>`
-          : nothing}
-      </div>
+            ></ha-icon>
+          </div>`
+        : nothing}
     `;
   }
 
@@ -1183,7 +1187,7 @@ export class DesStorageCard extends LitElement {
     this._closer.deactivate();
   }
 
-  private _onMainKeydown(ev: KeyboardEvent): void {
+  private _onKeydown(ev: KeyboardEvent): void {
     if (ev.key === 'Enter' || ev.key === ' ') {
       ev.preventDefault();
       this._toggleExpanded();
@@ -1462,22 +1466,6 @@ export class DesStorageCard extends LitElement {
       margin-top: 8px;
     }
 
-    .main.clickable {
-      cursor: pointer;
-      outline: none;
-    }
-
-    /* A mouse click must not leave the ring standing; keyboard focus keeps it. */
-    .main.clickable:focus {
-      outline: none;
-    }
-
-    .main.clickable:focus-visible {
-      outline: 2px solid var(--primary-color, #03a9f4);
-      outline-offset: 3px;
-      border-radius: 6px;
-    }
-
     .battery {
       flex-shrink: 0;
     }
@@ -1545,6 +1533,30 @@ export class DesStorageCard extends LitElement {
 
     .power.neutral {
       color: var(--secondary-text-color);
+    }
+
+    /* --- chevron --- */
+
+    .chevron-row {
+      display: flex;
+      justify-content: center;
+      margin-top: 8px;
+    }
+
+    .chevron-row.clickable {
+      cursor: pointer;
+      outline: none;
+    }
+
+    /* A mouse click must not leave the ring standing; keyboard focus keeps it. */
+    .chevron-row.clickable:focus {
+      outline: none;
+    }
+
+    .chevron-row.clickable:focus-visible {
+      outline: 2px solid var(--primary-color, #03a9f4);
+      outline-offset: 2px;
+      border-radius: 6px;
     }
 
     /* --- battery controls (collapsed by default) --- */
@@ -1670,6 +1682,11 @@ export class DesStorageCard extends LitElement {
       border-radius: 50%;
       background: var(--secondary-text-color);
       opacity: 0.5;
+      /* Optical correction, not a geometric one: align-items:center already
+         puts the dot on the text's ink centre, but a small circle reads as
+         sitting low next to lining figures. A transform is used so the row
+         height and the flex layout stay untouched. */
+      transform: translateY(-1px);
     }
 
     .dot.dot-on {
