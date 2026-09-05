@@ -3924,8 +3924,13 @@ ie.properties = {
       }
     `
 ];
+<<<<<<< HEAD
 let ke = ie;
 const Rr = "0.3.1", Ir = [
+=======
+let Ee = ne;
+const Pr = "0.2.3", Mr = [
+>>>>>>> 84c2ee9c84bd29f4fbd58208bbedbbf1668a5895
   {
     type: "des-storage-card",
     element: ye,
