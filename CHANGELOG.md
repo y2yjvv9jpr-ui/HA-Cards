@@ -4,6 +4,26 @@ Alle nennenswerten Änderungen an diesem Projekt werden hier festgehalten.
 Format grob nach [Keep a Changelog](https://keepachangelog.com/de/1.1.0/),
 Versionierung nach [SemVer](https://semver.org/lang/de/).
 
+## [0.5.0]
+
+### Hinzugefügt
+
+- **des-inverter-card:** Uhrzeit-Überwachung über das neue `time_entity`
+  (`datetime`) und `time_warn_minutes` (Standard 2). Die Abweichung ist die Zeit
+  der Entität minus die Browserzeit, vorzeichenbehaftet — positiv heißt, der
+  Wechselrichter geht vor. Sie wird **jede Minute** neu bewertet, nicht nur bei
+  einem Zustandswechsel: eine stehende Uhr fiele sonst gar nicht auf.
+- Ab der Schwelle steht links neben der Status-Pille eine amber Pille
+  „Uhr +3 min" bzw. „Uhr −3 min"; darunter keine. Ist die Entität nicht lesbar,
+  steht dort grau „Uhr ?".
+- Aufgeklappt eine Zeile „Wechselrichter-Uhr" mit dem Wert als
+  `dd.MM.yyyy HH:mm` und `(Δ +3 min)`, dazu der Knopf **Zeit setzen** im Stil
+  der Segmented-Control-Buttons. Er ruft `datetime.set_value` mit der lokalen
+  Zeit (Sekunden `00`) auf und bestätigt kurz mit „gesetzt". Deaktiviert,
+  solange die Abweichung unter der Schwelle liegt oder die Entität nicht lesbar
+  ist.
+- Ohne `time_entity` ändert sich an der Karte nichts.
+
 ## [0.4.1]
 
 ### Behoben

@@ -272,6 +272,16 @@ export interface DesInverterCardConfig {
   dc_temp_entity?: string;
   /** Grid frequency (Hz), footer. */
   grid_frequency_entity?: string;
+
+  // --- clock monitoring ----------------------------------------------------
+
+  /**
+   * `datetime` entity carrying the inverter's own clock. Without it none of
+   * the clock display appears at all.
+   */
+  time_entity?: string;
+  /** Deviation in minutes from which the clock is flagged. Default 2. */
+  time_warn_minutes?: number;
   /** String PV1 power / voltage / current. */
   pv1_power_entity?: string;
   pv1_voltage_entity?: string;

@@ -165,6 +165,54 @@ function sumNonNull(values: ReadonlyArray<number | null>): number | null {
   return usable.length > 0 ? usable.reduce((a, b) => a + b, 0) : null;
 }
 
+/** Deviation from which the inverter clock is flagged, in minutes. */
+const DEFAULT_TIME_WARN_MINUTES = 2;
+
+/** The deviation grows on its own, so it is re-evaluated once a minute. */
+const CLOCK_TICK_MS = 60_000;
+
+/** How long the button confirms a write before returning to normal. */
+const TIME_SET_FEEDBACK_MS = 2500;
+
+/** What the clock entity currently says. */
+type ClockReading =
+  | { kind: 'off' }
+  | { kind: 'unavailable' }
+  | { kind: 'value'; at: Date; minutes: number };
+
+const pad2 = (value: number): string => String(value).padStart(2, '0');
+
+/**
+ * Home Assistant `datetime` states are naive local timestamps, usually
+ * `YYYY-MM-DD HH:MM:SS`. Only Chromium parses that spelling; swapping in the
+ * `T` makes it an ISO local time every engine reads the same way. A state that
+ * carries an offset already is left alone.
+ */
+function parseDatetimeState(state: string): Date | null {
+  const text = state.trim();
+  if (text.length === 0) return null;
+  const iso = text.includes('T') ? text : text.replace(' ', 'T');
+  const parsed = new Date(iso);
+  return Number.isNaN(parsed.getTime()) ? null : parsed;
+}
+
+/** "dd.MM.yyyy HH:mm". */
+function formatClock(date: Date): string {
+  return (
+    `${pad2(date.getDate())}.${pad2(date.getMonth() + 1)}.${date.getFullYear()} ` +
+    `${pad2(date.getHours())}:${pad2(date.getMinutes())}`
+  );
+}
+
+/** Local wall clock for `datetime.set_value`, seconds zeroed. */
+function localNowForService(): string {
+  const now = new Date();
+  return (
+    `${now.getFullYear()}-${pad2(now.getMonth() + 1)}-${pad2(now.getDate())} ` +
+    `${pad2(now.getHours())}:${pad2(now.getMinutes())}:00`
+  );
+}
+
 export class DesInverterCard extends LitElement {
   static override properties = {
     // Assigning `hass` is a reactive property write, so Home Assistant's state
@@ -172,28 +220,165 @@ export class DesInverterCard extends LitElement {
     hass: { attribute: false },
     _config: { state: true },
     _expanded: { state: true },
+    _clockTick: { state: true },
+    _timeSetDone: { state: true },
   };
 
   declare hass?: HomeAssistant;
   declare _config?: DesInverterCardConfig;
   declare _expanded: boolean;
+  /** Bumped once a minute so the deviation is re-read without an entity update. */
+  declare _clockTick: number;
+  /** Shows "gesetzt" on the button for a moment after a successful write. */
+  declare _timeSetDone: boolean;
 
   /** Closes the dropdown on an outside click or Escape while it is open. */
   private _closer = new OverlayCloser(this, () => this._collapse());
 
+  private _clockTimer?: number;
+  private _feedbackTimer?: number;
+
   constructor() {
     super();
     this._expanded = false;
+    this._clockTick = 0;
+    this._timeSetDone = false;
   }
 
   override disconnectedCallback(): void {
     super.disconnectedCallback();
     this._closer.deactivate();
+    this._stopClockTimer();
+    if (this._feedbackTimer !== undefined) {
+      window.clearTimeout(this._feedbackTimer);
+      this._feedbackTimer = undefined;
+    }
   }
 
   /** Keeps the `expanded` attribute in sync for the stacking rule. */
   protected override updated(): void {
     this.toggleAttribute('expanded', this._expanded);
+    this._syncClockTimer();
+  }
+
+  // =========================================================================
+  // inverter clock
+  // =========================================================================
+
+  /** The timer only runs while a clock entity is configured. */
+  private _syncClockTimer(): void {
+    const wanted = present(this._config?.time_entity);
+    if (wanted && this._clockTimer === undefined) {
+      this._clockTimer = window.setInterval(() => {
+        this._clockTick += 1;
+      }, CLOCK_TICK_MS);
+    } else if (!wanted) {
+      this._stopClockTimer();
+    }
+  }
+
+  private _stopClockTimer(): void {
+    if (this._clockTimer === undefined) return;
+    window.clearInterval(this._clockTimer);
+    this._clockTimer = undefined;
+  }
+
+  private _warnMinutes(): number {
+    const configured = this._config?.time_warn_minutes;
+    return typeof configured === 'number' && Number.isFinite(configured) && configured >= 0
+      ? configured
+      : DEFAULT_TIME_WARN_MINUTES;
+  }
+
+  /** Signed deviation in minutes; positive means the inverter runs ahead. */
+  private _clockReading(): ClockReading {
+    const entity = this._config?.time_entity;
+    if (!present(entity)) return { kind: 'off' };
+
+    const state = this._text(entity);
+    if (state === null) return { kind: 'unavailable' };
+
+    const at = parseDatetimeState(state);
+    if (at === null) return { kind: 'unavailable' };
+
+    return { kind: 'value', at, minutes: (at.getTime() - Date.now()) / 60_000 };
+  }
+
+  private _clockOffBy(reading: ClockReading): boolean {
+    return reading.kind === 'value' && Math.abs(reading.minutes) >= this._warnMinutes();
+  }
+
+  /** Amber only past the threshold; grey when the entity cannot be read. */
+  private _renderClockPill(reading: ClockReading): TemplateResult | typeof nothing {
+    if (reading.kind === 'off') return nothing;
+    if (reading.kind === 'unavailable') {
+      return html`<span class="pill">
+        <span class="pill-label">Uhr ?</span>
+      </span>`;
+    }
+    if (!this._clockOffBy(reading)) return nothing;
+
+    return html`<span class="pill pill-alarm">
+      <span class="pill-label">
+        Uhr ${formatSignedMinus(reading.minutes)} min
+      </span>
+    </span>`;
+  }
+
+  private _renderClockRow(reading: ClockReading): TemplateResult | typeof nothing {
+    if (reading.kind === 'off') return nothing;
+
+    const readable = reading.kind === 'value';
+    // Writing is pointless while the clock is already within tolerance.
+    const canSet = readable && this._clockOffBy(reading);
+
+    return html`
+      <div class="clock-row">
+        <span class="foot-label">Wechselrichter-Uhr</span>
+        <span class="clock-value">
+          ${readable
+            ? html`${formatClock(reading.at)}
+                <span class="clock-delta">
+                  (Δ ${formatSignedMinus(reading.minutes)} min)
+                </span>`
+            : html`<span class="unavail">–</span>`}
+        </span>
+        <button
+          class="clock-set"
+          type="button"
+          ?disabled=${!canSet}
+          @click=${this._setInverterTime}
+        >
+          ${this._timeSetDone ? 'gesetzt' : 'Zeit setzen'}
+        </button>
+      </div>
+    `;
+  }
+
+  private _setInverterTime(): void {
+    const entity = this._config?.time_entity;
+    if (!present(entity) || typeof this.hass?.callService !== 'function') return;
+
+    void Promise.resolve(
+      this.hass.callService('datetime', 'set_value', {
+        entity_id: entity,
+        datetime: localNowForService(),
+      }),
+    )
+      .then(() => {
+        this._timeSetDone = true;
+        if (this._feedbackTimer !== undefined) {
+          window.clearTimeout(this._feedbackTimer);
+        }
+        this._feedbackTimer = window.setTimeout(() => {
+          this._feedbackTimer = undefined;
+          this._timeSetDone = false;
+        }, TIME_SET_FEEDBACK_MS);
+      })
+      .catch((error: unknown) => {
+        // eslint-disable-next-line no-console
+        console.error('des-inverter-card: Zeit konnte nicht gesetzt werden', error);
+      });
   }
 
   setConfig(config: DesInverterCardConfig): void {
@@ -462,7 +647,11 @@ export class DesInverterCard extends LitElement {
     if (!config) return nothing;
 
     const view = this._view();
-    const hasDetails = view.showStrings || view.showPhases || this._hasFooter(view);
+    const hasDetails =
+      view.showStrings ||
+      view.showPhases ||
+      this._hasFooter(view) ||
+      present(config.time_entity);
 
     return html`
       <ha-card>
@@ -487,7 +676,10 @@ export class DesInverterCard extends LitElement {
           <span class="name">${config.name}</span>
           <span class="meta">${this._renderMeta(view)}</span>
         </div>
-        ${this._renderPill(view)}
+        <div class="pills">
+          ${this._renderClockPill(this._clockReading())}
+          ${this._renderPill(view)}
+        </div>
       </div>
 
       ${this._renderPowerRow(view)}
@@ -612,6 +804,7 @@ export class DesInverterCard extends LitElement {
         ${view.showStrings ? this._renderStringsTable(view) : nothing}
         ${view.showPhases ? this._renderPhasesTable(view) : nothing}
         ${this._hasFooter(view) ? this._renderFooter(view) : nothing}
+        ${this._renderClockRow(this._clockReading())}
       </div>
     `;
   }
@@ -817,6 +1010,15 @@ export class DesInverterCard extends LitElement {
     }
 
     /* --- status pill (shared look with the storage card badges) --- */
+
+    /* Holds the clock pill and the status pill; with no clock entity it wraps
+       the single status pill and nothing about the header changes. */
+    .pills {
+      display: flex;
+      align-items: flex-start;
+      gap: 6px;
+      flex-shrink: 0;
+    }
 
     .pill {
       display: inline-flex;
@@ -1040,6 +1242,58 @@ export class DesInverterCard extends LitElement {
       font-size: 13px;
       color: var(--primary-text-color);
       font-variant-numeric: tabular-nums;
+    }
+
+    /* --- inverter clock --- */
+
+    .clock-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .clock-value {
+      margin-left: auto;
+      font-size: 13px;
+      color: var(--primary-text-color);
+      font-variant-numeric: tabular-nums;
+      white-space: nowrap;
+    }
+
+    .clock-delta {
+      color: var(--secondary-text-color);
+    }
+
+    /* Same look as a segmented-control button, standing on its own. */
+    .clock-set {
+      flex-shrink: 0;
+      font-family: inherit;
+      font-size: 11px;
+      line-height: 1;
+      padding: 4px 7px;
+      background: none;
+      border: 1px solid var(--divider-color, rgba(127, 127, 127, 0.28));
+      border-radius: 5px;
+      color: var(--secondary-text-color);
+      cursor: pointer;
+    }
+
+    .clock-set:hover:not(:disabled) {
+      color: var(--primary-text-color);
+    }
+
+    .clock-set:disabled {
+      opacity: 0.4;
+      cursor: default;
+    }
+
+    .clock-set:focus {
+      outline: none;
+    }
+
+    .clock-set:focus-visible {
+      outline: 2px solid var(--primary-color, #03a9f4);
+      outline-offset: 2px;
     }
   `,
   ];

@@ -629,6 +629,8 @@ werden über `unit_of_measurement` umgerechnet (`kW`/`MW` → W, `Wh`/`MWh` → 
 | `grid_power_entities`       | `[L1,L2,L3]` W | Netzleistung je Phase (Vorzeichen, siehe `invert_grid`). |
 | `inverter_power_entities`   | `[L1,L2,L3]` W | WR-Ausgang je Phase.                                     |
 | `grid_voltage_entities`     | `[L1,L2,L3]` V | Netzspannung je Phase.                                   |
+| `time_entity`               | `datetime`  | Uhr des Wechselrichters, siehe **Uhrzeit-Überwachung**.      |
+| `time_warn_minutes`         | number      | Ab dieser Abweichung wird die Uhr gemeldet. Standard `2`.    |
 
 **Blöcke** — im Entity-Modus wird ausgeblendet, was gar nicht konfiguriert ist:
 
@@ -667,6 +669,33 @@ jede Darstellung geprüft werden kann:
   Minuszeichen: Einspeisung grün, Bezug rot, 0 gedämpft), der WR-Ausgang und die
   Spannung, plus eine hervorgehobene Summenzeile `Σ`.
 - **Fußzeile** — DC-Temperatur (nur bei `show_dc_temp`) und Netzfrequenz (Hz).
+- **Wechselrichter-Uhr** — nur mit `time_entity`, siehe unten.
+
+**Uhrzeit-Überwachung** — nur wenn `time_entity` gesetzt ist; ohne dieses Feld
+ändert sich an der Karte nichts.
+
+Die Abweichung ist die Zeit der Entität minus die aktuelle Zeit des Browsers,
+in Minuten und **vorzeichenbehaftet**: positiv heißt, der Wechselrichter geht
+vor. Sie wird jede Minute neu bewertet, nicht nur bei einem Zustandswechsel der
+Entität — eine stehende Uhr fällt sonst gar nicht auf.
+
+- **Kopfzeile** — ab `|Abweichung| ≥ time_warn_minutes` eine amber Pille
+  „Uhr +3 min" bzw. „Uhr −3 min", **links** neben der Status-Pille. Darunter
+  keine Pille. Ist die Entität `unavailable`/`unknown` oder unlesbar, steht dort
+  grau „Uhr ?".
+- **Aufgeklappt** — die Zeile „Wechselrichter-Uhr" mit dem Wert der Entität als
+  `dd.MM.yyyy HH:mm` und rechts `(Δ +3 min)`, daneben der Knopf
+  **Zeit setzen**. Er ruft `datetime.set_value` auf `time_entity` mit der
+  aktuellen lokalen Zeit auf, Sekunden auf `00`. Nach dem Schreiben zeigt er
+  kurz „gesetzt".
+- Der Knopf ist **deaktiviert**, solange die Abweichung unter der Schwelle liegt
+  oder die Entität nicht lesbar ist — eine Uhr innerhalb der Toleranz neu zu
+  stellen bringt nichts.
+
+> Home-Assistant-`datetime`-Entitäten liefern eine **naive lokale** Zeit
+> (`2026-09-05 23:34:00`). Die Karte liest sie als lokale Zeit; Browser und
+> Home Assistant müssen also in derselben Zeitzone laufen, sonst misst die
+> Karte den Zonenversatz als Abweichung mit.
 
 **Beispiel-YAML** — Entities (Statik `kwp_*`, alles andere aus `hass.states`):
 
@@ -689,6 +718,10 @@ fault_entity: sensor.inverter_fault
 inverter_temp_entity: sensor.inverter_temperature
 dc_temp_entity: sensor.inverter_dc_temperature
 grid_frequency_entity: sensor.inverter_grid_frequency
+
+# Uhrzeit-Ueberwachung: Pille ab 2 min Abweichung, "Zeit setzen" aufgeklappt.
+time_entity: datetime.inverter_date_time
+time_warn_minutes: 2
 
 pv1_power_entity: sensor.inverter_pv1_power
 pv1_voltage_entity: sensor.inverter_pv1_voltage
