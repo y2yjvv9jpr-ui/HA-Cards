@@ -51,8 +51,11 @@ const TARGET_RANGE: SliderRange = { min: 50, max: 100, step: 5 };
 
 const MAX_ITEMS = 5;
 
-/** Below this many watts the battery counts as idle, not as charging. */
-const POWER_DEADBAND_W = 25;
+/** Below this many watts the battery counts as idle. `idle_threshold_w` wins. */
+const DEFAULT_IDLE_THRESHOLD_W = 20;
+
+/** Full power by default - see `power_share`. */
+const DEFAULT_POWER_SHARE = 1;
 
 /**
  * Sliders write on `change` (pointer release), and that write is debounced:
@@ -417,7 +420,13 @@ export class DesStorageCard extends LitElement {
   // resolution / derivation
   // =========================================================================
 
-  /** `power_w` if given, otherwise voltage x current; sign optionally flipped. */
+  /**
+   * `power_w` if given, otherwise voltage x current.
+   *
+   * `power_w` deliberately wins: a summed power entity is both fresher and
+   * finer-grained than a BMS current in half-amp steps. The sign flip and the
+   * share factor apply to whichever source was used.
+   */
   private _power(config: DesStorageCardConfig): Resolved<number> {
     let power = resolveNumber(config.power_w, this.hass);
 
@@ -430,10 +439,28 @@ export class DesStorageCard extends LitElement {
           : { kind: 'unavailable' };
     }
 
-    if (power.kind === 'value' && config.invert_power) {
-      return { kind: 'value', value: -power.value };
+    if (power.kind !== 'value') return power;
+
+    // Card convention: positive = charging, negative = discharging. Inverters
+    // that report it the other way round are corrected here.
+    let value = config.invert_power ? -power.value : power.value;
+
+    const share = resolveNumber(config.power_share, this.hass);
+    if (share.kind === 'unavailable') {
+      // Scaling by 1 would silently show the whole sum on one card.
+      return { kind: 'unavailable' };
     }
-    return power;
+    value *= share.kind === 'value' ? share.value : DEFAULT_POWER_SHARE;
+
+    return { kind: 'value', value };
+  }
+
+  /** Absolute watts below which the battery reads as idle. */
+  private _idleThreshold(config: DesStorageCardConfig): number {
+    const configured = resolveNumber(config.idle_threshold_w, this.hass);
+    return configured.kind === 'value' && configured.value >= 0
+      ? configured.value
+      : DEFAULT_IDLE_THRESHOLD_W;
   }
 
   /** Configured status, else derived from the power sign. */
@@ -448,8 +475,9 @@ export class DesStorageCard extends LitElement {
     }
 
     if (power.kind === 'value') {
-      if (power.value < -POWER_DEADBAND_W) return 'discharging';
-      if (power.value > POWER_DEADBAND_W) return 'charging';
+      const threshold = this._idleThreshold(config);
+      if (power.value <= -threshold) return 'discharging';
+      if (power.value >= threshold) return 'charging';
     }
     return 'idle';
   }
@@ -653,7 +681,7 @@ export class DesStorageCard extends LitElement {
         <div class="timing">
           ${power.kind === 'unset'
             ? nothing
-            : html`<div class=${this._powerClass(power)}>
+            : html`<div class=${this._powerClass(power, this._idleThreshold(config))}>
                 ${power.kind === 'value'
                   ? this._formatPower(power.value)
                   : this._dash()}
@@ -966,8 +994,15 @@ export class DesStorageCard extends LitElement {
       : this._renderBadge('Notstrom bereit', 'backup-ready');
   }
 
-  private _powerClass(power: Resolved<number>): string {
-    if (power.kind !== 'value' || power.value === 0) return 'power neutral';
+  /**
+   * Battery only - the thermal group colours its own row.
+   *
+   * Inside the dead band the reading is muted rather than coloured: a few
+   * watts of standby current are not a direction worth signalling.
+   */
+  private _powerClass(power: Resolved<number>, idleThreshold: number): string {
+    if (power.kind !== 'value') return 'power neutral';
+    if (Math.abs(power.value) < idleThreshold) return 'power neutral';
     return power.value < 0 ? 'power negative' : 'power positive';
   }
 

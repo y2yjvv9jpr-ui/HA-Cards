@@ -27,7 +27,7 @@ npm install
 npm run build
 ```
 
-Ergebnis: `dist/daniels-energy-cards.js` (~108 kB, gzip ~26 kB; Lit und **alle
+Ergebnis: `dist/daniels-energy-cards.js` (~110 kB, gzip ~26 kB; Lit und **alle
 vier** Karten sind mit eingebettet).
 
 Weitere Skripte:
@@ -128,10 +128,12 @@ eine Entity-ID.
 | ---------------------------- | ---------------------------- | -------------------------------------------------------------------------------- |
 | `soc`                        | number (%) \| Entity         | Ladestand; füllt das Batteriesymbol, steht groß daneben.                          |
 | `capacity_kwh`               | number \| Entity             | Kapazität — erstes Segment der Meta-Zeile.                                        |
-| `power_w`                    | number \| Entity             | Vorzeichen: **negativ = Entladen**, **positiv = Laden**.                          |
-| `voltage_entity`             | Entity                       | Zusammen mit `current_entity` Ersatz für `power_w` (U × I).                        |
+| `power_w`                    | number \| Entity             | **Bevorzugte Leistungsquelle.** Vorzeichen: **negativ = Entladen**, **positiv = Laden**. |
+| `voltage_entity`             | Entity                       | Nur als **Fallback**, wenn `power_w` fehlt: zusammen mit `current_entity` U × I.  |
 | `current_entity`             | Entity                       | siehe `voltage_entity`.                                                           |
 | `invert_power`               | boolean                      | Dreht das Vorzeichen der ermittelten Leistung. Standard: `false`.                  |
+| `power_share`                | number \| Entity             | Faktor auf die Leistung, für geteilte Summen-Entities. Standard: `1`.               |
+| `idle_threshold_w`           | number \| Entity             | Unterhalb dieses Betrags gilt der Akku als „Bereit“. Standard: `20`.                |
 | `status`                     | Status \| Entity             | **Optional** — ohne Angabe aus der Leistung abgeleitet.                            |
 | `energy_kwh`                 | number \| Entity             | **Optional** — ohne Angabe aus `soc × capacity_kwh / 100` berechnet.               |
 | `temp_c`                     | number \| Entity \| `null`   | Akkutemperatur. Bei `null` entfällt das Segment in der Meta-Zeile.                 |
@@ -153,8 +155,8 @@ Gültige `status`-Werte: `charging`, `discharging`, `idle`, `standby` (= `idle`)
 
 | Feld         | Ableitung, wenn nicht gesetzt                                       |
 | ------------ | ------------------------------------------------------------------- |
-| `power_w`    | `voltage_entity × current_entity`                                    |
-| `status`     | Leistung < −25 W → `discharging`, > 25 W → `charging`, sonst `idle`  |
+| `power_w`    | `voltage_entity × current_entity` — nur wenn `power_w` fehlt          |
+| `status`     | Leistung ≤ −`idle_threshold_w` → `discharging`, ≥ +`idle_threshold_w` → `charging`, sonst `idle` |
 | `energy_kwh` | `soc × capacity_kwh / 100`                                           |
 
 **`backup` als Entität** — statt `none`/`ready`/`active` auch ein Objekt:
@@ -169,6 +171,28 @@ Solange der State **nicht** in `active_states` steht, zeigt die Karte grün
 „Notstrom bereit“, sonst rot „NOTSTROM AKTIV“. Ist die Entität nicht verfügbar,
 entfällt das Badge — eine nicht lesbare Notstromquelle wird bewusst nicht als
 „bereit“ gemeldet.
+
+**Leistungsquelle** — ist `power_w` gesetzt, wird es verwendet; `voltage_entity`
+× `current_entity` greift nur, wenn `power_w` fehlt. Eine Summen-Entität ist der
+Rechnung aus BMS-Werten in aller Regel vorzuziehen: die BMS-Ströme kommen oft
+nur in groben Schritten und mit Verzögerung.
+
+**Vorzeichen** — die Karte erwartet **negativ = Entladen**, **positiv = Laden**.
+Deye-Wechselrichter melden es umgekehrt (negativ = Laden); dafür ist
+`invert_power: true` gedacht. Der Dreh gilt für `power_w` **und** für den
+U × I-Fallback und wirkt, bevor Status, Farbe und Anzeige abgeleitet werden.
+
+**`power_share`** — multipliziert die Leistung, nachdem das Vorzeichen steht.
+Gedacht für eine Summen-Entität, die auf mehrere Karten verteilt wird: zwei
+Hausakkus hinter einem Wechselrichter bekommen je `0.5`. Der Faktor wirkt
+**nur** auf die Leistung — nie auf `soc`, `capacity_kwh`, `energy_kwh` oder die
+Restzeiten. Hängt `power_share` an einer Entität, die sich nicht lesen lässt,
+zeigt die Karte „–“ statt der ungeteilten Summe.
+
+**`idle_threshold_w`** — Totzone um null. Liegt der Betrag der Leistung
+darunter, steht der Status auf „Bereit“ und der Wert wird gedämpft ohne
+Vorzeichenfarbe dargestellt. Das verhindert ein „Entlädt“ wegen ein paar Watt
+Leerlaufstrom. Genau auf der Schwelle zählt es bereits als Laden bzw. Entladen.
 
 **Restzeit** — ohne `time_remaining` wählt die Karte nach dem Vorzeichen der
 Leistung: positiv → `time_remaining_charging`, sonst
@@ -316,7 +340,8 @@ nach `power_w > 0`.
   als Tausendertrenner. Leistungen mit Vorzeichen (`-1.240 W`, `+2.450 W`,
   `0 W`).
 - **Leistungsfarben** — durchgängig gleich: **grün** bei positiver Leistung
-  (Laden bzw. Heizen), **rot** bei negativer (Entladen), gedämpft bei `0 W`.
+  (Laden bzw. Heizen), **rot** bei negativer (Entladen), gedämpft innerhalb der
+  Totzone `idle_threshold_w` (Akku) bzw. bei `0 W`.
 - **Theme** — ausschließlich HA-Theme-Variablen (`--card-background-color`,
   `--primary-text-color`, `--secondary-text-color`, `--info-color`,
   `--warning-color`, `--success-color`, `--error-color`), hell wie dunkel.

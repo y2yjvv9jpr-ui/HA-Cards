@@ -108,6 +108,20 @@ export interface DesStorageCardConfig {
   current_entity?: string;
   /** Flips the sign of the resolved power. Default `false`. */
   invert_power?: boolean;
+  /**
+   * Scales the resolved power. Default `1`.
+   *
+   * For a summed entity that several cards share: two house batteries behind
+   * one inverter total get `0.5` each. Applies to the power only - never to
+   * soc, capacity or the remaining times.
+   */
+  power_share?: NumberValue;
+  /**
+   * Below this many watts (absolute) the battery reads as idle. Default `20`.
+   *
+   * Keeps standby currents from being reported as discharging.
+   */
+  idle_threshold_w?: NumberValue;
   /** Cell temperature in °C. `null` drops the segment from the meta line. */
   temp_c?: NumberValue | null;
   /** Minimum state of charge in percent; start value of the slider. */
