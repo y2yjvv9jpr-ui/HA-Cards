@@ -1,4 +1,4 @@
-# todo.md — offene Punkte (Stand 06.09.2026, 17:45)
+# todo.md — offene Punkte (Stand 06.09.2026, 18:10)
 
 Reihenfolge = Vorschlag. Jeder Punkt wird erst abgestimmt, dann freigegeben,
 dann umgesetzt (siehe claude.md).
@@ -143,14 +143,22 @@ dann umgesetzt (siehe claude.md).
       HACS auf 0.7.0, Dashboard-YAML in HA ersetzen. **Prüfen:** Sections-View
       kein Überlauf; löst apexcharts `var(--des-production-color)` im Solar auf?
 - [x] 06.09. des-chart-card (v0.7.1): gestapelte Flächen stapeln nicht. Fix:
-      `stacked: true` wird top-level **und** auf `apex_config.chart` gesetzt
-      (Flächen brauchen `chart.stacked`), plus default `group_by.fill: last` für
-      gestapelte group_by-Charts (deckungsgleiche Zeitstempel je Reihe). **Nicht
-      live gerendert** — bitte „Speicher-Füllstand" prüfen. Falls weiter nicht
-      gestapelt: Reihen-Zeitstempel wirklich deckungsgleich? Ggf. `group_by`-
-      Raster/`fill` in der YAML explizit setzen. Hinweis: der Tages-Chart der
-      **Hauskarte** (v0.7.0) baut sein Apex-Config selbst — dort ist `fill: last`
-      noch nicht gesetzt; falls dessen Flächen auch nicht stapeln, dort nachziehen.
+      `stacked: true` wird top-level **und** auf `apex_config.chart` gesetzt,
+      plus default `group_by.fill: last`. **Ergebnis:** hat den Kern nicht gelöst
+      — Ursache ist ein **Upstream-Bug**: ApexCharts ≥ 3.44.1 (in apexcharts-card
+      2.2.3, der aktuellsten Version, gebündelt) stapelt **Flächen** nicht mehr,
+      **Säulen** schon (apexcharts.js#4132). Zusätzlich stapelt es mit `yaxis`
+      teils nur mit `stack_group` je Reihe (apexcharts-card#827).
+- [x] 06.09. des-house-card (v0.7.2): Quellen-Chart auf gestapelte **Säulen**
+      umgestellt (type column, `stack_group: quellen`, `group_by.fill: last`) —
+      stapelt zuverlässig. → per HACS auf 0.7.2.
+- [ ] **Speicher-Füllstand** (Dashboard) bleibt bewusst Fläche — als Balken
+      wertlos (Daniel). Offen: echte gestapelte Flächen nur über anderes Tool.
+      Optionen: (a) `plotly-graph-card` standalone (Plotly stapelt Flächen,
+      eigene Config, kein Perioden-Umschalter); (b) überlappende Flächen mit
+      Summen-Helfer (`sensor.pv_helper_speicher_gespeichert_kwh` =
+      Hausakkus+Zendure, hinten Gesamt, vorne Hausakkus). Entscheidung offen.
+      Hinweis: ApexCharts wird kaum noch weiterentwickelt.
 - [ ] des-storage-card: geschätzte Restzeit der Hausakkus im Betrieb prüfen
       (Glättung, „< 10 min"/„> 48 h").
 - [ ] des-inverter-card: Uhr-Pille läuft; Zeitzonen-Unterschied Browser/HA nur
