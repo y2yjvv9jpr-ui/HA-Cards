@@ -1,0 +1,354 @@
+# ---------------------------------------------------------------------------
+# pv_helper_laden.yaml
+# Helfer und Automationen für Laden und Entladen des Zendure SolarFlow 2400 AC+.
+# Konvention: <domain>.pv_helper_<gegenstand>_<größe>
+#   Template-Sensoren und Automationen: Entity-ID entsteht aus dem Namen/Alias
+#   → immer „PV Helper …". Umlaute werden zu u/a/o („Überschuss" → uberschuss).
+#
+# Überschuss (Laden):
+#   sensor.pv_helper_uberschuss_leistung = Einspeisung − Hausakku-Entladung.
+#   Laden der Hausakkus zählt NICHT als Überschuss (deren Vorrang beim Laden).
+# Ladepriorität (06.09.2026): Der Zendure lädt nur, wenn die Hausakkus NICHT
+#   laden (Aufnahme ≤ 100 W). Laden sie während des Zendure-Ladens wieder mehr
+#   als 100 W, stoppt der Zendure nach 1 Minute (Ladestopp).
+# Entladen:
+#   Sollwert = Abgabe − Einspeisung − Hausakku-LADUNG − 50 W. Hier zählt das
+#   Laden der Hausakkus als „zu viel", sonst pumpt der Zendure in die Hausakkus.
+#   Deye-Vorzeichen: external_power positiv = Netzbezug,
+#   battery_power positiv = Entladen, negativ = Laden.
+#
+# Gerätegrenzen (zenSDK-Helfer): max_charge_power und max_discharge_power
+#   haben Minimum 400 W. Laden startet daher erst ab 450 W Überschuss,
+#   Entladen erst ab (Entlademinimum + 50 W) Hausakku-Entnahme. Feinere
+#   Leistungen wären nur über den Modus Manual möglich (offen).
+#
+# Ein Schalter: input_select.pv_helper_zendure_lademodus (Karte Laden|Auto)
+#   Laden → Quick Charge mit 2400 W bis zur Ladegrenze, egal was los ist.
+#   Auto  → Laden:    Überschuss > 450 W und Hausakkus laden nicht → Quick Charge
+#                     mit (Überschuss − 50 W), 400–2400 W. Sollwert < 400 W →
+#                     sofort 400 W, nach 1 min weiterhin < 400 W → Standby.
+#           Entladen: Hausakku-Entnahme > Minimum + 50 W → Quick Discharge mit
+#                     (Hausakku-Entnahme − 50 W), Minimum–800 W. Sollwert 1 min
+#                     unter Minimum oder SoC ≤ min. SoC → Standby.
+#   Beide nur aus Standby heraus. Alle Entscheidungen im 30-s-Takt, keine
+#   Kanten-Trigger.
+# Voll: binary_sensor.pv_helper_zendure_voll = SoC ≥ Ladegrenze ODER Quick
+#   Charge nimmt 2 min lang < 100 W an. Gibt die Heizer frei.
+# Prio Laden: Zendure vor Aquarienheizern beim Zuschalten (Bedingung
+#   „zendure_frei" in „PV Solar Überschuss Aquarienheizung"); die Heizer
+#   rechnen die Zendure-Abgabe aus ihrem Überschuss heraus.
+# Prio Entladen: Zendure vor Hausakku — Ziel Hausakku-Entnahme ≈ 50 W.
+# Smart Matching (Gielz-Schleife) wird nicht mehr verwendet.
+# Hinweis: Das SoC-Ziel hat gerätseitig eine Hysterese von ≥ 2 %.
+# Stand: 2026-09-06
+# ---------------------------------------------------------------------------
+
+input_select:
+  pv_helper_zendure_lademodus:
+    name: PV Zendure Lademodus
+    options:
+      - Laden
+      - Auto
+    initial: Auto
+    icon: mdi:battery-charging-high
+
+input_number:
+  pv_helper_zendure_ladeleistung_maximum:
+    name: PV Zendure Ladeleistung Maximum
+    min: 400
+    max: 2400
+    step: 50
+    initial: 2400
+    unit_of_measurement: W
+    mode: box
+    icon: mdi:format-vertical-align-top
+  pv_helper_zendure_entladeleistung_minimum:
+    name: PV Zendure Entladeleistung Minimum
+    min: 50
+    max: 800
+    step: 10
+    initial: 400
+    unit_of_measurement: W
+    mode: box
+    icon: mdi:format-vertical-align-bottom
+  pv_helper_zendure_entladeleistung_maximum:
+    name: PV Zendure Entladeleistung Maximum
+    min: 100
+    max: 800
+    step: 50
+    initial: 800
+    unit_of_measurement: W
+    mode: box
+    icon: mdi:format-vertical-align-top
+
+template:
+  - sensor:
+      - name: PV Helper Überschuss Leistung
+        unique_id: pv_helper_uberschuss_leistung
+        unit_of_measurement: W
+        device_class: power
+        state_class: measurement
+        icon: mdi:transmission-tower-export
+        state: >-
+          {% set netz = states('sensor.inverter_external_power') | float(0) %}
+          {% set akku = states('sensor.inverter_battery_power') | float(0) %}
+          {{ (-netz - [0, akku] | max) | round(0) }}
+        availability: >-
+          {{ has_value('sensor.inverter_external_power') and has_value('sensor.inverter_battery_power') }}
+
+      - name: PV Helper Zendure Ladeleistung Soll
+        unique_id: pv_helper_zendure_ladeleistung_soll
+        unit_of_measurement: W
+        state_class: measurement
+        icon: mdi:target
+        state: >-
+          {% set ueberschuss = states('sensor.pv_helper_uberschuss_leistung') | float(0) %}
+          {% set ist = states('sensor.zendure_power_from_home') | float(0) %}
+          {% set maximum = states('input_number.pv_helper_zendure_ladeleistung_maximum') | float(2400) %}
+          {% set soll = ist + ueberschuss - 50 %}
+          {{ [0, [soll, maximum] | min] | max | round(0) }}
+        availability: >-
+          {{ has_value('sensor.pv_helper_uberschuss_leistung') and has_value('sensor.zendure_power_from_home') }}
+
+      - name: PV Helper Zendure Entladeleistung Soll
+        unique_id: pv_helper_zendure_entladeleistung_soll
+        unit_of_measurement: W
+        state_class: measurement
+        icon: mdi:target
+        state: >-
+          {% set netz = states('sensor.inverter_external_power') | float(0) %}
+          {% set akku = states('sensor.inverter_battery_power') | float(0) %}
+          {% set ist = states('sensor.zendure_power_to_home') | float(0) %}
+          {% set maximum = states('input_number.pv_helper_zendure_entladeleistung_maximum') | float(800) %}
+          {% set soll = ist + netz + akku - 50 %}
+          {{ [0, [soll, maximum] | min] | max | round(0) }}
+        availability: >-
+          {{ has_value('sensor.inverter_external_power') and has_value('sensor.inverter_battery_power') and has_value('sensor.zendure_power_to_home') }}
+
+  - binary_sensor:
+      - name: PV Helper Hausakku Laedt
+        unique_id: pv_helper_hausakku_laedt
+        device_class: battery_charging
+        icon: mdi:battery-arrow-up
+        # Hausakkus nehmen mehr als 100 W auf (Deye: negativ = Laden).
+        state: >-
+          {{ states('sensor.inverter_battery_power') | float(0) < -100 }}
+        availability: "{{ has_value('sensor.inverter_battery_power') }}"
+
+      - name: PV Helper Zendure Voll
+        unique_id: pv_helper_zendure_voll
+        device_class: battery_charging
+        icon: mdi:battery-check
+        delay_on:
+          minutes: 2
+        state: >-
+          {% set soc = states('sensor.zendure_total_state_of_charge') | float(0) %}
+          {% set grenze = states('input_number.zendure_setting_maximum_allowed_state_of_charge') | float(100) %}
+          {% set aufnahme = states('sensor.zendure_power_from_home') | float(0) %}
+          {% set quick = is_state('input_select.zendure_operation_mode', 'Quick Charge') %}
+          {{ soc >= grenze or (quick and aufnahme < 100) }}
+        availability: >-
+          {{ has_value('sensor.zendure_total_state_of_charge') and has_value('sensor.zendure_power_from_home') }}
+
+      - name: PV Helper Zendure Ladestopp
+        unique_id: pv_helper_zendure_ladestopp
+        icon: mdi:stop-circle-outline
+        delay_on:
+          minutes: 1
+        # Lädt, aber Sollwert seit 1 min unter 400 W ODER Hausakkus laden seit
+        # 1 min → Laden beenden (Hausakkus haben Vorrang).
+        state: >-
+          {{ is_state('input_select.zendure_operation_mode', 'Quick Charge')
+             and (states('sensor.pv_helper_zendure_ladeleistung_soll') | float(400) < 400
+                  or is_state('binary_sensor.pv_helper_hausakku_laedt', 'on')) }}
+        availability: "{{ has_value('sensor.pv_helper_zendure_ladeleistung_soll') }}"
+
+      - name: PV Helper Zendure Entladestopp
+        unique_id: pv_helper_zendure_entladestopp
+        icon: mdi:stop-circle-outline
+        delay_on:
+          minutes: 1
+        state: >-
+          {% set minimum = states('input_number.pv_helper_zendure_entladeleistung_minimum') | float(400) %}
+          {{ is_state('input_select.zendure_operation_mode', 'Quick Discharge')
+             and states('sensor.pv_helper_zendure_entladeleistung_soll') | float(minimum) < minimum }}
+        availability: "{{ has_value('sensor.pv_helper_zendure_entladeleistung_soll') }}"
+
+automation:
+  # -------------------------------------------------------------------------
+  # Umschalten Laden|Auto sofort ausführen
+  # -------------------------------------------------------------------------
+  - id: pv_helper_zendure_lademodus
+    alias: PV Helper Zendure Lademodus
+    description: >-
+      Setzt den Zendure beim Umschalten des Karten-Schalters sofort um:
+      Laden → Quick Charge 2400 W; Auto → Standby (Automatik übernimmt).
+    triggers:
+      - trigger: state
+        entity_id: input_select.pv_helper_zendure_lademodus
+    actions:
+      - choose:
+          - conditions:
+              - condition: state
+                entity_id: input_select.pv_helper_zendure_lademodus
+                state: Laden
+            sequence:
+              - action: input_number.set_value
+                target:
+                  entity_id: input_number.zendure_setting_max_charge_power
+                data:
+                  value: 2400
+              - action: input_select.select_option
+                target:
+                  entity_id: input_select.zendure_operation_mode
+                data:
+                  option: Quick Charge
+          - conditions:
+              - condition: state
+                entity_id: input_select.pv_helper_zendure_lademodus
+                state: Auto
+            sequence:
+              - action: input_select.select_option
+                target:
+                  entity_id: input_select.zendure_operation_mode
+                data:
+                  option: Standby
+    mode: restart
+
+  # -------------------------------------------------------------------------
+  # Überschussladen (nur im Modus Auto), alles im 30-s-Takt
+  # -------------------------------------------------------------------------
+  - id: pv_helper_zendure_ueberschussladen
+    alias: PV Helper Zendure Überschussladen
+    description: >-
+      Lädt den Zendure aus PV-Überschuss (Einspeisung − Hausakku-Entladung) mit
+      (Überschuss − 50 W), 400–2400 W — nur, wenn die Hausakkus nicht laden.
+      Regelt sofort in beide Richtungen; Stopp über
+      binary_sensor.pv_helper_zendure_ladestopp. Nur im Lademodus Auto.
+    triggers:
+      - trigger: time_pattern
+        seconds: /30
+      - trigger: state
+        entity_id: binary_sensor.pv_helper_zendure_ladestopp
+        to: "on"
+    conditions:
+      - condition: state
+        entity_id: input_select.pv_helper_zendure_lademodus
+        state: Auto
+    variables:
+      modus: "{{ states('input_select.zendure_operation_mode') }}"
+      laedt: "{{ modus == 'Quick Charge' }}"
+      soc: "{{ states('sensor.zendure_total_state_of_charge') | float(0) }}"
+      soc_max: "{{ states('input_number.zendure_setting_maximum_allowed_state_of_charge') | float(100) }}"
+      voll: "{{ soc >= soc_max }}"
+      stopp: "{{ is_state('binary_sensor.pv_helper_zendure_ladestopp', 'on') }}"
+      hausakku_laedt: "{{ is_state('binary_sensor.pv_helper_hausakku_laedt', 'on') }}"
+      ueberschuss: "{{ states('sensor.pv_helper_uberschuss_leistung') | float(0) }}"
+      soll: "{{ states('sensor.pv_helper_zendure_ladeleistung_soll') | float(0) }}"
+      maximum: "{{ states('input_number.pv_helper_zendure_ladeleistung_maximum') | float(2400) }}"
+      aktuell: "{{ states('input_number.zendure_setting_max_charge_power') | float(0) }}"
+      ziel: "{{ [400, [soll, maximum] | min] | max | round(0) }}"
+    actions:
+      - choose:
+          - conditions:
+              - condition: template
+                value_template: "{{ laedt and (voll or stopp) }}"
+            sequence:
+              - action: input_select.select_option
+                target:
+                  entity_id: input_select.zendure_operation_mode
+                data:
+                  option: Standby
+          - conditions:
+              - condition: template
+                value_template: "{{ modus == 'Standby' and not voll and not hausakku_laedt and ueberschuss > 450 }}"
+            sequence:
+              - action: input_number.set_value
+                target:
+                  entity_id: input_number.zendure_setting_max_charge_power
+                data:
+                  value: "{{ ziel }}"
+              - action: input_select.select_option
+                target:
+                  entity_id: input_select.zendure_operation_mode
+                data:
+                  option: Quick Charge
+          - conditions:
+              - condition: template
+                value_template: "{{ laedt and (ziel - aktuell) | abs >= 20 }}"
+            sequence:
+              - action: input_number.set_value
+                target:
+                  entity_id: input_number.zendure_setting_max_charge_power
+                data:
+                  value: "{{ ziel }}"
+    mode: single
+
+  # -------------------------------------------------------------------------
+  # Bedarfsentladen (nur im Modus Auto), alles im 30-s-Takt
+  # -------------------------------------------------------------------------
+  - id: pv_helper_zendure_bedarfsentladen
+    alias: PV Helper Zendure Bedarfsentladen
+    description: >-
+      Entlädt den Zendure, sobald die Hausakkus mehr als (Minimum + 50 W)
+      liefern, mit (Hausakku-Entnahme − 50 W), Minimum–800 W, Totband 30 W.
+      Stopp über binary_sensor.pv_helper_zendure_entladestopp oder SoC ≤ min. SoC.
+      Nur im Lademodus Auto.
+    triggers:
+      - trigger: time_pattern
+        seconds: /30
+      - trigger: state
+        entity_id: binary_sensor.pv_helper_zendure_entladestopp
+        to: "on"
+    conditions:
+      - condition: state
+        entity_id: input_select.pv_helper_zendure_lademodus
+        state: Auto
+    variables:
+      modus: "{{ states('input_select.zendure_operation_mode') }}"
+      entlaedt: "{{ modus == 'Quick Discharge' }}"
+      soc: "{{ states('sensor.zendure_total_state_of_charge') | float(0) }}"
+      soc_min: "{{ states('input_number.zendure_setting_minimum_allowed_state_of_charge') | float(0) }}"
+      leer: "{{ soc <= soc_min }}"
+      stopp: "{{ is_state('binary_sensor.pv_helper_zendure_entladestopp', 'on') }}"
+      hausakku: "{{ states('sensor.inverter_battery_power') | float(0) }}"
+      soll: "{{ states('sensor.pv_helper_zendure_entladeleistung_soll') | float(0) }}"
+      minimum: "{{ states('input_number.pv_helper_zendure_entladeleistung_minimum') | float(400) }}"
+      maximum: "{{ states('input_number.pv_helper_zendure_entladeleistung_maximum') | float(800) }}"
+      aktuell: "{{ states('input_number.zendure_setting_max_discharge_power') | float(0) }}"
+      ziel: "{{ [minimum, [soll, maximum] | min] | max | round(0) }}"
+    actions:
+      - choose:
+          - conditions:
+              - condition: template
+                value_template: "{{ entlaedt and (leer or stopp) }}"
+            sequence:
+              - action: input_select.select_option
+                target:
+                  entity_id: input_select.zendure_operation_mode
+                data:
+                  option: Standby
+          - conditions:
+              - condition: template
+                value_template: "{{ modus == 'Standby' and not leer and hausakku > minimum + 50 }}"
+            sequence:
+              - action: input_number.set_value
+                target:
+                  entity_id: input_number.zendure_setting_max_discharge_power
+                data:
+                  value: "{{ ziel }}"
+              - action: input_select.select_option
+                target:
+                  entity_id: input_select.zendure_operation_mode
+                data:
+                  option: Quick Discharge
+          - conditions:
+              - condition: template
+                value_template: "{{ entlaedt and (ziel - aktuell) | abs >= 30 }}"
+            sequence:
+              - action: input_number.set_value
+                target:
+                  entity_id: input_number.zendure_setting_max_discharge_power
+                data:
+                  value: "{{ ziel }}"
+    mode: single
