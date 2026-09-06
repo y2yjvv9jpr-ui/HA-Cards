@@ -217,9 +217,14 @@ sections:
                 statistics:
                   type: change
                   period: hour
+                  align: start
                 float_precision: 2
                 unit: kWh
               series:
+                - entity: sensor.pv_helper_energie_export_gesamt
+                  name: Einspeisung
+                  color: '#2e7d32'
+                  transform: return -Math.max(0, x);
                 - entity: sensor.pv_helper_energie_solar_direkt
                   name: Solar
                   color: var(--success-color)
@@ -232,10 +237,6 @@ sections:
                   name: Netz
                   color: '#E24B4A'
                   transform: return Math.max(0, x);
-                - entity: sensor.pv_helper_energie_export_gesamt
-                  name: Einspeisung
-                  color: '#2e7d32'
-                  transform: return -Math.max(0, x);
           week:
             meta: kWh je Tag
             chart:
@@ -263,9 +264,14 @@ sections:
                 statistics:
                   type: change
                   period: day
+                  align: start
                 float_precision: 1
                 unit: kWh
               series:
+                - entity: sensor.pv_helper_energie_export_gesamt
+                  name: Einspeisung
+                  color: '#2e7d32'
+                  transform: return -Math.max(0, x);
                 - entity: sensor.pv_helper_energie_solar_direkt
                   name: Solar
                   color: var(--success-color)
@@ -278,10 +284,6 @@ sections:
                   name: Netz
                   color: '#E24B4A'
                   transform: return Math.max(0, x);
-                - entity: sensor.pv_helper_energie_export_gesamt
-                  name: Einspeisung
-                  color: '#2e7d32'
-                  transform: return -Math.max(0, x);
           month:
             meta: kWh je Tag
             chart:
@@ -309,9 +311,14 @@ sections:
                 statistics:
                   type: change
                   period: day
+                  align: start
                 float_precision: 1
                 unit: kWh
               series:
+                - entity: sensor.pv_helper_energie_export_gesamt
+                  name: Einspeisung
+                  color: '#2e7d32'
+                  transform: return -Math.max(0, x);
                 - entity: sensor.pv_helper_energie_solar_direkt
                   name: Solar
                   color: var(--success-color)
@@ -324,10 +331,6 @@ sections:
                   name: Netz
                   color: '#E24B4A'
                   transform: return Math.max(0, x);
-                - entity: sensor.pv_helper_energie_export_gesamt
-                  name: Einspeisung
-                  color: '#2e7d32'
-                  transform: return -Math.max(0, x);
           year:
             meta: kWh je Monat
             chart:
@@ -355,9 +358,14 @@ sections:
                 statistics:
                   type: change
                   period: month
+                  align: start
                 float_precision: 0
                 unit: kWh
               series:
+                - entity: sensor.pv_helper_energie_export_gesamt
+                  name: Einspeisung
+                  color: '#2e7d32'
+                  transform: return -Math.max(0, x);
                 - entity: sensor.pv_helper_energie_solar_direkt
                   name: Solar
                   color: var(--success-color)
@@ -370,10 +378,6 @@ sections:
                   name: Netz
                   color: '#E24B4A'
                   transform: return Math.max(0, x);
-                - entity: sensor.pv_helper_energie_export_gesamt
-                  name: Einspeisung
-                  color: '#2e7d32'
-                  transform: return -Math.max(0, x);
       - type: custom:des-chart-card
         grid_options:
           columns: 12
@@ -410,6 +414,7 @@ sections:
                 type: line
                 unit: '%'
                 float_precision: 0
+                extend_to: false
                 group_by:
                   func: avg
                   duration: 10min
@@ -449,6 +454,7 @@ sections:
                 type: line
                 unit: '%'
                 float_precision: 0
+                extend_to: false
                 group_by:
                   func: avg
                   duration: 1h
