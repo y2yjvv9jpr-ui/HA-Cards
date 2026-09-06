@@ -861,27 +861,27 @@ Wandlungsverlusten oder einem nicht erfassten Verbraucher steckt). Ist
 `1 − import / consumption` (ganzzahlige %). Ist der Tagesverbrauch `≤ 0` oder
 nicht lesbar, zeigt sie „–“.
 
-**Aufbau — eingeklappt**
+**Aufbau — eingeklappt** (kompakt, `rows 4`, bündig mit den Nachbarkarten)
 
 - **Kopfzeile** — Name links, darunter gedämpft `… kWh heute · … % autark`.
-  Rechts oben drei Pillen **Solar / Speicher / Netz** mit dem aktuellen Wert in
-  W und einem farbigen Quadrat (dieselben Farben wie der Mix-Balken). Bei 0 W
-  wird die jeweilige Pille grau.
 - **Leistungszeile** — der Verbrauch groß in neutraler Textfarbe, daneben klein
   gedämpft „Verbrauch“.
 - **Mix-Balken** — ein gestapelter Balken (8 px, abgerundet) in der Reihenfolge
   **Solar** (grün), **Speicher** (blau, wie „Lädt“ bei der Speicherkarte) und
   **Netz** (rot). Die Schiene ist der gedämpfte Theme-Hintergrund.
-- **Chart** — darunter ein Perioden-Umschalter **Tag | Woche | Monat | Jahr**
-  (Standard Tag; Woche/Monat/Jahr nur mit den Energie-Entitäten) und eine
-  Meta-Zeile (`W` bzw. `kWh je Tag` / `kWh je Monat`). Der Chart selbst ist eine
-  eingebettete apexcharts-card: gestapelte Flächen für Solar, Speicher und Netz.
-  **Tag** zeigt die Leistung (W, 10-min-Mittel seit Tagesbeginn),
-  **Woche/Monat/Jahr** die Energie (kWh) aus der Langzeitstatistik (Summe je Tag
-  bzw. Monat). Ist apexcharts-card nicht installiert, steht dort ein Hinweis.
+- **Legende** — drei Zeilen mit Farbquadrat, Label (`Solar`, `Speicher`, `Netz`),
+  Leistung in W und Anteil in %.
 
-**Aufbau — aufgeklappt** (unter dem Chevron, durch eine Haarlinie getrennt)
+**Aufbau — aufgeklappt** (unter dem Chevron, als Dropdown)
 
+- **Perioden-Umschalter** **Tag | Woche | Monat | Jahr** (Standard Tag;
+  Woche/Monat/Jahr nur mit den Energie-Entitäten) und darunter der **Chart**:
+  eine eingebettete apexcharts-card mit gestapelten Säulen für Solar, Speicher
+  und Netz (Säulen statt Flächen, weil die gebündelte ApexCharts-Version
+  gestapelte Flächen nicht mehr stapelt). **Tag** zeigt die Leistung (W,
+  30-min-Mittel seit Tagesbeginn), **Woche/Monat/Jahr** die Energie (kWh) aus
+  der Langzeitstatistik (Summe je Tag bzw. Monat). Ohne die Energie-Entitäten
+  gibt es nur „Tag"; ist apexcharts-card nicht installiert, steht dort ein Hinweis.
 - **Heute** — zwei Spalten Label/Wert, je eine Nachkommastelle:
 
   | Zeile         | Wert                | Farbe   |
@@ -890,8 +890,8 @@ nicht lesbar, zeigt sie „–“.
   | Netzbezug     | `today_import`      | rot     |
   | Einspeisung   | `today_export`      | grün    |
 
-  Fehlt eine dieser Entitäten, entfällt ihre Zeile. Ist **keiner** der drei
-  Tageswerte konfiguriert, blendet die Karte Chevron und Block aus.
+  Fehlt eine dieser Entitäten, entfällt ihre Zeile. Der Chevron erscheint, sobald
+  es etwas aufzuklappen gibt (Chart oder mindestens ein Tageswert).
 
 **Beispiel-YAML** — Entities (alles aus `hass.states`):
 
