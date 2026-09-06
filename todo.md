@@ -1,4 +1,4 @@
-# todo.md — offene Punkte (Stand 06.09.2026, 18:10)
+# todo.md — offene Punkte (Stand 06.09.2026, 18:30)
 
 Reihenfolge = Vorschlag. Jeder Punkt wird erst abgestimmt, dann freigegeben,
 dann umgesetzt (siehe claude.md).
