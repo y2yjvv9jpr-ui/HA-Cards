@@ -222,7 +222,7 @@ sections:
               series:
                 - entity: sensor.pv_helper_energie_solar_direkt
                   name: Solar
-                  color: '#2e7d32'
+                  color: 'var(--success-color)'
                   transform: 'return Math.max(0, x);'
                 - entity: sensor.pv_helper_energie_entladen_gesamt
                   name: Speicher
@@ -234,7 +234,7 @@ sections:
                   transform: 'return Math.max(0, x);'
                 - entity: sensor.pv_helper_energie_export_gesamt
                   name: Einspeisung
-                  color: '#639922'
+                  color: '#2e7d32'
                   transform: 'return -Math.max(0, x);'
           week:
             meta: kWh je Tag
@@ -268,7 +268,7 @@ sections:
               series:
                 - entity: sensor.pv_helper_energie_solar_direkt
                   name: Solar
-                  color: '#2e7d32'
+                  color: 'var(--success-color)'
                   transform: 'return Math.max(0, x);'
                 - entity: sensor.pv_helper_energie_entladen_gesamt
                   name: Speicher
@@ -280,7 +280,7 @@ sections:
                   transform: 'return Math.max(0, x);'
                 - entity: sensor.pv_helper_energie_export_gesamt
                   name: Einspeisung
-                  color: '#639922'
+                  color: '#2e7d32'
                   transform: 'return -Math.max(0, x);'
           month:
             meta: kWh je Tag
@@ -314,7 +314,7 @@ sections:
               series:
                 - entity: sensor.pv_helper_energie_solar_direkt
                   name: Solar
-                  color: '#2e7d32'
+                  color: 'var(--success-color)'
                   transform: 'return Math.max(0, x);'
                 - entity: sensor.pv_helper_energie_entladen_gesamt
                   name: Speicher
@@ -326,7 +326,7 @@ sections:
                   transform: 'return Math.max(0, x);'
                 - entity: sensor.pv_helper_energie_export_gesamt
                   name: Einspeisung
-                  color: '#639922'
+                  color: '#2e7d32'
                   transform: 'return -Math.max(0, x);'
           year:
             meta: kWh je Monat
@@ -360,7 +360,7 @@ sections:
               series:
                 - entity: sensor.pv_helper_energie_solar_direkt
                   name: Solar
-                  color: '#2e7d32'
+                  color: 'var(--success-color)'
                   transform: 'return Math.max(0, x);'
                 - entity: sensor.pv_helper_energie_entladen_gesamt
                   name: Speicher
@@ -372,7 +372,7 @@ sections:
                   transform: 'return Math.max(0, x);'
                 - entity: sensor.pv_helper_energie_export_gesamt
                   name: Einspeisung
-                  color: '#639922'
+                  color: '#2e7d32'
                   transform: 'return -Math.max(0, x);'
   - type: grid
     cards:
