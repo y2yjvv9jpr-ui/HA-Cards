@@ -222,7 +222,7 @@ sections:
               series:
                 - entity: sensor.pv_helper_energie_solar_direkt
                   name: Solar
-                  color: '#639922'
+                  color: '#2e7d32'
                   transform: 'return Math.max(0, x);'
                 - entity: sensor.pv_helper_energie_entladen_gesamt
                   name: Speicher
@@ -268,7 +268,7 @@ sections:
               series:
                 - entity: sensor.pv_helper_energie_solar_direkt
                   name: Solar
-                  color: '#639922'
+                  color: '#2e7d32'
                   transform: 'return Math.max(0, x);'
                 - entity: sensor.pv_helper_energie_entladen_gesamt
                   name: Speicher
@@ -314,7 +314,7 @@ sections:
               series:
                 - entity: sensor.pv_helper_energie_solar_direkt
                   name: Solar
-                  color: '#639922'
+                  color: '#2e7d32'
                   transform: 'return Math.max(0, x);'
                 - entity: sensor.pv_helper_energie_entladen_gesamt
                   name: Speicher
@@ -360,7 +360,7 @@ sections:
               series:
                 - entity: sensor.pv_helper_energie_solar_direkt
                   name: Solar
-                  color: '#639922'
+                  color: '#2e7d32'
                   transform: 'return Math.max(0, x);'
                 - entity: sensor.pv_helper_energie_entladen_gesamt
                   name: Speicher
