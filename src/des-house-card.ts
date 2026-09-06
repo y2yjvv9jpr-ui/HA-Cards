@@ -3,6 +3,7 @@ import { formatFixed, formatInt, clamp } from './format';
 import { entityUnit, isEntityId, resolveNumber } from './resolve';
 import { chevronStyles } from './chevron';
 import { overlayStyles, OverlayCloser } from './overlay';
+import { tokenStyles } from './tokens';
 import type {
   DesHouseCardConfig,
   HomeAssistant,
@@ -550,6 +551,7 @@ export class DesHouseCard extends LitElement {
   static override styles = [
     chevronStyles,
     overlayStyles,
+    tokenStyles,
     css`
     :host {
       display: block;
@@ -633,9 +635,9 @@ export class DesHouseCard extends LitElement {
     }
 
     .pill-feed {
-      background: rgba(46, 125, 50, 0.16);
-      background: color-mix(in srgb, var(--success-color, #2e7d32) 16%, transparent);
-      color: var(--success-color, #2e7d32);
+      background: rgba(99, 153, 34, 0.16);
+      background: color-mix(in srgb, var(--des-export-color, #639922) 16%, transparent);
+      color: var(--des-export-color, #639922);
     }
 
     .pill-draw {
@@ -701,7 +703,7 @@ export class DesHouseCard extends LitElement {
 
     .mix-seg.solar,
     .swatch.solar {
-      background: var(--success-color, #2e7d32);
+      background: var(--des-production-color, #2e7d32);
     }
 
     /* Blue = the storage card's "charging" colour: heating/charging fills a store. */
@@ -783,7 +785,7 @@ export class DesHouseCard extends LitElement {
     }
 
     .today-value.feed {
-      color: var(--success-color, #2e7d32);
+      color: var(--des-export-color, #639922);
     }
   `,
   ];
