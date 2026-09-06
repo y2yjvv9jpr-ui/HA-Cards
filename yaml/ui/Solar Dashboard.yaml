@@ -34,6 +34,7 @@ sections:
         invert_grid: false
         show_dc_temp: true
         time_entity: datetime.inverter_date_time
+        time_warn_minutes: 5
         pv_power_entity: sensor.inverter_pv_power
         pv1_power_entity: sensor.inverter_pv1_power
         pv2_power_entity: sensor.inverter_pv2_power
