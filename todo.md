@@ -1,15 +1,14 @@
-# todo.md — offene Punkte (Stand 06.09.2026, 11:10)
+# todo.md — offene Punkte (Stand 06.09.2026, 11:50)
 
 Reihenfolge = Vorschlag. Jeder Punkt wird erst abgestimmt, dann freigegeben,
 dann umgesetzt (siehe claude.md).
 
 ## 0. Gesamtlogik verständlich machen
 
-- [ ] Nummerierte Tabelle: welcher Wert wird wie berechnet (Leistungen, Sollwerte,
-      Schwellen, Zähler), gegen Daniels ursprüngliche Vorgaben; Abweichungen
-      markieren; entscheiden, was bleibt, was vereinfacht wird, was raus muss.
-      Entscheidung 06.09.: erst die offensichtlichen Abweichungen fixen (Punkt 1),
-      Tabelle danach.
+- [x] 06.09. `docs/logik.md` (nummerierte Regeln A1…F mit Vorgabe/Abweichung) und
+      `docs/anlage.md` (Anlage, Entitäten, Register, Geräteverhalten) angelegt, in
+      `claude.md` verknüpft. → Daniel prüft die Abweichungen (Spalte rechts) und
+      entscheidet, was bleibt, was vereinfacht wird, was raus muss.
 
 ## 1. Fixes vom 06.09.
 
@@ -25,6 +24,13 @@ dann umgesetzt (siehe claude.md).
       auf `_gesamt`-Quellen umgestellt (Referenzwerte unverändert, Zendure-Integral
       war an allen Periodenanfängen 0). → in HA (Skript, YAML-Modus) einspielen
       und einmal ausführen.
+- [x] 06.09. `pv_helper_energiezaehler.yaml`: Sprungschutz auch für Produktion/
+      Import/Export (`_gesamt`-Summen), Utility-Meter darauf umgehängt. → in HA
+      einspielen (Template neu laden; Utility-Meter-Quellen greifen nach Neustart).
+- [x] 06.09. Dashboard-Chart: Netz/Einspeisung lesen `_import_gesamt`/`_export_gesamt`,
+      Einspeisung hellrot statt grün. → Dashboard-YAML in HA ersetzen.
+- [x] 06.09. Ausreißer −8.000 kWh in der Langzeitstatistik von `inverter_total_energy_export`
+      (Neustart 09:00): irrelevant, Chart liest jetzt `_export_gesamt`; Sensorverlauf sauber.
 - [ ] Tageszähler 06.09. kalibrieren: verbrauch 18.5 / laden 12.5 / entladen 14.9
       (Offsets des Sprungs 7,5 / 3,6 / 8,1 abgezogen; ab 07.09. 00:00 exakt).
 - [ ] Prüfen, ob `inverter_total_load_consumption` (Deye-Verbrauchszähler) den
