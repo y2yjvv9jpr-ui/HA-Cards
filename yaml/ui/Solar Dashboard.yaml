@@ -185,7 +185,7 @@ sections:
             mode_entity: input_number.aq_zusatzheizer_mode_600l
       - type: custom:des-chart-card
         grid_options:
-          columns: 24
+          columns: 12
           rows: 5
         name: Verbrauch nach Quelle
         default_period: day
@@ -222,20 +222,20 @@ sections:
               series:
                 - entity: sensor.pv_helper_energie_solar_direkt
                   name: Solar
-                  color: 'var(--success-color)'
-                  transform: 'return Math.max(0, x);'
+                  color: var(--success-color)
+                  transform: return Math.max(0, x);
                 - entity: sensor.pv_helper_energie_entladen_gesamt
                   name: Speicher
                   color: '#378ADD'
-                  transform: 'return Math.max(0, x);'
+                  transform: return Math.max(0, x);
                 - entity: sensor.pv_helper_energie_import_gesamt
                   name: Netz
                   color: '#E24B4A'
-                  transform: 'return Math.max(0, x);'
+                  transform: return Math.max(0, x);
                 - entity: sensor.pv_helper_energie_export_gesamt
                   name: Einspeisung
                   color: '#2e7d32'
-                  transform: 'return -Math.max(0, x);'
+                  transform: return -Math.max(0, x);
           week:
             meta: kWh je Tag
             chart:
@@ -268,20 +268,20 @@ sections:
               series:
                 - entity: sensor.pv_helper_energie_solar_direkt
                   name: Solar
-                  color: 'var(--success-color)'
-                  transform: 'return Math.max(0, x);'
+                  color: var(--success-color)
+                  transform: return Math.max(0, x);
                 - entity: sensor.pv_helper_energie_entladen_gesamt
                   name: Speicher
                   color: '#378ADD'
-                  transform: 'return Math.max(0, x);'
+                  transform: return Math.max(0, x);
                 - entity: sensor.pv_helper_energie_import_gesamt
                   name: Netz
                   color: '#E24B4A'
-                  transform: 'return Math.max(0, x);'
+                  transform: return Math.max(0, x);
                 - entity: sensor.pv_helper_energie_export_gesamt
                   name: Einspeisung
                   color: '#2e7d32'
-                  transform: 'return -Math.max(0, x);'
+                  transform: return -Math.max(0, x);
           month:
             meta: kWh je Tag
             chart:
@@ -314,20 +314,20 @@ sections:
               series:
                 - entity: sensor.pv_helper_energie_solar_direkt
                   name: Solar
-                  color: 'var(--success-color)'
-                  transform: 'return Math.max(0, x);'
+                  color: var(--success-color)
+                  transform: return Math.max(0, x);
                 - entity: sensor.pv_helper_energie_entladen_gesamt
                   name: Speicher
                   color: '#378ADD'
-                  transform: 'return Math.max(0, x);'
+                  transform: return Math.max(0, x);
                 - entity: sensor.pv_helper_energie_import_gesamt
                   name: Netz
                   color: '#E24B4A'
-                  transform: 'return Math.max(0, x);'
+                  transform: return Math.max(0, x);
                 - entity: sensor.pv_helper_energie_export_gesamt
                   name: Einspeisung
                   color: '#2e7d32'
-                  transform: 'return -Math.max(0, x);'
+                  transform: return -Math.max(0, x);
           year:
             meta: kWh je Monat
             chart:
@@ -360,20 +360,20 @@ sections:
               series:
                 - entity: sensor.pv_helper_energie_solar_direkt
                   name: Solar
-                  color: 'var(--success-color)'
-                  transform: 'return Math.max(0, x);'
+                  color: var(--success-color)
+                  transform: return Math.max(0, x);
                 - entity: sensor.pv_helper_energie_entladen_gesamt
                   name: Speicher
                   color: '#378ADD'
-                  transform: 'return Math.max(0, x);'
+                  transform: return Math.max(0, x);
                 - entity: sensor.pv_helper_energie_import_gesamt
                   name: Netz
                   color: '#E24B4A'
-                  transform: 'return Math.max(0, x);'
+                  transform: return Math.max(0, x);
                 - entity: sensor.pv_helper_energie_export_gesamt
                   name: Einspeisung
                   color: '#2e7d32'
-                  transform: 'return -Math.max(0, x);'
+                  transform: return -Math.max(0, x);
   - type: grid
     cards:
       - type: heading
@@ -443,7 +443,7 @@ sections:
         storage_positive: discharge
         today_consumption_entity: sensor.pv_helper_energie_verbrauch_tag
         today_import_entity: sensor.inverter_today_energy_import
-        today_export_entity: sensor.inverter_today_energy_export                  
+        today_export_entity: sensor.inverter_today_energy_export
 cards: []
 dense_section_placement: false
 icon: mdi:solar-power-variant
