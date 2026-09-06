@@ -4,6 +4,19 @@ Alle nennenswerten Änderungen an diesem Projekt werden hier festgehalten.
 Format grob nach [Keep a Changelog](https://keepachangelog.com/de/1.1.0/),
 Versionierung nach [SemVer](https://semver.org/lang/de/).
 
+## [0.6.2]
+
+### Geändert
+
+- **Produktion-Farbe als Token:** Neuer Design-Token `--des-production-color`
+  (`src/tokens.ts`), Standardwert `#2e7d32` (das voreingestellte HA-Erfolgsgrün).
+  Die Statistikkarte zeichnet die Zeile „Produktion" jetzt darüber statt über
+  `--success-color` — damit ist die Farbe an einen festen Hex gebunden und passt
+  zum Dashboard-Chart (der keine CSS-Variablen lesen kann).
+- **Dashboard-Chart „Verbrauch nach Quelle":** die Reihe „Solar" trägt in allen
+  vier Zeiträumen jetzt `#2e7d32` (Token-Wert) statt `#639922`. So sind „Solar"
+  (grün) und „Einspeisung" (`#639922`, olivgrün) wieder unterscheidbar.
+
 ## [0.6.1]
 
 ### Geändert

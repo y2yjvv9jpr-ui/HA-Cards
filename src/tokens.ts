@@ -9,6 +9,12 @@ import { css } from 'lit';
  */
 export const tokenStyles = css`
   :host {
+    /* Production / solar colour: the default Home Assistant success green,
+       pinned to a literal so it matches the dashboard chart (which cannot read
+       CSS variables). Shared by the stats card (Produktion row) and, as the
+       literal hex #2e7d32, the "Solar" series of the chart — keep them in sync. */
+    --des-production-color: #2e7d32;
+
     /* Feed-in / export colour: a muted olive that stays clear of the
        production green. Shared by the stats card (Export row) and the inverter
        card (export bar). The dashboard chart's "Einspeisung" series cannot read

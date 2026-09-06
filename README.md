@@ -984,7 +984,7 @@ CSS-Custom-Property der Karte überschreibbare Töne:
 | Zeile      | Farbe                                                       |
 | ---------- | ---------------------------------------------------------- |
 | Verbrauch  | neutrales Grau (`--secondary-text-color`)                   |
-| Produktion | Grün (`--success-color`) — wie „positive Leistung“ sonst    |
+| Produktion | Grün (`--des-production-color`, Fallback `#2e7d32`)         |
 | Import     | Rot (`--error-color`)                                       |
 | Export     | Olivgrün (`--des-export-color`, Fallback `#639922`)         |
 | Laden      | Blau (`--info-color`) — die Ladefarbe der Speicherkarte     |
@@ -1232,14 +1232,16 @@ Properties auf `:host` gesetzt. Da Custom Properties **nicht** über Shadow-DOM-
 Grenzen hinweg vererbt werden, bindet jede Karte, die einen Token braucht, den
 Block über ihr `styles`-Array ein — der Wert steht so an genau einer Stelle.
 
-| Token                 | Wert      | Verwendung                                                 |
-| --------------------- | --------- | ---------------------------------------------------------- |
-| `--des-export-color`  | `#639922` | Export/Einspeisung: Zeile „Export" der Statistikkarte und Balken „Export" der Wechselrichterkarte. |
+| Token                    | Wert      | Verwendung                                              |
+| ------------------------ | --------- | ------------------------------------------------------ |
+| `--des-production-color` | `#2e7d32` | Produktion/Solar: Zeile „Produktion" der Statistikkarte. |
+| `--des-export-color`     | `#639922` | Export/Einspeisung: Zeile „Export" der Statistikkarte und Balken „Export" der Wechselrichterkarte. |
 
 Die Chart-Karte im Dashboard (`yaml/ui/Solar Dashboard.yaml`, „Verbrauch nach
-Quelle") kann keine CSS-Variablen lesen; ihre Reihe „Einspeisung" trägt denselben
-Hex-Wert `#639922` als Literal. Wird der Token geändert, ist der Chart-Wert von
-Hand nachzuziehen.
+Quelle") kann keine CSS-Variablen lesen; ihre Reihen tragen die Hex-Werte als
+Literal: „Solar" `#2e7d32` (= `--des-production-color`), „Einspeisung" `#639922`
+(= `--des-export-color`). Wird ein Token geändert, ist der Chart-Wert von Hand
+nachzuziehen.
 
 ## Projektstruktur
 
