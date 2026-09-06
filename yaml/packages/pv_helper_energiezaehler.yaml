@@ -3,12 +3,15 @@
 #         Laden/Entladen/Verbrauch umfassen ALLE Speicher: Deye-Gesamtzähler
 #         + Zendure (aus Leistung integriert, kWh, monoton).
 #         Verbrauch = Deye + Zendure-Entladen − Zendure-Laden.
+#         Produktion/Import/Export = Deye-Gesamtzähler, ebenfalls über eine
+#         geschützte _gesamt-Summe geführt (06.09.2026).
 # Sprungschutz (06.09.2026): Die Deye-Gesamtzähler liefern bei Stick-Aussetzern
 #         gelegentlich falsche Werte; ein Utility-Meter deutet einen Rückwärts-
 #         sprung als Zählerreset und addiert danach den ganzen Zählerstand
-#         (06.09.: Entladen-Tag 15,3 kWh statt 6,3). Deshalb übernehmen die
-#         _gesamt-Summen einen neuen Wert nur, wenn er höchstens 5 kWh vom
-#         letzten abweicht; sonst bleibt der letzte Wert stehen.
+#         (06.09.: Entladen-Tag 15,3 kWh statt 6,3; Export-Statistik −8.000 kWh
+#         um 09:00). Deshalb übernehmen ALLE _gesamt-Summen einen neuen Wert
+#         nur, wenn er höchstens 5 kWh vom letzten abweicht; sonst bleibt der
+#         letzte Wert stehen. Chart und Utility-Meter lesen nur die _gesamt-Summen.
 # Nutzer: des-stats-card, des-house-card, des-chart-card (Dashboard "Solar").
 # Reset:  Tag 00:00, Woche Mo 00:00, Monat 1., Jahr 1.1. – HA-Zeit.
 # Kalibrierung: utility_meter.calibrate bzw. script.pv_helper_energiezaehler_kalibrieren
@@ -33,7 +36,7 @@ sensor:
     unit_time: h
     round: 3
 
-# ---------- Summen: Deye + Zendure (Quelle für die Utility-Meter) ----------
+# ---------- Geschützte Summen (Quelle für Utility-Meter und Chart) ----------
 template:
   - sensor:
       - name: PV Helper Energie Laden Gesamt
@@ -78,6 +81,42 @@ template:
         availability: >-
           {{ has_value('sensor.inverter_total_load_consumption') }}
 
+      - name: PV Helper Energie Produktion Gesamt
+        unique_id: pv_helper_energie_produktion_gesamt
+        unit_of_measurement: kWh
+        device_class: energy
+        state_class: total_increasing
+        state: >-
+          {% set neu = states('sensor.inverter_total_production') | float(0) %}
+          {% set alt = this.state | float(none) %}
+          {% if alt is none or (neu - alt) | abs <= 5 %}{{ neu | round(2) }}{% else %}{{ alt }}{% endif %}
+        availability: >-
+          {{ has_value('sensor.inverter_total_production') }}
+
+      - name: PV Helper Energie Import Gesamt
+        unique_id: pv_helper_energie_import_gesamt
+        unit_of_measurement: kWh
+        device_class: energy
+        state_class: total_increasing
+        state: >-
+          {% set neu = states('sensor.inverter_total_energy_import') | float(0) %}
+          {% set alt = this.state | float(none) %}
+          {% if alt is none or (neu - alt) | abs <= 5 %}{{ neu | round(2) }}{% else %}{{ alt }}{% endif %}
+        availability: >-
+          {{ has_value('sensor.inverter_total_energy_import') }}
+
+      - name: PV Helper Energie Export Gesamt
+        unique_id: pv_helper_energie_export_gesamt
+        unit_of_measurement: kWh
+        device_class: energy
+        state_class: total_increasing
+        state: >-
+          {% set neu = states('sensor.inverter_total_energy_export') | float(0) %}
+          {% set alt = this.state | float(none) %}
+          {% if alt is none or (neu - alt) | abs <= 5 %}{{ neu | round(2) }}{% else %}{{ alt }}{% endif %}
+        availability: >-
+          {{ has_value('sensor.inverter_total_energy_export') }}
+
 utility_meter:
   # ---------- Tag (Laden/Entladen/Verbrauch; Produktion/Import/Export liefert der Deye) ----------
   pv_helper_energie_laden_tag:
@@ -94,7 +133,7 @@ utility_meter:
     name: PV Helper Energie Verbrauch Tag
   # ---------- Woche ----------
   pv_helper_energie_produktion_woche:
-    source: sensor.inverter_total_production
+    source: sensor.pv_helper_energie_produktion_gesamt
     cycle: weekly
     name: PV Helper Energie Produktion Woche
   pv_helper_energie_verbrauch_woche:
@@ -102,11 +141,11 @@ utility_meter:
     cycle: weekly
     name: PV Helper Energie Verbrauch Woche
   pv_helper_energie_import_woche:
-    source: sensor.inverter_total_energy_import
+    source: sensor.pv_helper_energie_import_gesamt
     cycle: weekly
     name: PV Helper Energie Import Woche
   pv_helper_energie_export_woche:
-    source: sensor.inverter_total_energy_export
+    source: sensor.pv_helper_energie_export_gesamt
     cycle: weekly
     name: PV Helper Energie Export Woche
   pv_helper_energie_laden_woche:
@@ -119,7 +158,7 @@ utility_meter:
     name: PV Helper Energie Entladen Woche
   # ---------- Monat ----------
   pv_helper_energie_produktion_monat:
-    source: sensor.inverter_total_production
+    source: sensor.pv_helper_energie_produktion_gesamt
     cycle: monthly
     name: PV Helper Energie Produktion Monat
   pv_helper_energie_verbrauch_monat:
@@ -127,11 +166,11 @@ utility_meter:
     cycle: monthly
     name: PV Helper Energie Verbrauch Monat
   pv_helper_energie_import_monat:
-    source: sensor.inverter_total_energy_import
+    source: sensor.pv_helper_energie_import_gesamt
     cycle: monthly
     name: PV Helper Energie Import Monat
   pv_helper_energie_export_monat:
-    source: sensor.inverter_total_energy_export
+    source: sensor.pv_helper_energie_export_gesamt
     cycle: monthly
     name: PV Helper Energie Export Monat
   pv_helper_energie_laden_monat:
@@ -144,7 +183,7 @@ utility_meter:
     name: PV Helper Energie Entladen Monat
   # ---------- Jahr ----------
   pv_helper_energie_produktion_jahr:
-    source: sensor.inverter_total_production
+    source: sensor.pv_helper_energie_produktion_gesamt
     cycle: yearly
     name: PV Helper Energie Produktion Jahr
   pv_helper_energie_verbrauch_jahr:
@@ -152,11 +191,11 @@ utility_meter:
     cycle: yearly
     name: PV Helper Energie Verbrauch Jahr
   pv_helper_energie_import_jahr:
-    source: sensor.inverter_total_energy_import
+    source: sensor.pv_helper_energie_import_gesamt
     cycle: yearly
     name: PV Helper Energie Import Jahr
   pv_helper_energie_export_jahr:
-    source: sensor.inverter_total_energy_export
+    source: sensor.pv_helper_energie_export_gesamt
     cycle: yearly
     name: PV Helper Energie Export Jahr
   pv_helper_energie_laden_jahr:
