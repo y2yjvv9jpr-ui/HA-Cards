@@ -1232,10 +1232,16 @@ Properties auf `:host` gesetzt. Da Custom Properties **nicht** über Shadow-DOM-
 Grenzen hinweg vererbt werden, bindet jede Karte, die einen Token braucht, den
 Block über ihr `styles`-Array ein — der Wert steht so an genau einer Stelle.
 
-| Token                    | Wert      | Verwendung                                              |
-| ------------------------ | --------- | ------------------------------------------------------ |
-| `--des-production-color` | `#2e7d32` | Produktion/Solar: Zeile „Produktion" der Statistikkarte. |
-| `--des-export-color`     | `#639922` | Export/Einspeisung: Zeile „Export" der Statistikkarte und Balken „Export" der Wechselrichterkarte. |
+Im ganzen Projekt gibt es **genau zwei Energie-Grüns** — Produktion und Export —
+plus ein davon getrenntes **Status-Grün**. Jede grüne Fundstelle in `src/` und im
+Dashboard-Chart zieht ihre Farbe aus einem dieser drei Tokens; andere Grün-Werte
+gibt es nicht.
+
+| Token                    | Wert      | Bedeutung / Verwendung                                    |
+| ------------------------ | --------- | --------------------------------------------------------- |
+| `--des-production-color` | `#2e7d32` | Produktion/Solar/PV: Hauskarte „Solar" + Mix-Anteil, Wechselrichterkarte PV-Leistungszahl + PV1/PV2-Balken, Statistikkarte „Produktion", Chart-Reihe „Solar". |
+| `--des-export-color`     | `#639922` | Export/Einspeisung: Hauskarte Pille „Einspeisung" + Einspeisungs-Tageswert, Wechselrichterkarte Export-Balken + Netz-Einspeisung (Phasentabelle), Statistikkarte „Export", Chart-Reihe „Einspeisung". |
+| `--des-status-ok-color`  | `#2e7d32` | Status „alles ok/aktiv" — **kein** Energie-Grün: Status-Pillen (Normal/Bereit), Lade- und Heiz-Leistung (positiv), gefüllter Akku (> 50 %), laufender Punkt. Eigener Token, damit er sich später unabhängig vom Produktions-Grün bewegen kann. |
 
 Die Chart-Karte im Dashboard (`yaml/ui/Solar Dashboard.yaml`, „Verbrauch nach
 Quelle") kann keine CSS-Variablen lesen; ihre Reihen tragen die Hex-Werte als

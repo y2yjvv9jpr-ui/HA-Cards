@@ -1,4 +1,4 @@
-# todo.md — offene Punkte (Stand 06.09.2026, 13:40)
+# todo.md — offene Punkte (Stand 06.09.2026, 14:10)
 
 Reihenfolge = Vorschlag. Jeder Punkt wird erst abgestimmt, dann freigegeben,
 dann umgesetzt (siehe claude.md).
@@ -98,6 +98,13 @@ dann umgesetzt (siehe claude.md).
       und Einspeisung (`#639922`, oliv) jetzt wieder unterscheidbar. → Karte per
       HACS aktualisieren, Dashboard-YAML in HA ersetzen (Chart zieht erst danach
       nach).
+- [x] 06.09. Farb-Audit (v0.6.3): projektweit genau zwei Energie-Grüns +
+      Status-Grün als Tokens (`--des-production-color` #2e7d32,
+      `--des-export-color` #639922, `--des-status-ok-color` #2e7d32). Alle
+      Karten (Haus/Wechselrichter/Statistik/Speicher) ziehen daraus; verstreute
+      `--success-color`-Grüns entfernt. Sichtbar: Einspeisung jetzt überall oliv
+      (Hauskarte Pille+Tageswert, Inverter Phasentabelle). Dashboard-Chart trug
+      die Zielwerte schon. → Karten per HACS auf 0.6.3 aktualisieren.
 - [ ] des-storage-card: geschätzte Restzeit der Hausakkus im Betrieb prüfen
       (Glättung, „< 10 min"/„> 48 h").
 - [ ] des-inverter-card: Uhr-Pille läuft; Zeitzonen-Unterschied Browser/HA nur
