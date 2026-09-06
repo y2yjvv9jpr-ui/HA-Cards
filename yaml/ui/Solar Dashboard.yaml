@@ -374,6 +374,91 @@ sections:
                   name: Einspeisung
                   color: '#2e7d32'
                   transform: return -Math.max(0, x);
+      - type: custom:des-chart-card
+        grid_options:
+          columns: 12
+          rows: 5
+        name: Speicher-Füllstand
+        default_period: day
+        periods:
+          day:
+            meta: SoC in %
+            chart:
+              graph_span: 24h
+              span:
+                start: day
+              apex_config:
+                legend:
+                  position: bottom
+                grid:
+                  borderColor: var(--divider-color)
+                  strokeDashArray: 3
+                yaxis:
+                  min: 0
+                  max: 100
+                  tickAmount: 4
+                xaxis:
+                  tooltip:
+                    enabled: false
+                  labels:
+                    datetimeFormatter:
+                      hour: HH
+                stroke:
+                  curve: smooth
+                  width: 2
+              all_series_config:
+                type: line
+                unit: '%'
+                float_precision: 0
+                group_by:
+                  func: avg
+                  duration: 10min
+              series:
+                - entity: sensor.inverter_battery
+                  name: Hausakkus
+                  color: '#378ADD'
+                - entity: sensor.zendure_total_state_of_charge
+                  name: Zendure
+                  color: '#8FC7F0'
+          week:
+            meta: SoC in %, Wochenverlauf
+            chart:
+              graph_span: 7d
+              span:
+                start: isoWeek
+              apex_config:
+                legend:
+                  position: bottom
+                grid:
+                  borderColor: var(--divider-color)
+                  strokeDashArray: 3
+                yaxis:
+                  min: 0
+                  max: 100
+                  tickAmount: 4
+                xaxis:
+                  tooltip:
+                    enabled: false
+                  labels:
+                    datetimeFormatter:
+                      day: dd.MM
+                stroke:
+                  curve: smooth
+                  width: 2
+              all_series_config:
+                type: line
+                unit: '%'
+                float_precision: 0
+                group_by:
+                  func: avg
+                  duration: 1h
+              series:
+                - entity: sensor.inverter_battery
+                  name: Hausakkus
+                  color: '#378ADD'
+                - entity: sensor.zendure_total_state_of_charge
+                  name: Zendure
+                  color: '#8FC7F0'
   - type: grid
     cards:
       - type: heading
