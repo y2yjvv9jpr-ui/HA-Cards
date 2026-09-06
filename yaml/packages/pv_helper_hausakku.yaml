@@ -1,0 +1,180 @@
+# ---------------------------------------------------------------------------
+# pv_helper_hausakku.yaml
+# Karten-Schalter Laden|Auto für die Deye-Hausakkus (SUN-12K-SG04LP3).
+#
+# Erkenntnisse 05./06.09.2026:
+#   - Der Deye entlädt nur mit aktivem Time Of Use (TOU). TOU bleibt daher
+#     DAUERHAFT „Week" (Register 146 = 255); Programme: Charging Disabled,
+#     SoC 15. Diese Register werden von der Automation NICHT angefasst.
+#   - Schreibbefehle über die Solarman-Entitäten kommen nicht zuverlässig an;
+#     zuverlässig ist solarman.write_multiple_registers (Funktionscode 16).
+#     Deshalb schreibt alles hier über diese Aktion und liest über die
+#     Entitäten zurück (bis 3 Versuche, sonst Benachrichtigung).
+#   - Netzladen ohne TOU-Programme: Start-SoC (Reg. 127) + Schalter (Reg. 130).
+#     Damit begann das Netzladen am 05.09. binnen einer Minute.
+#
+# Laden → Reg. 127/128 = [100, Netzladestrom], Reg. 130 = 1 (Schalter an)
+#         → Deye lädt aus dem Netz, solange SoC < 100 %.
+#         Ende automatisch bei SoC ≥ 100 % → Auto.
+# Auto  → Reg. 130 = 0 (Schalter aus, harter Riegel), Reg. 127 = 30.
+#
+# Register (deye_p3.yaml): 127 Grid Charging Start %, 128 Grid Charging A,
+#   130 Grid Charging Schalter, 117 Battery Low SOC, 146 Time Of Use,
+#   166–171 Programm-SoC, 172–177 Programm-Charging.
+# Konvention: <domain>.pv_helper_<gegenstand>_<größe>
+# Stand:  2026-09-06
+# ---------------------------------------------------------------------------
+
+input_select:
+  pv_helper_hausakku_lademodus:
+    name: PV Hausakku Lademodus
+    options:
+      - Laden
+      - Auto
+    initial: Auto
+    icon: mdi:battery-charging-high
+
+input_number:
+  pv_helper_hausakku_netzladestrom:
+    name: PV Hausakku Netzladestrom
+    min: 10
+    max: 120
+    step: 5
+    initial: 40
+    unit_of_measurement: A
+    mode: box
+    icon: mdi:current-dc
+
+script:
+  # -------------------------------------------------------------------------
+  # Register schreiben und über eine Entität zurücklesen, bis 3 Versuche.
+  # Felder: adresse (int), werte (Liste int), entitaet, soll (Zahl oder on/off)
+  # -------------------------------------------------------------------------
+  pv_helper_deye_register_schreiben:
+    alias: PV Helper Deye Register schreiben
+    mode: queued
+    fields:
+      adresse:
+        description: Startregister
+        example: "127"
+      werte:
+        description: Liste der Registerwerte
+        example: "[100, 40]"
+      entitaet:
+        description: Entität zum Rücklesen
+        example: "number.inverter_battery_grid_charging_start"
+      soll:
+        description: Erwarteter Zustand (Zahl oder on/off)
+        example: "100"
+    sequence:
+      - variables:
+          geraet: "5dc4516c56e7d29d70d39106cd746594"
+      - repeat:
+          sequence:
+            - action: solarman.write_multiple_registers
+              data:
+                device: "{{ geraet }}"
+                address: "{{ adresse }}"
+                values: "{{ werte }}"
+            - delay:
+                seconds: 15
+          until:
+            - condition: template
+              value_template: >-
+                {% set ist = states(entitaet) %}
+                {% if soll in ['on', 'off'] %}
+                  {{ ist == soll or repeat.index >= 3 }}
+                {% else %}
+                  {{ (ist | float(-1)) == (soll | float(-2)) or repeat.index >= 3 }}
+                {% endif %}
+      - if:
+          - condition: template
+            value_template: >-
+              {% set ist = states(entitaet) %}
+              {% if soll in ['on', 'off'] %}
+                {{ ist != soll }}
+              {% else %}
+                {{ (ist | float(-1)) != (soll | float(-2)) }}
+              {% endif %}
+        then:
+          - action: persistent_notification.create
+            data:
+              title: Deye-Schreibbefehl fehlgeschlagen
+              message: >-
+                Register {{ adresse }} → {{ werte }} nach 3 Versuchen nicht
+                übernommen. {{ entitaet }} steht auf {{ states(entitaet) }},
+                erwartet {{ soll }}.
+
+automation:
+  # -------------------------------------------------------------------------
+  # Umschalten Laden|Auto in die Deye-Register schreiben
+  # -------------------------------------------------------------------------
+  - id: pv_helper_hausakku_lademodus
+    alias: PV Helper Hausakku Lademodus
+    description: >-
+      Laden → Netzladen-Start 100 % + Strom, Schalter an.
+      Auto → Schalter aus, Start 30 %. Über write_multiple_registers mit Rücklesen.
+    triggers:
+      - trigger: state
+        entity_id: input_select.pv_helper_hausakku_lademodus
+    mode: queued
+    actions:
+      - choose:
+          - conditions:
+              - condition: state
+                entity_id: input_select.pv_helper_hausakku_lademodus
+                state: Laden
+            sequence:
+              - action: script.pv_helper_deye_register_schreiben
+                data:
+                  adresse: 127
+                  werte: "{{ [100, states('input_number.pv_helper_hausakku_netzladestrom') | int(40)] }}"
+                  entitaet: number.inverter_battery_grid_charging_start
+                  soll: 100
+              - action: script.pv_helper_deye_register_schreiben
+                data:
+                  adresse: 130
+                  werte: [1]
+                  entitaet: switch.inverter_battery_grid_charging
+                  soll: "on"
+          - conditions:
+              - condition: state
+                entity_id: input_select.pv_helper_hausakku_lademodus
+                state: Auto
+            sequence:
+              - action: script.pv_helper_deye_register_schreiben
+                data:
+                  adresse: 130
+                  werte: [0]
+                  entitaet: switch.inverter_battery_grid_charging
+                  soll: "off"
+              - action: script.pv_helper_deye_register_schreiben
+                data:
+                  adresse: 127
+                  werte: [30]
+                  entitaet: number.inverter_battery_grid_charging_start
+                  soll: 30
+
+  # -------------------------------------------------------------------------
+  # Netzladen beenden, sobald die Hausakkus voll sind (Prüfung jede Minute)
+  # -------------------------------------------------------------------------
+  - id: pv_helper_hausakku_ladeende
+    alias: PV Helper Hausakku Ladeende
+    description: Im Lademodus Laden bei SoC ≥ 100 % → Auto.
+    triggers:
+      - trigger: time_pattern
+        minutes: /1
+    conditions:
+      - condition: state
+        entity_id: input_select.pv_helper_hausakku_lademodus
+        state: Laden
+      - condition: numeric_state
+        entity_id: sensor.inverter_battery
+        above: 99.5
+    actions:
+      - action: input_select.select_option
+        target:
+          entity_id: input_select.pv_helper_hausakku_lademodus
+        data:
+          option: Auto
+    mode: single
