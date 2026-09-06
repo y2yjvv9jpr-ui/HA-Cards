@@ -409,7 +409,7 @@ export class DesStatsCard extends LitElement {
       }
 
       .bar-fill.m-export {
-        background: var(--des-export-color, #639922);
+        background: var(--des-export-color, #2e7d32);
       }
 
       .bar-fill.m-charge {
