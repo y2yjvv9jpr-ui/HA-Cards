@@ -28,6 +28,12 @@ const DEFAULT_KWP_PV2 = 6.0;
 const DEFAULT_IMBALANCE_RATIO = 0.5;
 const DEFAULT_IMBALANCE_MIN_W = 500;
 
+/**
+ * Below this many watts of feed-in the export bar reads zero: the grid meter
+ * jitters a few watts around zero even when nothing is exported.
+ */
+const EXPORT_MIN_W = 40;
+
 /** Grid size in a HA sections view (column_span 3 → 36 columns): a third wide. */
 const GRID_ROWS = 4;
 const GRID_COLUMNS = 12;
@@ -144,8 +150,11 @@ interface InverterView {
   strings: [StringView, StringView];
   phases: [PhaseView, PhaseView, PhaseView];
   imbalance: [boolean, boolean];
+  /** Grid feed-in (W, positive), summed over the grid phases; null if unreadable. */
+  exportW: number | null;
   /** Which optional blocks have at least one configured field. */
   showStrings: boolean;
+  showExport: boolean;
   showPhases: boolean;
   showDcItem: boolean;
   showFreqItem: boolean;
@@ -559,7 +568,9 @@ export class DesInverterCard extends LitElement {
       strings: [data.strings[0], data.strings[1]],
       phases: [data.phases[0], data.phases[1], data.phases[2]],
       imbalance: this._imbalance(data.strings[0].power, data.strings[1].power),
+      exportW: this._exportW(data.phases.map((p) => p.grid)),
       showStrings: true,
+      showExport: true,
       showPhases: true,
       showDcItem: config.show_dc_temp !== false,
       showFreqItem: true,
@@ -615,11 +626,27 @@ export class DesInverterCard extends LitElement {
       strings,
       phases: [phase(0), phase(1), phase(2)],
       imbalance: this._imbalance(pv1Power, pv2Power),
+      exportW: this._exportW(
+        (c.grid_power_entities ?? []).map((e) => this._num(e, 'power')),
+      ),
       showStrings: blocks.strings,
+      showExport: nonEmptyArray(c.grid_power_entities),
       showPhases: blocks.phases,
       showDcItem: blocks.dc,
       showFreqItem: blocks.freq,
     };
+  }
+
+  /**
+   * Grid feed-in as a positive number, from the raw grid-phase powers.
+   * The grid meter follows the Deye sign (positive = draw, negative = feed-in);
+   * `invert_grid` flips that first, exactly as the phases table does, then the
+   * result is negated so feed-in comes out positive. `null` stays `null`.
+   */
+  private _exportW(rawGrid: ReadonlyArray<number | null>): number | null {
+    const invert = this._config?.invert_grid ? -1 : 1;
+    const sum = sumNonNull(rawGrid);
+    return sum === null ? null : -(sum * invert);
   }
 
   /** Per-string amber flags; skipped when a power is missing (would be NaN). */
@@ -683,7 +710,9 @@ export class DesInverterCard extends LitElement {
       </div>
 
       ${this._renderPowerRow(view)}
-      ${view.showStrings ? this._renderStringBars(view) : nothing}
+      ${view.showStrings || view.showExport
+        ? this._renderStringBars(view)
+        : nothing}
 
       ${hasDetails
         ? html`<div
@@ -770,28 +799,58 @@ export class DesInverterCard extends LitElement {
 
     return html`
       <div class="strings">
-        ${view.strings.map((s, i) => {
-          const full = (kwp[i] ?? 0) * 1000;
-          const pct =
-            s.power !== null && full > 0
-              ? clamp((s.power / full) * 100, 0, 100)
-              : 0;
-          const warn = view.imbalance[i];
-          return html`
-            <div class="string-row">
-              <span class="string-label">PV${i + 1}</span>
-              <div class="bar">
-                <div
-                  class="bar-fill ${warn ? 'warn' : ''}"
-                  style="width: ${pct}%"
-                ></div>
-              </div>
-              <span class="string-power">
-                ${this._unit(s.power, formatInt, 'W')}
-              </span>
-            </div>
-          `;
-        })}
+        ${view.showStrings
+          ? view.strings.map((s, i) => {
+              const full = (kwp[i] ?? 0) * 1000;
+              const pct =
+                s.power !== null && full > 0
+                  ? clamp((s.power / full) * 100, 0, 100)
+                  : 0;
+              const warn = view.imbalance[i];
+              return html`
+                <div class="string-row">
+                  <span class="string-label">PV${i + 1}</span>
+                  <div class="bar">
+                    <div
+                      class="bar-fill ${warn ? 'warn' : ''}"
+                      style="width: ${pct}%"
+                    ></div>
+                  </div>
+                  <span class="string-power">
+                    ${this._unit(s.power, formatInt, 'W')}
+                  </span>
+                </div>
+              `;
+            })
+          : nothing}
+        ${view.showExport ? this._renderExportBar(view) : nothing}
+      </div>
+    `;
+  }
+
+  /**
+   * Export row under the strings: same build (label, bar, value), but only
+   * feed-in is shown. Below `EXPORT_MIN_W` (or while drawing) the bar is empty
+   * and the value reads "0 W"; the bar is scaled against `kwp_total`, like the
+   * string bars against their own kWp.
+   */
+  private _renderExportBar(view: InverterView): TemplateResult {
+    const value = view.exportW;
+    const feeding = value !== null && value >= EXPORT_MIN_W;
+    const full = this._kwpTotal * 1000;
+    const pct = feeding && full > 0 ? clamp((value / full) * 100, 0, 100) : 0;
+
+    return html`
+      <div class="string-row">
+        <span class="string-label">Export</span>
+        <div class="bar">
+          <div class="bar-fill export" style="width: ${pct}%"></div>
+        </div>
+        <span class="string-power">
+          ${value === null
+            ? html`<span class="unavail">–</span>`
+            : html`${formatInt(feeding ? value : 0)} W`}
+        </span>
       </div>
     `;
   }
@@ -954,6 +1013,9 @@ export class DesInverterCard extends LitElement {
     :host {
       display: block;
       height: 100%;
+      /* Feed-in colour, shared with the "Einspeisung" series of the dashboard
+         chart (yaml/ui/Solar Dashboard.yaml). One source for both. */
+      --des-export-color: #f29b9a;
     }
 
     ha-card {
@@ -1116,10 +1178,10 @@ export class DesInverterCard extends LitElement {
     /* --- string bars --- */
 
     .strings {
-      margin-top: 10px;
+      margin-top: 8px;
       display: flex;
       flex-direction: column;
-      gap: 6px;
+      gap: 5px;
     }
 
     .string-row {
@@ -1150,6 +1212,10 @@ export class DesInverterCard extends LitElement {
 
     .bar-fill.warn {
       background: var(--warning-color, #ff9800);
+    }
+
+    .bar-fill.export {
+      background: var(--des-export-color, #f29b9a);
     }
 
     .string-power {

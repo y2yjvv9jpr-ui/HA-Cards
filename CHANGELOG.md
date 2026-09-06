@@ -4,6 +4,22 @@ Alle nennenswerten Änderungen an diesem Projekt werden hier festgehalten.
 Format grob nach [Keep a Changelog](https://keepachangelog.com/de/1.1.0/),
 Versionierung nach [SemVer](https://semver.org/lang/de/).
 
+## [0.6.0]
+
+### Hinzugefügt
+
+- **des-inverter-card:** Neue Balkenzeile **Export** unter PV2, gleiche Bauart
+  wie die PV-Zeilen (Label links, Balken, Wert rechts). Der Wert ist die Summe
+  der konfigurierten `grid_power_entities` (Deye-Vorzeichen: positiv = Bezug,
+  negativ = Einspeisung), invertiert, sodass Einspeisung positiv erscheint.
+  Gezeigt wird nur Einspeisung: bei Bezug oder unter 40 W steht der Balken auf 0
+  und der Wert auf „0 W". Die Balkenlänge ist relativ zu `kwp_total` (wie die
+  PV-Balken zu ihrem kWp). Keine neue Konfiguration — nutzt die vorhandenen
+  `grid_power_entities`.
+- Neuer Design-Token `--des-export-color` (Standard `#F29B9A`) für die
+  Balkenfarbe; sie entspricht der „Einspeisung"-Reihe im Dashboard-Chart, damit
+  Karte und Chart dieselbe Farbquelle haben.
+
 ## [0.5.0]
 
 ### Hinzugefügt

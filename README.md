@@ -661,6 +661,15 @@ jede Darstellung geprüft werden kann:
   `… % von … kWp`; rechts Thermometer-Icon und die WR-Temperatur.
 - **String-Zeilen** — `PV1`/`PV2` mit schmalem Balken (Füllung = Leistung /
   `kwp_pvX`, grün, bei Unsymmetrie amber) und Leistung in W.
+- **Export-Zeile** — gleiche Bauart darunter: Label `Export`, Balken, Wert in W.
+  Der Wert ist die Summe der `grid_power_entities` (Deye-Vorzeichen: positiv =
+  Bezug, negativ = Einspeisung, `invert_grid` wird berücksichtigt), invertiert,
+  sodass Einspeisung positiv erscheint. Gezeigt wird **nur Einspeisung**: bei
+  Bezug oder unter 40 W steht der Balken auf 0 und der Wert auf „0 W". Die
+  Balkenlänge ist relativ zu `kwp_total`. Die Farbe kommt aus dem Token
+  `--des-export-color` (Standard `#F29B9A`, wie die „Einspeisung"-Reihe im
+  Dashboard-Chart). Keine eigene Konfiguration — die Zeile erscheint, sobald
+  `grid_power_entities` gesetzt ist.
 
 **Aufbau — aufgeklappt** (unter dem Chevron, durch eine Haarlinie getrennt)
 
