@@ -9,6 +9,7 @@ import {
 import { entityUnit, isEntityId, resolveNumber, resolveText } from './resolve';
 import { chevronStyles } from './chevron';
 import { overlayStyles, OverlayCloser } from './overlay';
+import { tokenStyles } from './tokens';
 import type {
   DesInverterCardConfig,
   HomeAssistant,
@@ -1009,13 +1010,11 @@ export class DesInverterCard extends LitElement {
   static override styles = [
     chevronStyles,
     overlayStyles,
+    tokenStyles,
     css`
     :host {
       display: block;
       height: 100%;
-      /* Feed-in colour, shared with the "Einspeisung" series of the dashboard
-         chart (yaml/ui/Solar Dashboard.yaml). One source for both. */
-      --des-export-color: #f29b9a;
     }
 
     ha-card {
@@ -1215,7 +1214,7 @@ export class DesInverterCard extends LitElement {
     }
 
     .bar-fill.export {
-      background: var(--des-export-color, #f29b9a);
+      background: var(--des-export-color, #639922);
     }
 
     .string-power {
