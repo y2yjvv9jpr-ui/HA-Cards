@@ -1,4 +1,4 @@
-# todo.md — offene Punkte (Stand 06.09.2026, 17:20)
+# todo.md — offene Punkte (Stand 06.09.2026, 17:45)
 
 Reihenfolge = Vorschlag. Jeder Punkt wird erst abgestimmt, dann freigegeben,
 dann umgesetzt (siehe claude.md).
@@ -142,6 +142,15 @@ dann umgesetzt (siehe claude.md).
       Standard-Helfern. rows 6 (min 5), Dashboard-Hauskarte auf rows 6. → per
       HACS auf 0.7.0, Dashboard-YAML in HA ersetzen. **Prüfen:** Sections-View
       kein Überlauf; löst apexcharts `var(--des-production-color)` im Solar auf?
+- [x] 06.09. des-chart-card (v0.7.1): gestapelte Flächen stapeln nicht. Fix:
+      `stacked: true` wird top-level **und** auf `apex_config.chart` gesetzt
+      (Flächen brauchen `chart.stacked`), plus default `group_by.fill: last` für
+      gestapelte group_by-Charts (deckungsgleiche Zeitstempel je Reihe). **Nicht
+      live gerendert** — bitte „Speicher-Füllstand" prüfen. Falls weiter nicht
+      gestapelt: Reihen-Zeitstempel wirklich deckungsgleich? Ggf. `group_by`-
+      Raster/`fill` in der YAML explizit setzen. Hinweis: der Tages-Chart der
+      **Hauskarte** (v0.7.0) baut sein Apex-Config selbst — dort ist `fill: last`
+      noch nicht gesetzt; falls dessen Flächen auch nicht stapeln, dort nachziehen.
 - [ ] des-storage-card: geschätzte Restzeit der Hausakkus im Betrieb prüfen
       (Glättung, „< 10 min"/„> 48 h").
 - [ ] des-inverter-card: Uhr-Pille läuft; Zeitzonen-Unterschied Browser/HA nur
