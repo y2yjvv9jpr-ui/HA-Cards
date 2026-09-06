@@ -4,6 +4,17 @@ Alle nennenswerten Änderungen an diesem Projekt werden hier festgehalten.
 Format grob nach [Keep a Changelog](https://keepachangelog.com/de/1.1.0/),
 Versionierung nach [SemVer](https://semver.org/lang/de/).
 
+## [0.7.2]
+
+### Behoben
+
+- **des-house-card:** Der Quellen-Chart zeichnet jetzt gestapelte **Säulen**
+  statt Flächen. Gestapelte Flächen werden von der in apexcharts-card gebündelten
+  ApexCharts-Version (≥ 3.44.1) nicht mehr gestapelt (apexcharts.js#4132) —
+  Säulen dagegen schon. `type: area` → `type: column` in beiden Perioden-Zweigen,
+  je Reihe `stack_group: quellen` (wegen des yaxis-bezogenen Stapel-Bugs
+  apexcharts-card#827) und `group_by.fill: last` für deckungsgleiche Zeitstempel.
+
 ## [0.7.1]
 
 ### Behoben
