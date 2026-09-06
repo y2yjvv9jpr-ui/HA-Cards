@@ -45,7 +45,7 @@ const At = (i) => new ut(typeof i == "string" ? i : i + "", void 0, Ce), E = (i,
  * Copyright 2017 Google LLC
  * SPDX-License-Identifier: BSD-3-Clause
  */
-const { is: Ct, defineProperty: Tt, getOwnPropertyDescriptor: Pt, getOwnPropertyNames: Mt, getOwnPropertySymbols: Ot, getPrototypeOf: Lt } = Object, le = globalThis, Ue = le.trustedTypes, Rt = Ue ? Ue.emptyScript : "", zt = le.reactiveElementPolyfillSupport, W = (i, e) => i, ye = { toAttribute(i, e) {
+const { is: Ct, defineProperty: Tt, getOwnPropertyDescriptor: Pt, getOwnPropertyNames: Mt, getOwnPropertySymbols: Ot, getPrototypeOf: Lt } = Object, le = globalThis, Ue = le.trustedTypes, Rt = Ue ? Ue.emptyScript : "", Nt = le.reactiveElementPolyfillSupport, W = (i, e) => i, ye = { toAttribute(i, e) {
   switch (e) {
     case Boolean:
       i = i ? Rt : null;
@@ -75,7 +75,7 @@ const { is: Ct, defineProperty: Tt, getOwnPropertyDescriptor: Pt, getOwnProperty
   return t;
 } }, pt = (i, e) => !Ct(i, e), We = { attribute: !0, type: String, converter: ye, reflect: !1, useDefault: !1, hasChanged: pt };
 Symbol.metadata ??= Symbol("metadata"), le.litPropertyMetadata ??= /* @__PURE__ */ new WeakMap();
-let z = class extends HTMLElement {
+let N = class extends HTMLElement {
   static addInitializer(e) {
     this._$Ei(), (this.l ??= []).push(e);
   }
@@ -256,15 +256,15 @@ let z = class extends HTMLElement {
   firstUpdated(e) {
   }
 };
-z.elementStyles = [], z.shadowRootOptions = { mode: "open" }, z[W("elementProperties")] = /* @__PURE__ */ new Map(), z[W("finalized")] = /* @__PURE__ */ new Map(), zt?.({ ReactiveElement: z }), (le.reactiveElementVersions ??= []).push("2.1.2");
+N.elementStyles = [], N.shadowRootOptions = { mode: "open" }, N[W("elementProperties")] = /* @__PURE__ */ new Map(), N[W("finalized")] = /* @__PURE__ */ new Map(), Nt?.({ ReactiveElement: N }), (le.reactiveElementVersions ??= []).push("2.1.2");
 /**
  * @license
  * Copyright 2017 Google LLC
  * SPDX-License-Identifier: BSD-3-Clause
  */
-const Te = globalThis, Fe = (i) => i, re = Te.trustedTypes, Be = re ? re.createPolicy("lit-html", { createHTML: (i) => i }) : void 0, _t = "$lit$", S = `lit$${Math.random().toFixed(9).slice(2)}$`, gt = "?" + S, Nt = `<${gt}>`, O = document, F = () => O.createComment(""), B = (i) => i === null || typeof i != "object" && typeof i != "function", Pe = Array.isArray, Dt = (i) => Pe(i) || typeof i?.[Symbol.iterator] == "function", _e = `[ 	
+const Te = globalThis, Fe = (i) => i, re = Te.trustedTypes, Be = re ? re.createPolicy("lit-html", { createHTML: (i) => i }) : void 0, _t = "$lit$", S = `lit$${Math.random().toFixed(9).slice(2)}$`, gt = "?" + S, zt = `<${gt}>`, O = document, F = () => O.createComment(""), B = (i) => i === null || typeof i != "object" && typeof i != "function", Pe = Array.isArray, Dt = (i) => Pe(i) || typeof i?.[Symbol.iterator] == "function", _e = `[ 	
 \f\r]`, H = /<(?:(!--|\/[^a-zA-Z])|(\/?[a-zA-Z][^>\s]*)|(\/?$))/g, je = /-->/g, Ge = />/g, T = RegExp(`>|${_e}(?:([^\\s"'>=/]+)(${_e}*=${_e}*(?:[^ 	
-\f\r"'\`<>=]|("|')|))|$)`, "g"), Ve = /'/g, Ke = /"/g, mt = /^(?:script|style|textarea|title)$/i, ft = (i) => (e, ...t) => ({ _$litType$: i, strings: e, values: t }), o = ft(1), It = ft(2), N = Symbol.for("lit-noChange"), d = Symbol.for("lit-nothing"), qe = /* @__PURE__ */ new WeakMap(), M = O.createTreeWalker(O, 129);
+\f\r"'\`<>=]|("|')|))|$)`, "g"), Ve = /'/g, Ke = /"/g, mt = /^(?:script|style|textarea|title)$/i, ft = (i) => (e, ...t) => ({ _$litType$: i, strings: e, values: t }), o = ft(1), It = ft(2), z = Symbol.for("lit-noChange"), d = Symbol.for("lit-nothing"), qe = /* @__PURE__ */ new WeakMap(), M = O.createTreeWalker(O, 129);
 function vt(i, e) {
   if (!Pe(i) || !i.hasOwnProperty("raw")) throw Error("invalid template strings array");
   return Be !== void 0 ? Be.createHTML(e) : e;
@@ -277,7 +277,7 @@ const Ht = (i, e) => {
     let u, _, h = -1, m = 0;
     for (; m < l.length && (n.lastIndex = m, _ = n.exec(l), _ !== null); ) m = n.lastIndex, n === H ? _[1] === "!--" ? n = je : _[1] !== void 0 ? n = Ge : _[2] !== void 0 ? (mt.test(_[2]) && (s = RegExp("</" + _[2], "g")), n = T) : _[3] !== void 0 && (n = T) : n === T ? _[0] === ">" ? (n = s ?? H, h = -1) : _[1] === void 0 ? h = -2 : (h = n.lastIndex - _[2].length, u = _[1], n = _[3] === void 0 ? T : _[3] === '"' ? Ke : Ve) : n === Ke || n === Ve ? n = T : n === je || n === Ge ? n = H : (n = T, s = void 0);
     const v = n === T && i[c + 1].startsWith("/>") ? " " : "";
-    a += n === H ? l + Nt : h >= 0 ? (r.push(u), l.slice(0, h) + _t + l.slice(h) + S + v) : l + S + (h === -2 ? c : v);
+    a += n === H ? l + zt : h >= 0 ? (r.push(u), l.slice(0, h) + _t + l.slice(h) + S + v) : l + S + (h === -2 ? c : v);
   }
   return [vt(i, a + (i[t] || "<?>") + (e === 2 ? "</svg>" : e === 3 ? "</math>" : "")), r];
 };
@@ -319,7 +319,7 @@ class j {
   }
 }
 function D(i, e, t = i, r) {
-  if (e === N) return e;
+  if (e === z) return e;
   let s = r !== void 0 ? t._$Co?.[r] : t._$Cl;
   const a = B(e) ? void 0 : e._$litDirective$;
   return s?.constructor !== a && (s?._$AO?.(!1), a === void 0 ? s = void 0 : (s = new a(i), s._$AT(i, t, r)), r !== void 0 ? (t._$Co ??= [])[r] = s : t._$Cl = s), s !== void 0 && (e = D(i, s._$AS(i, e.values), s, r)), e;
@@ -371,7 +371,7 @@ class K {
     return this._$AB;
   }
   _$AI(e, t = this) {
-    e = D(this, e, t), B(e) ? e === d || e == null || e === "" ? (this._$AH !== d && this._$AR(), this._$AH = d) : e !== this._$AH && e !== N && this._(e) : e._$litType$ !== void 0 ? this.$(e) : e.nodeType !== void 0 ? this.T(e) : Dt(e) ? this.k(e) : this._(e);
+    e = D(this, e, t), B(e) ? e === d || e == null || e === "" ? (this._$AH !== d && this._$AR(), this._$AH = d) : e !== this._$AH && e !== z && this._(e) : e._$litType$ !== void 0 ? this.$(e) : e.nodeType !== void 0 ? this.T(e) : Dt(e) ? this.k(e) : this._(e);
   }
   O(e) {
     return this._$AA.parentNode.insertBefore(e, this._$AB);
@@ -424,11 +424,11 @@ class ce {
   _$AI(e, t = this, r, s) {
     const a = this.strings;
     let n = !1;
-    if (a === void 0) e = D(this, e, t, 0), n = !B(e) || e !== this._$AH && e !== N, n && (this._$AH = e);
+    if (a === void 0) e = D(this, e, t, 0), n = !B(e) || e !== this._$AH && e !== z, n && (this._$AH = e);
     else {
       const c = e;
       let l, u;
-      for (e = a[0], l = 0; l < a.length - 1; l++) u = D(this, c[r + l], t, l), u === N && (u = this._$AH[l]), n ||= !B(u) || u !== this._$AH[l], u === d ? e = d : e !== d && (e += (u ?? "") + a[l + 1]), this._$AH[l] = u;
+      for (e = a[0], l = 0; l < a.length - 1; l++) u = D(this, c[r + l], t, l), u === z && (u = this._$AH[l]), n ||= !B(u) || u !== this._$AH[l], u === d ? e = d : e !== d && (e += (u ?? "") + a[l + 1]), this._$AH[l] = u;
     }
     n && !s && this.j(e);
   }
@@ -457,7 +457,7 @@ class Bt extends ce {
     super(e, t, r, s, a), this.type = 5;
   }
   _$AI(e, t = this) {
-    if ((e = D(this, e, t, 0) ?? d) === N) return;
+    if ((e = D(this, e, t, 0) ?? d) === z) return;
     const r = this._$AH, s = e === d && r !== d || e.capture !== r.capture || e.once !== r.once || e.passive !== r.passive, a = e !== d && (r === d || s);
     s && this.element.removeEventListener(this.name, this, r), a && this.element.addEventListener(this.name, this, e), this._$AH = e;
   }
@@ -493,7 +493,7 @@ const Vt = (i, e, t) => {
  * SPDX-License-Identifier: BSD-3-Clause
  */
 const Me = globalThis;
-class k extends z {
+class k extends N {
   constructor() {
     super(...arguments), this.renderOptions = { host: this }, this._$Do = void 0;
   }
@@ -512,7 +512,7 @@ class k extends z {
     super.disconnectedCallback(), this._$Do?.setConnected(!1);
   }
   render() {
-    return N;
+    return z;
   }
 }
 k._$litElement$ = !0, k.finalized = !0, Me.litElementHydrateSupport?.({ LitElement: k });
@@ -789,7 +789,7 @@ const Re = E`
     outline-offset: 2px;
     border-radius: 6px;
   }
-`, ze = E`
+`, Ne = E`
   /* Only while open does the host lift above its neighbours. */
   :host([expanded]) {
     position: relative;
@@ -849,7 +849,7 @@ const Re = E`
     }
   }
 `;
-class Ne {
+class ze {
   constructor(e, t) {
     this._host = e, this._onClose = t, this._active = !1, this._onDocClick = (r) => {
       r.composedPath().includes(this._host) || this._onClose();
@@ -928,7 +928,7 @@ function br(i) {
 }
 const se = class se extends k {
   constructor() {
-    super(), this._writeTimers = /* @__PURE__ */ new Map(), this._settleTimers = /* @__PURE__ */ new Map(), this._closer = new Ne(this, () => this._collapse()), this._powerAverage = null, this._averageDirection = 0, this._averageStartedAt = 0, this._averageUpdatedAt = 0, this._expanded = !1, this._thresholdLocal = null, this._targetLocal = null, this._chargeModeLocal = null, this._itemModesLocal = [];
+    super(), this._writeTimers = /* @__PURE__ */ new Map(), this._settleTimers = /* @__PURE__ */ new Map(), this._closer = new ze(this, () => this._collapse()), this._powerAverage = null, this._averageDirection = 0, this._averageStartedAt = 0, this._averageUpdatedAt = 0, this._expanded = !1, this._thresholdLocal = null, this._targetLocal = null, this._chargeModeLocal = null, this._itemModesLocal = [];
   }
   setConfig(e) {
     if (!e)
@@ -1626,7 +1626,7 @@ se.properties = {
 }, se.styles = [
   ue,
   Re,
-  ze,
+  Ne,
   E`
     /* The card fills whatever height the sections grid hands it, so several
        cards in one row can be levelled with grid_options.rows. */
@@ -2114,13 +2114,13 @@ function J(i) {
   return e.length > 0 ? e.reduce((t, r) => t + r, 0) : null;
 }
 const Or = 2, Lr = 6e4, Rr = 2500, C = (i) => String(i).padStart(2, "0");
-function zr(i) {
+function Nr(i) {
   const e = i.trim();
   if (e.length === 0) return null;
   const t = e.includes("T") ? e : e.replace(" ", "T"), r = new Date(t);
   return Number.isNaN(r.getTime()) ? null : r;
 }
-function Nr(i) {
+function zr(i) {
   return `${C(i.getDate())}.${C(i.getMonth() + 1)}.${i.getFullYear()} ${C(i.getHours())}:${C(i.getMinutes())}`;
 }
 function Dr() {
@@ -2129,7 +2129,7 @@ function Dr() {
 }
 const ie = class ie extends k {
   constructor() {
-    super(), this._closer = new Ne(this, () => this._collapse()), this._expanded = !1, this._clockTick = 0, this._timeSetDone = !1;
+    super(), this._closer = new ze(this, () => this._collapse()), this._expanded = !1, this._clockTick = 0, this._timeSetDone = !1;
   }
   disconnectedCallback() {
     super.disconnectedCallback(), this._closer.deactivate(), this._stopClockTimer(), this._feedbackTimer !== void 0 && (window.clearTimeout(this._feedbackTimer), this._feedbackTimer = void 0);
@@ -2161,7 +2161,7 @@ const ie = class ie extends k {
     if (!p(e)) return { kind: "off" };
     const t = this._text(e);
     if (t === null) return { kind: "unavailable" };
-    const r = zr(t);
+    const r = Nr(t);
     return r === null ? { kind: "unavailable" } : { kind: "value", at: r, minutes: (r.getTime() - Date.now()) / 6e4 };
   }
   _clockOffBy(e) {
@@ -2184,7 +2184,7 @@ const ie = class ie extends k {
       <div class="clock-row">
         <span class="foot-label">Wechselrichter-Uhr</span>
         <span class="clock-value">
-          ${t ? o`${Nr(e.at)}
+          ${t ? o`${zr(e.at)}
                 <span class="clock-delta">
                   (Δ ${Z(e.minutes)} min)
                 </span>` : o`<span class="unavail">–</span>`}
@@ -2652,7 +2652,7 @@ ie.properties = {
   _timeSetDone: { state: !0 }
 }, ie.styles = [
   Re,
-  ze,
+  Ne,
   De,
   E`
     :host {
@@ -3010,7 +3010,7 @@ const Ir = /* @__PURE__ */ new Set([
   "normal",
   "night",
   "export"
-]), st = 6, Hr = 5, Ur = 12, Wr = "sensor.pv_helper_solar_direkt_leistung", Fr = "sensor.pv_helper_speicher_leistung", Br = "sensor.inverter_external_power", it = "sensor.pv_helper_energie_solar_direkt", at = "sensor.pv_helper_energie_entladen_gesamt", nt = "sensor.pv_helper_energie_import_gesamt", ot = "var(--des-production-color)", lt = "#378ADD", ct = "#E24B4A", jr = ["day", "week", "month", "year"], Gr = {
+]), st = 4, Hr = 4, Ur = 12, Wr = "sensor.pv_helper_solar_direkt_leistung", Fr = "sensor.pv_helper_speicher_leistung", Br = "sensor.inverter_external_power", it = "sensor.pv_helper_energie_solar_direkt", at = "sensor.pv_helper_energie_entladen_gesamt", nt = "sensor.pv_helper_energie_import_gesamt", ot = "var(--success-color)", lt = "#378ADD", ct = "#E24B4A", jr = ["day", "week", "month", "year"], Gr = {
   day: "Tag",
   week: "Woche",
   month: "Monat",
@@ -3065,7 +3065,7 @@ function Xr(i) {
 }
 const ae = class ae extends k {
   constructor() {
-    super(), this._closer = new Ne(this, () => this._collapse()), this._mountToken = 0, this._awaitingApex = !1, this._expanded = !1, this._period = null;
+    super(), this._closer = new ze(this, () => this._collapse()), this._mountToken = 0, this._awaitingApex = !1, this._expanded = !1, this._period = null;
   }
   disconnectedCallback() {
     super.disconnectedCallback(), this._closer.deactivate(), this._teardownChart(), this._resizeObserver?.disconnect(), this._resizeObserver = void 0, this._observedChart = void 0;
@@ -3208,11 +3208,9 @@ const ae = class ae extends k {
   _apexCardConfig(e) {
     const t = this._config, a = {
       chart: { height: this._chartHeight ?? Kr, stacked: !0 },
-      legend: {
-        position: "bottom",
-        markers: { offsetX: -4 },
-        itemMargin: { horizontal: 10 }
-      },
+      // No legend: the Solar/Speicher/Netz pills in the header already carry the
+      // colour key, and dropping it reclaims vertical space for a rows-4 card.
+      legend: { show: !1 },
       grid: { borderColor: "var(--divider-color)", strokeDashArray: 3 },
       plotOptions: { bar: { columnWidth: "70%" } },
       xaxis: {
@@ -3349,7 +3347,7 @@ const ae = class ae extends k {
       const n = !(a > 0);
       return o`
         <span class="hpill ${n ? "zero" : ""}">
-          <span class="swatch ${n ? "zero" : r}"></span>
+          <span class="swatch ${r}"></span>
           <span class="hpill-label">${s}</span>
           <span class="hpill-value">${g(a)} W</span>
         </span>
@@ -3520,7 +3518,7 @@ ae.properties = {
   _period: { state: !0 }
 }, ae.styles = [
   Re,
-  ze,
+  Ne,
   De,
   ue,
   E`
@@ -3689,11 +3687,6 @@ ae.properties = {
       height: 8px;
       border-radius: 2px;
       flex-shrink: 0;
-    }
-
-    .swatch.zero {
-      background: var(--secondary-text-color);
-      opacity: 0.5;
     }
 
     /* --- chart section --- */

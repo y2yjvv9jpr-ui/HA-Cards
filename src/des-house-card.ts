@@ -21,9 +21,10 @@ const DEMO_STATES: ReadonlySet<HouseDemoState> = new Set([
 /** How a resolved entity value is rescaled onto the unit the card expects. */
 type Scale = 'power' | 'energy' | 'plain';
 
-/** Grid size in a HA sections view (column_span 3 → 36 columns): a third wide. */
-const GRID_ROWS = 6;
-const GRID_MIN_ROWS = 5;
+/** Grid size in a HA sections view (column_span 3 → 36 columns): a third wide.
+    Same height as the neighbouring cards (inverter, stats): four rows. */
+const GRID_ROWS = 4;
+const GRID_MIN_ROWS = 4;
 const GRID_COLUMNS = 12;
 
 /** Default sources for the mix bar / chart — Daniel's helpers. */
@@ -34,8 +35,10 @@ const DEFAULT_SOLAR_ENERGY = 'sensor.pv_helper_energie_solar_direkt';
 const DEFAULT_STORAGE_ENERGY = 'sensor.pv_helper_energie_entladen_gesamt';
 const DEFAULT_GRID_ENERGY = 'sensor.pv_helper_energie_import_gesamt';
 
-/** Series colours — same as the mix bar. Solar follows the production token. */
-const COLOR_SOLAR = 'var(--des-production-color)';
+/** Series colours — same as the mix bar and the pills. Solar uses the global
+    theme var (ApexCharts resolves it; the shadow-DOM `--des-production-color`
+    token does not reach the embedded chart, so it would fall back to black). */
+const COLOR_SOLAR = 'var(--success-color)';
 const COLOR_STORAGE = '#378ADD';
 const COLOR_GRID = '#E24B4A';
 
@@ -480,11 +483,9 @@ export class DesHouseCard extends LitElement {
     // invalid type leaves the card spinning forever.
     const apex_config = {
       chart: { height, stacked: true },
-      legend: {
-        position: 'bottom',
-        markers: { offsetX: -4 },
-        itemMargin: { horizontal: 10 },
-      },
+      // No legend: the Solar/Speicher/Netz pills in the header already carry the
+      // colour key, and dropping it reclaims vertical space for a rows-4 card.
+      legend: { show: false },
       grid: { borderColor: 'var(--divider-color)', strokeDashArray: 3 },
       plotOptions: { bar: { columnWidth: '70%' } },
       xaxis: {
@@ -643,9 +644,10 @@ export class DesHouseCard extends LitElement {
       watts: number,
     ): TemplateResult => {
       const zero = !(watts > 0);
+      // Swatch always carries the source colour; only the value dims at 0 W.
       return html`
         <span class="hpill ${zero ? 'zero' : ''}">
-          <span class="swatch ${zero ? 'zero' : cls}"></span>
+          <span class="swatch ${cls}"></span>
           <span class="hpill-label">${label}</span>
           <span class="hpill-value">${formatInt(watts)} W</span>
         </span>
@@ -1070,11 +1072,6 @@ export class DesHouseCard extends LitElement {
       height: 8px;
       border-radius: 2px;
       flex-shrink: 0;
-    }
-
-    .swatch.zero {
-      background: var(--secondary-text-color);
-      opacity: 0.5;
     }
 
     /* --- chart section --- */

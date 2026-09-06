@@ -4,6 +4,24 @@ Alle nennenswerten Änderungen an diesem Projekt werden hier festgehalten.
 Format grob nach [Keep a Changelog](https://keepachangelog.com/de/1.1.0/),
 Versionierung nach [SemVer](https://semver.org/lang/de/).
 
+## [0.7.4]
+
+### Geändert
+
+- **des-house-card:** Feinschliff nach dem Umbau.
+  - Die Farbquadrate der Kopfzeilen-Pillen (Solar/Speicher/Netz) sind jetzt
+    **immer** in ihrer Quellfarbe, nicht nur bei > 0 W; bei 0 W wird nur noch der
+    Wert gedämpft.
+  - Chart-Farben folgen wieder der Konvention: die Solar-Reihe nutzt
+    `var(--success-color)` statt des Shadow-DOM-Tokens `--des-production-color`,
+    das die eingebettete apexcharts-card nicht auflöste (Solar wurde schwarz
+    gezeichnet). Speicher blau, Netz rot unverändert.
+  - Die Chart-**Legende** entfällt (die Pillen tragen den Farbschlüssel), das
+    spart Höhe.
+  - Karten-Höhe wieder **rows 4** (wie vor dem Umbau), damit die Karte bündig
+    mit Wechselrichter- und Statistikkarte in der Reihe sitzt. Dashboard-Hauskarte
+    ebenfalls auf `rows: 4`.
+
 ## [0.7.3]
 
 ### Behoben
