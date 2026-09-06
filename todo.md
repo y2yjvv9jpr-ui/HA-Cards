@@ -1,4 +1,4 @@
-# todo.md — offene Punkte (Stand 06.09.2026, 18:45)
+# todo.md — offene Punkte (Stand 06.09.2026, 19:05)
 
 Reihenfolge = Vorschlag. Jeder Punkt wird erst abgestimmt, dann freigegeben,
 dann umgesetzt (siehe claude.md).
@@ -155,7 +155,9 @@ dann umgesetzt (siehe claude.md).
       `all_series_config`). v0.7.4: Pillen-Farbquadrate immer farbig, Solar-Reihe
       auf `var(--success-color)` (Token löste im Chart nicht auf → war schwarz),
       Chart-Legende entfernt, Höhe wieder rows 4 (bündig mit den Nachbarkarten).
-      → per HACS auf 0.7.4.
+      v0.7.5: Chevron-Overlay repariert (overflow-Cap von ha-card auf .card),
+      Pillen ohne Textlabel (nur Farbe + Wert), Perioden-Umschalter in die
+      Verbrauchszeile → mehr Höhe für den Chart. → per HACS auf 0.7.5.
 - [ ] **Speicher-Füllstand** (Dashboard) bleibt bewusst Fläche — als Balken
       wertlos (Daniel). Offen: echte gestapelte Flächen nur über anderes Tool.
       Optionen: (a) `plotly-graph-card` standalone (Plotly stapelt Flächen,
