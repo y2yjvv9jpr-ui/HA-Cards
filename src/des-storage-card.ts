@@ -20,6 +20,7 @@ import {
 import { renderSegmented, segmentedStyles } from './segmented';
 import { chevronStyles } from './chevron';
 import { overlayStyles, OverlayCloser } from './overlay';
+import { tokenStyles } from './tokens';
 import type {
   BackupState,
   ChargeMode,
@@ -952,7 +953,7 @@ export class DesStorageCard extends LitElement {
       soc.kind !== 'value'
         ? 'transparent'
         : level > 50
-          ? 'var(--success-color, #2e7d32)'
+          ? 'var(--des-status-ok-color, #2e7d32)'
           : level >= 20
             ? 'var(--warning-color, #ff9800)'
             : 'var(--error-color, #d32f2f)';
@@ -1312,6 +1313,7 @@ export class DesStorageCard extends LitElement {
     segmentedStyles,
     chevronStyles,
     overlayStyles,
+    tokenStyles,
     css`
     /* The card fills whatever height the sections grid hands it, so several
        cards in one row can be levelled with grid_options.rows. */
@@ -1437,10 +1439,10 @@ export class DesStorageCard extends LitElement {
       background: rgba(46, 125, 50, 0.16);
       background: color-mix(
         in srgb,
-        var(--success-color, #2e7d32) 16%,
+        var(--des-status-ok-color, #2e7d32) 16%,
         transparent
       );
-      color: var(--success-color, #2e7d32);
+      color: var(--des-status-ok-color, #2e7d32);
     }
 
     .badge-alert {
@@ -1528,7 +1530,7 @@ export class DesStorageCard extends LitElement {
     }
 
     .power.positive {
-      color: var(--success-color, #2e7d32);
+      color: var(--des-status-ok-color, #2e7d32);
     }
 
     .power.neutral {
@@ -1666,7 +1668,7 @@ export class DesStorageCard extends LitElement {
     }
 
     .dot.dot-on {
-      background: var(--success-color, #2e7d32);
+      background: var(--des-status-ok-color, #2e7d32);
       opacity: 1;
     }
 
@@ -1693,7 +1695,7 @@ export class DesStorageCard extends LitElement {
     }
 
     .item-power.positive {
-      color: var(--success-color, #2e7d32);
+      color: var(--des-status-ok-color, #2e7d32);
       font-weight: 500;
     }
   `,

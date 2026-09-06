@@ -4,6 +4,23 @@ Alle nennenswerten Änderungen an diesem Projekt werden hier festgehalten.
 Format grob nach [Keep a Changelog](https://keepachangelog.com/de/1.1.0/),
 Versionierung nach [SemVer](https://semver.org/lang/de/).
 
+## [0.6.3]
+
+### Geändert
+
+- **Farb-Audit: genau zwei Energie-Grüns im ganzen Projekt.** Alle grünen
+  Fundstellen in `src/` ziehen ihre Farbe jetzt aus drei Tokens (`src/tokens.ts`):
+  `--des-production-color` (`#2e7d32`, Produktion/Solar/PV), `--des-export-color`
+  (`#639922`, Export/Einspeisung) und dem davon getrennten Status-Grün
+  `--des-status-ok-color` (`#2e7d32`, Normal/Bereit/Laden/Heizen/Akkufüllung/Punkt).
+  Verstreute `var(--success-color, #2e7d32)`-Definitionen entfallen.
+- **Sichtbare Änderung:** Einspeisung ist jetzt überall olivgrün statt success-
+  grün — Hauskarte (Pille „Einspeisung" und Einspeisungs-Tageswert) und
+  Wechselrichterkarte (Netz-Einspeisung in der Phasentabelle). Produktion/PV und
+  alle Status-Grüns bleiben `#2e7d32` (Aussehen unverändert).
+- Der Dashboard-Chart trug die Zielwerte bereits (Solar `#2e7d32`, Einspeisung
+  `#639922`); dort war keine Änderung nötig.
+
 ## [0.6.2]
 
 ### Geändert
