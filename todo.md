@@ -1,4 +1,4 @@
-# todo.md — offene Punkte (Stand 06.09.2026, 09:00)
+# todo.md — offene Punkte (Stand 06.09.2026, 11:10)
 
 Reihenfolge = Vorschlag. Jeder Punkt wird erst abgestimmt, dann freigegeben,
 dann umgesetzt (siehe claude.md).
@@ -11,23 +11,22 @@ dann umgesetzt (siehe claude.md).
       Entscheidung 06.09.: erst die offensichtlichen Abweichungen fixen (Punkt 1),
       Tabelle danach.
 
-## 1. Fixes vom 06.09. — im Repo, in HA noch einzuspielen
+## 1. Fixes vom 06.09.
 
-- [x] `pv_helper_laden.yaml`: Zendure lädt nur, wenn Hausakkus nicht > 100 W
-      laden (`binary_sensor.pv_helper_hausakku_laedt`); Ladestopp auch bei
-      ladenden Hausakkus. → in HA einspielen, testen.
-- [x] `pv_helper_energiezaehler.yaml`: Sprungschutz > 5 kWh in den `_gesamt`-Summen.
-      → einspielen, danach Tageszähler kalibrieren (verbrauch 8.0, laden 1.2,
-      entladen 6.6 vom 06.09.); Wochen-/Monats-/Jahreszähler mit Kalibrierskript.
-- [x] `pv_helper_charts.yaml`: Solar direkt = Integration von
-      max(0, PV − Einspeisung − Hausakku-Ladung − Zendure-Ladung). → Neustart,
-      alte Entität `sensor.pv_helper_energie_solar_direkt` löschen, neue `_2`
-      auf den alten Namen umbenennen.
-- [x] `pv_helper_haus.yaml`: Haus = Deye-AC-Ausgang + Netz + Zendure-Abgabe −
-      Zendure-Aufnahme (statt PV + Speicher + Netz; DC/AC-Verluste ~8 % raus).
-      → Template neu laden, gegen Deye-Last prüfen.
-- [ ] Kalibrierskript `script.pv_helper_energiezaehler_kalibrieren` auf die
-      `_gesamt`-Quellen umstellen (Datei liegt nicht im Repo — nachreichen).
+- [x] 06.09. `pv_helper_laden.yaml`: Zendure lädt nur, wenn Hausakkus nicht > 100 W
+      laden; Ladestopp auch bei ladenden Hausakkus. In HA eingespielt, Priorität
+      am Vormittag bestätigt (Hausakkus voll → Zendure lädt).
+- [x] 06.09. `pv_helper_energiezaehler.yaml`: Sprungschutz > 5 kWh. In HA eingespielt.
+- [x] 06.09. `pv_helper_charts.yaml`: Solar direkt aus integrierter Leistung. In HA
+      eingespielt (Entität umbenannt).
+- [x] 06.09. `pv_helper_haus.yaml`: Haus = Deye-AC-Ausgang + Netz + Zendure-Abgabe −
+      Zendure-Aufnahme. In HA eingespielt.
+- [x] 06.09. Kalibrierskript `yaml/scripts/pv_helper_energiezaehler_kalibrieren.yaml`
+      auf `_gesamt`-Quellen umgestellt (Referenzwerte unverändert, Zendure-Integral
+      war an allen Periodenanfängen 0). → in HA (Skript, YAML-Modus) einspielen
+      und einmal ausführen.
+- [ ] Tageszähler 06.09. kalibrieren: verbrauch 18.5 / laden 12.5 / entladen 14.9
+      (Offsets des Sprungs 7,5 / 3,6 / 8,1 abgezogen; ab 07.09. 00:00 exakt).
 - [ ] Prüfen, ob `inverter_total_load_consumption` (Deye-Verbrauchszähler) den
       gleichen Zendure-Fehler hat wie `inverter_load_power`: Tagesverbrauch Deye
       gegen Chart-Summe (Solar + Speicher + Netz) über einen ganzen Tag.
@@ -35,11 +34,11 @@ dann umgesetzt (siehe claude.md).
 ## 2. Hausakkus (Deye)
 
 - [ ] Karten-Schalter Laden|Auto testen (`pv_helper_hausakku.yaml`, schreibt
-      Register 127/128/130 per FC16 mit Rücklesen). Erwartung: Laden → Netzladen
-      binnen ~30 s, Auto → Ende.
+      Register 127/128/130 per FC16 mit Rücklesen) — sobald die Hausakkus nicht
+      voll sind (abends). Erwartung: Laden → Netzladen binnen ~30 s, Auto → Ende.
 - [ ] Programm-SoC 1–6 auf 13 % setzen (= Low-Batt-Grenze), damit nur eine
       Entladegrenze gilt. Offen: wirken Programm-Register sofort oder erst zum
-      nächsten Programm-Zeitpunkt? (Test 166 = 14 lief um 01:15, Ergebnis prüfen.)
+      nächsten Programm-Zeitpunkt? (Test 166 = 14 lief 06.09. 01:15, Ergebnis prüfen.)
 - [ ] „SoC-Bug": Pendeln discharging/idle/charging alle paar Sekunden
       (05.09. 18:05–21:08) — Ursache noch nicht analysiert.
 - [ ] Deye-Uhr drifted ~2 min in 7 h trotz „Time Syncs" — beobachten; ggf.
@@ -78,5 +77,8 @@ dann umgesetzt (siehe claude.md).
 
 - [ ] Heizer-Automation „PV Solar Überschuss Aquarienheizung" als Datei nach
       `yaml/automations/` übernehmen (liegt bisher nur in der HA-UI).
-- [ ] Kalibrierskript ins Repo.
+- [x] 06.09. Kalibrierskript ins Repo (`yaml/scripts/`), committet.
 - [ ] Dashboard-YAML in `yaml/ui/` nach jeder Kartenänderung mitziehen.
+- [x] 06.09. Ausstehende Commits erledigt: pv_helper_laden, pv_helper_energiezaehler,
+      pv_helper_charts, pv_helper_haus, pv_helper_hausakku, pv_helper_speicher,
+      zendure_gielz1986_global, Dashboard, claude.md/todo.md, yaml/scripts — gepusht.

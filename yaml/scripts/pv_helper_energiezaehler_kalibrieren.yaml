@@ -1,0 +1,108 @@
+# Skript „PV Helper Energiezähler kalibrieren" — wird in HA als UI-Skript
+# gepflegt (Einstellungen → Automationen & Szenen → Skripte → YAML-Modus).
+# Setzt Woche/Monat/Jahr-Zähler auf die Differenz zum Periodenbeginn.
+# Referenzwerte = Deye-Gesamtzähler zu Periodenbeginn (Langzeitstatistik, 05.09.2026).
+# Seit 06.09.2026: Quellen für Verbrauch/Laden/Entladen sind die _gesamt-Summen
+# (Deye + Zendure). Das Zendure-Integral stand an allen Periodenanfängen auf 0
+# (angelegt am 05.09.2026), die Referenzwerte gelten daher unverändert.
+# Bei neuem Jahr/Monat/Woche die Referenzwerte aus der Langzeitstatistik nachziehen.
+
+alias: PV Helper Energiezähler kalibrieren
+description: >-
+  Setzt Woche/Monat/Jahr-Zähler auf die Differenz zum Periodenbeginn (Stände aus
+  Langzeitstatistik, 2026-09-05). Quellen: Deye-Gesamtzähler bzw. pv_helper_*_gesamt.
+mode: single
+sequence:
+  # ---------- Woche ----------
+  - action: utility_meter.calibrate
+    target:
+      entity_id: sensor.pv_helper_energie_produktion_woche
+    data:
+      value: "{{ (states('sensor.inverter_total_production') | float - 25307.7) | round(2) }}"
+  - action: utility_meter.calibrate
+    target:
+      entity_id: sensor.pv_helper_energie_verbrauch_woche
+    data:
+      value: "{{ (states('sensor.pv_helper_energie_verbrauch_gesamt') | float - 21372.1) | round(2) }}"
+  - action: utility_meter.calibrate
+    target:
+      entity_id: sensor.pv_helper_energie_import_woche
+    data:
+      value: "{{ (states('sensor.inverter_total_energy_import') | float - 8548.5) | round(2) }}"
+  - action: utility_meter.calibrate
+    target:
+      entity_id: sensor.pv_helper_energie_export_woche
+    data:
+      value: "{{ (states('sensor.inverter_total_energy_export') | float - 12355.3) | round(2) }}"
+  - action: utility_meter.calibrate
+    target:
+      entity_id: sensor.pv_helper_energie_laden_woche
+    data:
+      value: "{{ (states('sensor.pv_helper_energie_laden_gesamt') | float - 5445.5) | round(2) }}"
+  - action: utility_meter.calibrate
+    target:
+      entity_id: sensor.pv_helper_energie_entladen_woche
+    data:
+      value: "{{ (states('sensor.pv_helper_energie_entladen_gesamt') | float - 5381.5) | round(2) }}"
+  # ---------- Monat ----------
+  - action: utility_meter.calibrate
+    target:
+      entity_id: sensor.pv_helper_energie_produktion_monat
+    data:
+      value: "{{ (states('sensor.inverter_total_production') | float - 25349.0) | round(2) }}"
+  - action: utility_meter.calibrate
+    target:
+      entity_id: sensor.pv_helper_energie_verbrauch_monat
+    data:
+      value: "{{ (states('sensor.pv_helper_energie_verbrauch_gesamt') | float - 21403.7) | round(2) }}"
+  - action: utility_meter.calibrate
+    target:
+      entity_id: sensor.pv_helper_energie_import_monat
+    data:
+      value: "{{ (states('sensor.inverter_total_energy_import') | float - 8553.8) | round(2) }}"
+  - action: utility_meter.calibrate
+    target:
+      entity_id: sensor.pv_helper_energie_export_monat
+    data:
+      value: "{{ (states('sensor.inverter_total_energy_export') | float - 12372.8) | round(2) }}"
+  - action: utility_meter.calibrate
+    target:
+      entity_id: sensor.pv_helper_energie_laden_monat
+    data:
+      value: "{{ (states('sensor.pv_helper_energie_laden_gesamt') | float - 5457.2) | round(2) }}"
+  - action: utility_meter.calibrate
+    target:
+      entity_id: sensor.pv_helper_energie_entladen_monat
+    data:
+      value: "{{ (states('sensor.pv_helper_energie_entladen_gesamt') | float - 5395.5) | round(2) }}"
+  # ---------- Jahr ----------
+  - action: utility_meter.calibrate
+    target:
+      entity_id: sensor.pv_helper_energie_produktion_jahr
+    data:
+      value: "{{ (states('sensor.inverter_total_production') | float - 13938.2) | round(2) }}"
+  - action: utility_meter.calibrate
+    target:
+      entity_id: sensor.pv_helper_energie_verbrauch_jahr
+    data:
+      value: "{{ (states('sensor.pv_helper_energie_verbrauch_gesamt') | float - 12705.6) | round(2) }}"
+  - action: utility_meter.calibrate
+    target:
+      entity_id: sensor.pv_helper_energie_import_jahr
+    data:
+      value: "{{ (states('sensor.inverter_total_energy_import') | float - 5646.7) | round(2) }}"
+  - action: utility_meter.calibrate
+    target:
+      entity_id: sensor.pv_helper_energie_export_jahr
+    data:
+      value: "{{ (states('sensor.inverter_total_energy_export') | float - 6783.9) | round(2) }}"
+  - action: utility_meter.calibrate
+    target:
+      entity_id: sensor.pv_helper_energie_laden_jahr
+    data:
+      value: "{{ (states('sensor.pv_helper_energie_laden_gesamt') | float - 3210.2) | round(2) }}"
+  - action: utility_meter.calibrate
+    target:
+      entity_id: sensor.pv_helper_energie_entladen_jahr
+    data:
+      value: "{{ (states('sensor.pv_helper_energie_entladen_gesamt') | float - 3181.6) | round(2) }}"
