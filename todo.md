@@ -33,6 +33,13 @@ dann umgesetzt (siehe claude.md).
       (Neustart 09:00): irrelevant, Chart liest jetzt `_export_gesamt`; Sensorverlauf sauber.
 - [ ] Tageszähler 06.09. kalibrieren: verbrauch 18.5 / laden 12.5 / entladen 14.9
       (Offsets des Sprungs 7,5 / 3,6 / 8,1 abgezogen; ab 07.09. 00:00 exakt).
+- [ ] Chart: Einspeisungs-Balken (negativ) beginnt mit Lücke unter 0 (06.09. 11 Uhr).
+      Prüfen per Tooltip, ob eine andere Reihe in der Stunde negativ ist; sonst
+      Einspeisung als eigene Stapelgruppe.
+- [ ] Repo direkt in HA einbinden statt manuell kopieren: Git-Pull (Add-on oder
+      Cron) nach `/config/ha-cards`, `packages: !include_dir_named ha-cards/yaml/packages`;
+      Heizer-Automation und Kalibrierskript als Packages; optional Dashboard im
+      YAML-Modus aus dem Repo. Gielz-Datei aus dem Package-Ordner nehmen. (Daniel: später.)
 - [ ] Prüfen, ob `inverter_total_load_consumption` (Deye-Verbrauchszähler) den
       gleichen Zendure-Fehler hat wie `inverter_load_power`: Tagesverbrauch Deye
       gegen Chart-Summe (Solar + Speicher + Netz) über einen ganzen Tag.
