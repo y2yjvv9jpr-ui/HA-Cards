@@ -11,7 +11,7 @@ kann („Regel L3"). Spalte „Vorgabe Daniel" = die ursprüngliche Anforderung;
 | --- | --- | --- | --- |
 | A1 | Überschuss (für Zendure-Laden) `pv_helper_uberschuss_leistung` | Einspeisung − Hausakku-Entladung = −Netz − max(0, Akku). Laden der Hausakkus zählt **nicht** als Überschuss. | pv_helper_laden |
 | A2 | Zendure-Ladesollwert `pv_helper_zendure_ladeleistung_soll` | aktuelle Aufnahme + A1 − 50 W, begrenzt auf 0 … Ladeleistung-Maximum (2400). Unter 400 = Stoppzone. | pv_helper_laden |
-| A3 | Zendure-Entladesollwert `pv_helper_zendure_entladeleistung_soll` | aktuelle Abgabe + Netz + Akku − 50 W, begrenzt 0 … Entladeleistung-Maximum (800). Hausakku-Entnahme erhöht, Hausakku-Ladung und Einspeisung senken. Unter Minimum (400) = Stoppzone. | pv_helper_laden |
+| A3 | Zendure-Entladesollwert `pv_helper_zendure_entladeleistung_soll` | aktuelle Abgabe + Netz + Akku − 50 W, begrenzt 0 … Entladeleistung-Maximum (2400 seit 06.09., vorher 800). Hausakku-Entnahme erhöht, Hausakku-Ladung und Einspeisung senken. Unter Minimum (400) = Stoppzone. | pv_helper_laden |
 | A4 | Hausakkus laden `pv_helper_hausakku_laedt` | Akku < −100 W | pv_helper_laden |
 | A5 | Zendure voll `pv_helper_zendure_voll` | SoC ≥ Ladegrenze **oder** Quick Charge nimmt 2 min < 100 W an | pv_helper_laden |
 | A6 | Ladestopp `pv_helper_zendure_ladestopp` | Quick Charge **und** (A2 < 400 **oder** A4 an), 1 min lang | pv_helper_laden |

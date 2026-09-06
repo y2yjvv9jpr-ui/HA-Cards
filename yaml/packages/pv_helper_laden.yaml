@@ -28,7 +28,7 @@
 #                     mit (Überschuss − 50 W), 400–2400 W. Sollwert < 400 W →
 #                     sofort 400 W, nach 1 min weiterhin < 400 W → Standby.
 #           Entladen: Hausakku-Entnahme > Minimum + 50 W → Quick Discharge mit
-#                     (Hausakku-Entnahme − 50 W), Minimum–800 W. Sollwert 1 min
+#                     (Hausakku-Entnahme − 50 W), Minimum–2400 W. Sollwert 1 min
 #                     unter Minimum oder SoC ≤ min. SoC → Standby.
 #   Beide nur aus Standby heraus. Alle Entscheidungen im 30-s-Takt, keine
 #   Kanten-Trigger.
@@ -74,9 +74,9 @@ input_number:
   pv_helper_zendure_entladeleistung_maximum:
     name: PV Zendure Entladeleistung Maximum
     min: 100
-    max: 800
+    max: 2400
     step: 50
-    initial: 800
+    initial: 2400
     unit_of_measurement: W
     mode: box
     icon: mdi:format-vertical-align-top
@@ -119,7 +119,7 @@ template:
           {% set netz = states('sensor.inverter_external_power') | float(0) %}
           {% set akku = states('sensor.inverter_battery_power') | float(0) %}
           {% set ist = states('sensor.zendure_power_to_home') | float(0) %}
-          {% set maximum = states('input_number.pv_helper_zendure_entladeleistung_maximum') | float(800) %}
+          {% set maximum = states('input_number.pv_helper_zendure_entladeleistung_maximum') | float(2400) %}
           {% set soll = ist + netz + akku - 50 %}
           {{ [0, [soll, maximum] | min] | max | round(0) }}
         availability: >-
@@ -314,7 +314,7 @@ automation:
       hausakku: "{{ states('sensor.inverter_battery_power') | float(0) }}"
       soll: "{{ states('sensor.pv_helper_zendure_entladeleistung_soll') | float(0) }}"
       minimum: "{{ states('input_number.pv_helper_zendure_entladeleistung_minimum') | float(400) }}"
-      maximum: "{{ states('input_number.pv_helper_zendure_entladeleistung_maximum') | float(800) }}"
+      maximum: "{{ states('input_number.pv_helper_zendure_entladeleistung_maximum') | float(2400) }}"
       aktuell: "{{ states('input_number.zendure_setting_max_discharge_power') | float(0) }}"
       ziel: "{{ [minimum, [soll, maximum] | min] | max | round(0) }}"
     actions:
