@@ -499,7 +499,7 @@ export class DesHouseCard extends LitElement {
         all_series_config: {
           type: 'column',
           extend_to: false,
-          group_by: { func: 'avg', duration: '10min', fill: 'last' },
+          group_by: { func: 'avg', duration: '30min', fill: 'last' },
           unit: 'W',
           float_precision: 0,
           show: { legend_value: false },

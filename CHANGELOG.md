@@ -4,6 +4,13 @@ Alle nennenswerten Änderungen an diesem Projekt werden hier festgehalten.
 Format grob nach [Keep a Changelog](https://keepachangelog.com/de/1.1.0/),
 Versionierung nach [SemVer](https://semver.org/lang/de/).
 
+## [0.7.7]
+
+### Geändert
+
+- **des-house-card:** Tages-Chart auf 30-Minuten-Raster (`group_by.duration`
+  von `10min` auf `30min`) — weniger, breitere Säulen.
+
 ## [0.7.6]
 
 ### Geändert

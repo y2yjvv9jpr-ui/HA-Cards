@@ -3228,7 +3228,7 @@ const ne = class ne extends k {
       all_series_config: {
         type: "column",
         extend_to: !1,
-        group_by: { func: "avg", duration: "10min", fill: "last" },
+        group_by: { func: "avg", duration: "30min", fill: "last" },
         unit: "W",
         float_precision: 0,
         show: { legend_value: !1 }
