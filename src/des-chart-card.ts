@@ -364,20 +364,23 @@ export class DesChartCard extends LitElement {
    * Adds the card type, forces the embedded card's own header off, and sets the
    * chart height. A height from the user's `apex_config` is deliberately
    * overwritten - the card's job here is to fill the space it was given.
+   *
+   * The legend gets a default gap between marker and text
+   * (`markers.offsetX: -4`, ~6 px) plus `itemMargin.horizontal: 10`, since
+   * ApexCharts otherwise butts the two together. These are defaults only: the
+   * user's `apex_config.legend` deep-merges on top and wins per key. Both are
+   * pure geometry, so light and dark look the same.
    */
   private _embedConfig(cfg: Record<string, unknown>): Record<string, unknown> {
-    const header =
-      cfg.header && typeof cfg.header === 'object'
-        ? (cfg.header as Record<string, unknown>)
-        : {};
-    const apex =
-      cfg.apex_config && typeof cfg.apex_config === 'object'
-        ? (cfg.apex_config as Record<string, unknown>)
-        : {};
-    const apexChart =
-      apex.chart && typeof apex.chart === 'object'
-        ? (apex.chart as Record<string, unknown>)
-        : {};
+    const asObject = (value: unknown): Record<string, unknown> =>
+      value && typeof value === 'object' ? (value as Record<string, unknown>) : {};
+
+    const header = asObject(cfg.header);
+    const apex = asObject(cfg.apex_config);
+    const apexChart = asObject(apex.chart);
+    const legend = asObject(apex.legend);
+    const legendMarkers = asObject(legend.markers);
+    const legendItemMargin = asObject(legend.itemMargin);
 
     return {
       ...cfg,
@@ -388,6 +391,12 @@ export class DesChartCard extends LitElement {
         chart: {
           ...apexChart,
           height: this._chartHeight ?? FALLBACK_CHART_HEIGHT,
+        },
+        legend: {
+          ...legend,
+          // Default first, user's value spread on top wins per key.
+          markers: { offsetX: -4, ...legendMarkers },
+          itemMargin: { horizontal: 10, ...legendItemMargin },
         },
       },
     };

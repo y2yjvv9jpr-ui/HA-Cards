@@ -274,10 +274,10 @@ const Ot = (i, e) => {
   let s, n = e === 2 ? "<svg>" : e === 3 ? "<math>" : "", a = U;
   for (let c = 0; c < t; c++) {
     const l = i[c];
-    let p, _, h = -1, f = 0;
-    for (; f < l.length && (a.lastIndex = f, _ = a.exec(l), _ !== null); ) f = a.lastIndex, a === U ? _[1] === "!--" ? a = je : _[1] !== void 0 ? a = Ve : _[2] !== void 0 ? (dt.test(_[2]) && (s = RegExp("</" + _[2], "g")), a = C) : _[3] !== void 0 && (a = C) : a === C ? _[0] === ">" ? (a = s ?? U, h = -1) : _[1] === void 0 ? h = -2 : (h = a.lastIndex - _[2].length, p = _[1], a = _[3] === void 0 ? C : _[3] === '"' ? Ge : Ke) : a === Ge || a === Ke ? a = C : a === je || a === Ve ? a = U : (a = C, s = void 0);
+    let u, _, h = -1, f = 0;
+    for (; f < l.length && (a.lastIndex = f, _ = a.exec(l), _ !== null); ) f = a.lastIndex, a === U ? _[1] === "!--" ? a = je : _[1] !== void 0 ? a = Ve : _[2] !== void 0 ? (dt.test(_[2]) && (s = RegExp("</" + _[2], "g")), a = C) : _[3] !== void 0 && (a = C) : a === C ? _[0] === ">" ? (a = s ?? U, h = -1) : _[1] === void 0 ? h = -2 : (h = a.lastIndex - _[2].length, u = _[1], a = _[3] === void 0 ? C : _[3] === '"' ? Ge : Ke) : a === Ge || a === Ke ? a = C : a === je || a === Ve ? a = U : (a = C, s = void 0);
     const w = a === C && i[c + 1].startsWith("/>") ? " " : "";
-    n += a === U ? l + Mt : h >= 0 ? (r.push(p), l.slice(0, h) + lt + l.slice(h) + A + w) : l + A + (h === -2 ? c : w);
+    n += a === U ? l + Mt : h >= 0 ? (r.push(u), l.slice(0, h) + lt + l.slice(h) + A + w) : l + A + (h === -2 ? c : w);
   }
   return [ut(i, n + (i[t] || "<?>") + (e === 2 ? "</svg>" : e === 3 ? "</math>" : "")), r];
 };
@@ -286,8 +286,8 @@ class j {
     let s;
     this.parts = [];
     let n = 0, a = 0;
-    const c = e.length - 1, l = this.parts, [p, _] = Ot(e, t);
-    if (this.el = j.createElement(p, r), P.currentNode = this.el.content, t === 2 || t === 3) {
+    const c = e.length - 1, l = this.parts, [u, _] = Ot(e, t);
+    if (this.el = j.createElement(u, r), P.currentNode = this.el.content, t === 2 || t === 3) {
       const h = this.el.content.firstChild;
       h.replaceWith(...h.childNodes);
     }
@@ -340,8 +340,8 @@ class Nt {
     let n = P.nextNode(), a = 0, c = 0, l = r[0];
     for (; l !== void 0; ) {
       if (a === l.index) {
-        let p;
-        l.type === 2 ? p = new K(n, n.nextSibling, this, e) : l.type === 1 ? p = new l.ctor(n, l.name, l.strings, this, e) : l.type === 6 && (p = new Dt(n, this, e)), this._$AV.push(p), l = r[++c];
+        let u;
+        l.type === 2 ? u = new K(n, n.nextSibling, this, e) : l.type === 1 ? u = new l.ctor(n, l.name, l.strings, this, e) : l.type === 6 && (u = new Dt(n, this, e)), this._$AV.push(u), l = r[++c];
       }
       a !== l?.index && (n = P.nextNode(), a++);
     }
@@ -427,8 +427,8 @@ class ce {
     if (n === void 0) e = z(this, e, t, 0), a = !B(e) || e !== this._$AH && e !== I, a && (this._$AH = e);
     else {
       const c = e;
-      let l, p;
-      for (e = n[0], l = 0; l < n.length - 1; l++) p = z(this, c[r + l], t, l), p === I && (p = this._$AH[l]), a ||= !B(p) || p !== this._$AH[l], p === d ? e = d : e !== d && (e += (p ?? "") + n[l + 1]), this._$AH[l] = p;
+      let l, u;
+      for (e = n[0], l = 0; l < n.length - 1; l++) u = z(this, c[r + l], t, l), u === I && (u = this._$AH[l]), a ||= !B(u) || u !== this._$AH[l], u === d ? e = d : e !== d && (e += (u ?? "") + n[l + 1]), this._$AH[l] = u;
     }
     a && !s && this.j(e);
   }
@@ -1255,7 +1255,7 @@ const se = class se extends k {
   // variant: battery
   // =========================================================================
   _renderBattery(e) {
-    const t = m(e.soc, this.hass), r = m(e.capacity_kwh, this.hass), s = this._power(e), n = this._energy(e, t, r), a = this._status(e, s), c = this._backup(e), l = this._timeRemaining(e, s), p = b(e.time_at, this.hass), _ = [l, p.kind === "value" ? p.value : null].filter(
+    const t = m(e.soc, this.hass), r = m(e.capacity_kwh, this.hass), s = this._power(e), n = this._energy(e, t, r), a = this._status(e, s), c = this._backup(e), l = this._timeRemaining(e, s), u = b(e.time_at, this.hass), _ = [l, u.kind === "value" ? u.value : null].filter(
       (f) => f !== null
     ), h = e.controls !== !1;
     return o`
@@ -1453,7 +1453,7 @@ const se = class se extends k {
 
       <div class="items">
         ${t.map(
-      (l, p) => this._renderItem(l, p, r[p], s[p])
+      (l, u) => this._renderItem(l, u, r[u], s[u])
     )}
       </div>
     `;
@@ -2103,11 +2103,11 @@ const ze = E`
     ]
   }
 };
-function u(i) {
+function p(i) {
   return typeof i == "string" && i.trim().length > 0;
 }
 function M(i) {
-  return Array.isArray(i) && i.some(u);
+  return Array.isArray(i) && i.some(p);
 }
 function X(i) {
   const e = i.filter((t) => t !== null);
@@ -2143,7 +2143,7 @@ const ie = class ie extends k {
   // =========================================================================
   /** The timer only runs while a clock entity is configured. */
   _syncClockTimer() {
-    const e = u(this._config?.time_entity);
+    const e = p(this._config?.time_entity);
     e && this._clockTimer === void 0 ? this._clockTimer = window.setInterval(() => {
       this._clockTick += 1;
     }, Ar) : e || this._stopClockTimer();
@@ -2158,7 +2158,7 @@ const ie = class ie extends k {
   /** Signed deviation in minutes; positive means the inverter runs ahead. */
   _clockReading() {
     const e = this._config?.time_entity;
-    if (!u(e)) return { kind: "off" };
+    if (!p(e)) return { kind: "off" };
     const t = this._text(e);
     if (t === null) return { kind: "unavailable" };
     const r = Cr(t);
@@ -2202,7 +2202,7 @@ const ie = class ie extends k {
   }
   _setInverterTime() {
     const e = this._config?.time_entity;
-    !u(e) || typeof this.hass?.callService != "function" || Promise.resolve(
+    !p(e) || typeof this.hass?.callService != "function" || Promise.resolve(
       this.hass.callService("datetime", "set_value", {
         entity_id: e,
         datetime: Pr()
@@ -2251,7 +2251,7 @@ const ie = class ie extends k {
   /** Any configured `*_entity` field switches the card from demo to reading. */
   get _entityMode() {
     const e = this._config;
-    return e ? u(e.pv_power_entity) || u(e.today_production_entity) || u(e.total_production_entity) || u(e.fault_entity) || u(e.alarm_entity) || u(e.device_state_entity) || u(e.inverter_temp_entity) || u(e.dc_temp_entity) || u(e.grid_frequency_entity) || u(e.pv1_power_entity) || u(e.pv1_voltage_entity) || u(e.pv1_current_entity) || u(e.pv2_power_entity) || u(e.pv2_voltage_entity) || u(e.pv2_current_entity) || M(e.grid_power_entities) || M(e.inverter_power_entities) || M(e.grid_voltage_entities) : !1;
+    return e ? p(e.pv_power_entity) || p(e.today_production_entity) || p(e.total_production_entity) || p(e.fault_entity) || p(e.alarm_entity) || p(e.device_state_entity) || p(e.inverter_temp_entity) || p(e.dc_temp_entity) || p(e.grid_frequency_entity) || p(e.pv1_power_entity) || p(e.pv1_voltage_entity) || p(e.pv1_current_entity) || p(e.pv2_power_entity) || p(e.pv2_voltage_entity) || p(e.pv2_current_entity) || M(e.grid_power_entities) || M(e.inverter_power_entities) || M(e.grid_voltage_entities) : !1;
   }
   /** Which optional blocks are present, from config alone (no hass needed). */
   _blocks() {
@@ -2262,10 +2262,10 @@ const ie = class ie extends k {
       dc: e?.show_dc_temp !== !1,
       freq: !0
     } : {
-      strings: u(e.pv1_power_entity) || u(e.pv1_voltage_entity) || u(e.pv1_current_entity) || u(e.pv2_power_entity) || u(e.pv2_voltage_entity) || u(e.pv2_current_entity),
+      strings: p(e.pv1_power_entity) || p(e.pv1_voltage_entity) || p(e.pv1_current_entity) || p(e.pv2_power_entity) || p(e.pv2_voltage_entity) || p(e.pv2_current_entity),
       phases: M(e.grid_power_entities) || M(e.inverter_power_entities) || M(e.grid_voltage_entities),
-      dc: e.show_dc_temp !== !1 && u(e.dc_temp_entity),
-      freq: u(e.grid_frequency_entity)
+      dc: e.show_dc_temp !== !1 && p(e.dc_temp_entity),
+      freq: p(e.grid_frequency_entity)
     };
   }
   get _kwpTotal() {
@@ -2286,7 +2286,7 @@ const ie = class ie extends k {
    * non-numeric slot - all of which render as a muted "–".
    */
   _num(e, t) {
-    if (!u(e)) return null;
+    if (!p(e)) return null;
     const r = m(e, this.hass);
     if (r.kind !== "value") return null;
     let s = r.value;
@@ -2298,7 +2298,7 @@ const ie = class ie extends k {
   }
   /** A configured entity's text, or null when unset/unavailable. */
   _text(e) {
-    if (!u(e)) return null;
+    if (!p(e)) return null;
     const t = b(e, this.hass);
     return t.kind === "value" ? t.value : null;
   }
@@ -2333,7 +2333,7 @@ const ie = class ie extends k {
   _entityView() {
     const e = this._config, t = this._num(e.pv1_power_entity, "power"), r = this._num(e.pv2_power_entity, "power");
     let s;
-    u(e.pv_power_entity) ? s = this._num(e.pv_power_entity, "power") : s = X([t, r]);
+    p(e.pv_power_entity) ? s = this._num(e.pv_power_entity, "power") : s = X([t, r]);
     const n = [
       {
         power: t,
@@ -2398,7 +2398,7 @@ const ie = class ie extends k {
   render() {
     const e = this._config;
     if (!e) return d;
-    const t = this._view(), r = t.showStrings || t.showPhases || this._hasFooter(t) || u(e.time_entity);
+    const t = this._view(), r = t.showStrings || t.showPhases || this._hasFooter(t) || p(e.time_entity);
     return o`
       <ha-card>
         <div class="card">${this._renderCollapsed(t, r)}</div>
@@ -3137,16 +3137,16 @@ const ne = class ne extends k {
     };
   }
   _view() {
-    const e = this._config, t = this._rawInputs(), r = e.invert_grid ? -1 : 1, n = (t.gridRaw === null ? null : t.gridRaw * r) ?? 0, a = Math.max(n, 0), c = Math.max(-n, 0), l = (e.storage_positive ?? "discharge") === "charge", p = t.storage.reduce((v, S) => S === null ? v : v + Math.max(l ? -S : S, 0), 0);
+    const e = this._config, t = this._rawInputs(), r = e.invert_grid ? -1 : 1, n = (t.gridRaw === null ? null : t.gridRaw * r) ?? 0, a = Math.max(n, 0), c = Math.max(-n, 0), l = (e.storage_positive ?? "discharge") === "charge", u = t.storage.reduce((v, S) => S === null ? v : v + Math.max(l ? -S : S, 0), 0);
     let _ = 0, h = 0, f = 0, w;
     if (t.pvPower !== null) {
       const v = t.storage.reduce((q, ue) => ue === null ? q : q + Math.max(l ? ue : -ue, 0), 0);
-      f = Math.max(t.pvPower - c - v, 0), _ = p, h = a;
+      f = Math.max(t.pvPower - c - v, 0), _ = u, h = a;
       const S = f + _ + h;
       w = (q) => S > 0 ? x(q / S * 100, 0, 100) : 0;
     } else {
       const v = t.load !== null && t.load > 0 ? t.load : 0;
-      v > 0 && (_ = Math.min(p, v), h = Math.min(a, v - _), f = Math.max(v - _ - h, 0)), w = (S) => v > 0 ? x(S / v * 100, 0, 100) : 0;
+      v > 0 && (_ = Math.min(u, v), h = Math.min(a, v - _), f = Math.max(v - _ - h, 0)), w = (S) => v > 0 ? x(S / v * 100, 0, 100) : 0;
     }
     return {
       load: t.load,
@@ -4003,18 +4003,30 @@ const ke = ["day", "week", "month", "year"], Fr = new Set(ke), Wr = {
    * Adds the card type, forces the embedded card's own header off, and sets the
    * chart height. A height from the user's `apex_config` is deliberately
    * overwritten - the card's job here is to fill the space it was given.
+   *
+   * The legend gets a default gap between marker and text
+   * (`markers.offsetX: -4`, ~6 px) plus `itemMargin.horizontal: 10`, since
+   * ApexCharts otherwise butts the two together. These are defaults only: the
+   * user's `apex_config.legend` deep-merges on top and wins per key. Both are
+   * pure geometry, so light and dark look the same.
    */
   _embedConfig(e) {
-    const t = e.header && typeof e.header == "object" ? e.header : {}, r = e.apex_config && typeof e.apex_config == "object" ? e.apex_config : {}, s = r.chart && typeof r.chart == "object" ? r.chart : {};
+    const t = (u) => u && typeof u == "object" ? u : {}, r = t(e.header), s = t(e.apex_config), n = t(s.chart), a = t(s.legend), c = t(a.markers), l = t(a.itemMargin);
     return {
       ...e,
       type: "custom:apexcharts-card",
-      header: { ...t, show: !1 },
+      header: { ...r, show: !1 },
       apex_config: {
-        ...r,
+        ...s,
         chart: {
-          ...s,
+          ...n,
           height: this._chartHeight ?? jr
+        },
+        legend: {
+          ...a,
+          // Default first, user's value spread on top wins per key.
+          markers: { offsetX: -4, ...c },
+          itemMargin: { horizontal: 10, ...l }
         }
       }
     };

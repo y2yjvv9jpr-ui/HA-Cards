@@ -4,6 +4,16 @@ Alle nennenswerten Änderungen an diesem Projekt werden hier festgehalten.
 Format grob nach [Keep a Changelog](https://keepachangelog.com/de/1.1.0/),
 Versionierung nach [SemVer](https://semver.org/lang/de/).
 
+## [0.6.5]
+
+### Geändert
+
+- **des-chart-card:** Die eingebettete apexcharts-card bekommt standardmäßig eine
+  Legende mit Abstand zwischen Farbmarker und Text (`legend.markers.offsetX: -4`,
+  ~6 px) sowie `legend.itemMargin.horizontal: 10`. Beides sind nur Defaults —
+  eine `apex_config.legend` aus der Nutzer-Config wird per Deep-Merge darübergelegt
+  und gewinnt je Schlüssel. Reine Geometrie, in Light und Dark identisch.
+
 ## [0.6.4]
 
 ### Geändert
