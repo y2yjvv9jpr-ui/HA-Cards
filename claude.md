@@ -12,6 +12,13 @@ wenn Daniel sie im Prompt ausdrücklich freigibt.
 | `yaml/automations/` | Automationen, die in HA als UI-Automation gepflegt werden     | **Daniel manuell** im Automations-Editor |
 | `yaml/ui/`        | Dashboard-YAML                                                  | **Daniel manuell** im Dashboard-Editor   |
 | `todo.md`         | Offene Punkte, Stand und Reihenfolge                            | —                                        |
+| `docs/anlage.md`  | Anlage, Entitäten, Vorzeichen, Deye-Register, Geräteverhalten     | —                                        |
+| `docs/logik.md`   | Nummerierte Berechnungs- und Regelübersicht (A1…F)               | —                                        |
+
+**Zu Beginn jeder Sitzung lesen:** `claude.md`, `todo.md`, `docs/anlage.md`,
+`docs/logik.md`. Chat-Verlauf und Compacting ersetzen diese Dateien nicht.
+Wer eine Berechnung oder ein Geräteverhalten ändert oder neu lernt, trägt es
+in `docs/logik.md` bzw. `docs/anlage.md` nach — im selben Commit.
 
 `yaml/packages/zendure_gielz1986_global.yaml` ist Fremdcode (Gielz zenSDK) und
 wird hier nur zum Nachschlagen abgelegt — **nicht ändern**.
@@ -50,9 +57,9 @@ wird hier nur zum Nachschlagen abgelegt — **nicht ändern**.
   dem Vermerk „→ in HA einspielen", bis Daniel es bestätigt.
 - Die `todo.md` wird im selben Commit wie die zugehörige Änderung committed.
 
-## Commits (auch für YAML)
+## Commits (auch für YAML und docs)
 
-- **Alles wird committed und gepusht** — Karten, `yaml/**`, `claude.md`, `todo.md`.
+- **Alles wird committed und gepusht** — Karten, `yaml/**`, `docs/**`, `claude.md`, `todo.md`.
   Dateien, die nur im Arbeitsverzeichnis liegen, gelten als nicht erledigt.
 - **Getrennt:** ein Commit betrifft genau eine Karte (oder genau ein
   gemeinsames Modul wie `chevron.ts`/`overlay.ts`) bzw. genau ein Package,
