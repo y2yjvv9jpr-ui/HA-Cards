@@ -1,4 +1,4 @@
-# todo.md — offene Punkte (Stand 06.09.2026, 14:10)
+# todo.md — offene Punkte (Stand 06.09.2026, 14:45)
 
 Reihenfolge = Vorschlag. Jeder Punkt wird erst abgestimmt, dann freigegeben,
 dann umgesetzt (siehe claude.md).
@@ -105,6 +105,17 @@ dann umgesetzt (siehe claude.md).
       `--success-color`-Grüns entfernt. Sichtbar: Einspeisung jetzt überall oliv
       (Hauskarte Pille+Tageswert, Inverter Phasentabelle). Dashboard-Chart trug
       die Zielwerte schon. → Karten per HACS auf 0.6.3 aktualisieren.
+- [x] 06.09. Farb-Audit korrigiert (v0.6.4): nur zwei Energie-Tokens —
+      `--des-production-color` = `var(--success-color, #2e7d32)` (Theme-Grün),
+      `--des-export-color` = `#2e7d32` (fest). `--des-status-ok-color` entfernt,
+      Status wieder auf `--success-color`; `#639922` raus. Hauskarten-
+      Kopfzeilenpille (Einspeisung/Netzbezug) + Option `grid_min_w` entfernt
+      (Export steht auf der Inverter-Karte). Chart: Solar `var(--success-color)`,
+      Einspeisung `#2e7d32`. → Karten per HACS auf 0.6.4, Dashboard-YAML in HA
+      ersetzen. **Prüfen:** löst apexcharts-card `var(--success-color)` im
+      Solar-Balken auf? Falls nicht, Rückmeldung — dann Hex `#2e7d32`. Am
+      Dashboard-House-Card-Config ist `grid_min_w: 40` jetzt wirkungslos (wird
+      ignoriert), kann bei Gelegenheit raus.
 - [ ] des-storage-card: geschätzte Restzeit der Hausakkus im Betrieb prüfen
       (Glättung, „< 10 min"/„> 48 h").
 - [ ] des-inverter-card: Uhr-Pille läuft; Zeitzonen-Unterschied Browser/HA nur

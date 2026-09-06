@@ -785,7 +785,6 @@ Klick auf das Chevron klappt ihn auf.
 | `demo_state`        | `normal` \| `night` \| `export` | Demo-Datensatz — **nur** wirksam, wenn kein Entity-Feld gesetzt ist. Standard `normal`. |
 | `invert_grid`       | boolean                        | Dreht das Vorzeichen der Netzleistung. Standard `false` (positiv = Bezug).    |
 | `storage_positive`  | `discharge` \| `charge`         | Bedeutung eines **positiven** Speicherwerts. Standard `discharge`.            |
-| `grid_min_w`        | number (W)                     | Totzone der Netz-Pille. Standard `40`.                                        |
 
 **Entity-Felder** (lesend). Jedes ist optional. Die erwartete Einheit ist die
 Basiseinheit — abweichende Einheiten werden über `unit_of_measurement`
@@ -849,15 +848,8 @@ nicht lesbar, zeigt sie „–“.
 **Aufbau — eingeklappt**
 
 - **Kopfzeile** — Name links, darunter gedämpft `… kWh heute · … % autark`.
-  Rechts **eine** Pille: grün `Einspeisung … W` (Einspeisung ab `grid_min_w`),
-  rot `Netzbezug … W` (Bezug ab `grid_min_w`), sonst gedämpft `Netz … W`.
-
-  **Totzone `grid_min_w`** (Standard `40` W) — solange `|Netzleistung|` unter
-  diesem Wert bleibt, ist die Pille neutral (gedämpft wie „Bereit“ der
-  Speicherkarte) und zeigt den kleinen Ist-Wert als `Netz … W` statt rot oder
-  grün. Ein Deye-Hybridwechselrichter zieht im Betrieb praktisch immer etwas
-  aus dem Netz; diese Totzone verhindert, dass dieser Grundbezug die Pille
-  dauerhaft rot färbt. Der Mix-Balken und die Prozente bleiben davon unberührt.
+  Keine Pille rechts: die Netz-Einspeisung steht jetzt auf der
+  Wechselrichterkarte (Zeile „Export").
 - **Leistungszeile** — der Verbrauch groß in neutraler Textfarbe, daneben klein
   gedämpft „Verbrauch“.
 - **Mix-Balken** — ein gestapelter Balken (8 px, abgerundet) in der Reihenfolge
@@ -907,10 +899,9 @@ name: Haus
 demo_state: normal        # normal | night | export
 ```
 
-Der Demo-Datensatz `normal` zeigt Solar 2.840 W / 72 %, Speicher 710 W / 18 %,
-Netz 400 W / 10 % und die Pille „Netzbezug 400 W“; `night` deckt den Verbrauch
-zu 100 % aus dem Speicher; `export` speist Überschuss ins Netz („Einspeisung
-3.800 W“, 100 % Solar).
+Der Demo-Datensatz `normal` zeigt Solar 2.840 W / 72 %, Speicher 710 W / 18 %
+und Netz 400 W / 10 %; `night` deckt den Verbrauch zu 100 % aus dem Speicher;
+`export` speist Überschuss ins Netz (100 % Solar).
 
 ---
 
@@ -986,7 +977,7 @@ CSS-Custom-Property der Karte überschreibbare Töne:
 | Verbrauch  | neutrales Grau (`--secondary-text-color`)                   |
 | Produktion | Grün (`--des-production-color`, Fallback `#2e7d32`)         |
 | Import     | Rot (`--error-color`)                                       |
-| Export     | Olivgrün (`--des-export-color`, Fallback `#639922`)         |
+| Export     | Grün (`--des-export-color`, Fallback `#2e7d32`)             |
 | Laden      | Blau (`--info-color`) — die Ladefarbe der Speicherkarte     |
 | Entladen   | helleres Blau (`--stats-discharge-color`, Fallback `#7fb8e8`) |
 
@@ -1237,17 +1228,20 @@ plus ein davon getrenntes **Status-Grün**. Jede grüne Fundstelle in `src/` und
 Dashboard-Chart zieht ihre Farbe aus einem dieser drei Tokens; andere Grün-Werte
 gibt es nicht.
 
-| Token                    | Wert      | Bedeutung / Verwendung                                    |
-| ------------------------ | --------- | --------------------------------------------------------- |
-| `--des-production-color` | `#2e7d32` | Produktion/Solar/PV: Hauskarte „Solar" + Mix-Anteil, Wechselrichterkarte PV-Leistungszahl + PV1/PV2-Balken, Statistikkarte „Produktion", Chart-Reihe „Solar". |
-| `--des-export-color`     | `#639922` | Export/Einspeisung: Hauskarte Pille „Einspeisung" + Einspeisungs-Tageswert, Wechselrichterkarte Export-Balken + Netz-Einspeisung (Phasentabelle), Statistikkarte „Export", Chart-Reihe „Einspeisung". |
-| `--des-status-ok-color`  | `#2e7d32` | Status „alles ok/aktiv" — **kein** Energie-Grün: Status-Pillen (Normal/Bereit), Lade- und Heiz-Leistung (positiv), gefüllter Akku (> 50 %), laufender Punkt. Eigener Token, damit er sich später unabhängig vom Produktions-Grün bewegen kann. |
+| Token                    | Wert                          | Bedeutung / Verwendung                          |
+| ------------------------ | ----------------------------- | ----------------------------------------------- |
+| `--des-production-color` | `var(--success-color, #2e7d32)` | Produktion/Solar/PV: Hauskarte „Solar" + Mix-Anteil, Wechselrichterkarte PV-Leistungszahl + PV1/PV2-Balken, Statistikkarte „Produktion", Chart-Reihe „Solar". Folgt dem Theme-Grün. |
+| `--des-export-color`     | `#2e7d32`                     | Export/Einspeisung: Wechselrichterkarte Export-Balken + Netz-Einspeisung (Phasentabelle), Hauskarte Einspeisungs-Tageswert, Statistikkarte „Export", Chart-Reihe „Einspeisung". Fester Hex, damit das Chart-Literal zur Karte passt. |
+
+Status-Grüns (Pillen „Normal"/„Bereit"/„Notstrom bereit", Akku-Füllung, Lade-/
+Heiz-Werte, Punkte) sind **kein** Energie-Grün und nutzen weiterhin direkt
+`var(--success-color, #2e7d32)`, keinen Token.
 
 Die Chart-Karte im Dashboard (`yaml/ui/Solar Dashboard.yaml`, „Verbrauch nach
-Quelle") kann keine CSS-Variablen lesen; ihre Reihen tragen die Hex-Werte als
-Literal: „Solar" `#2e7d32` (= `--des-production-color`), „Einspeisung" `#639922`
-(= `--des-export-color`). Wird ein Token geändert, ist der Chart-Wert von Hand
-nachzuziehen.
+Quelle") löst CSS-Variablen selbst auf: „Solar" steht auf `var(--success-color)`
+(= Theme-Grün wie `--des-production-color`), „Einspeisung" auf dem festen
+`#2e7d32` (= `--des-export-color`). Wird `--des-export-color` geändert, ist der
+Chart-Wert von Hand nachzuziehen.
 
 ## Projektstruktur
 
