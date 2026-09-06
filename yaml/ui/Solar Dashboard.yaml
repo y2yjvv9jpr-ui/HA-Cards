@@ -401,6 +401,8 @@ sections:
                 start: day
               stacked: true
               apex_config:
+                chart:
+                  stacked: true
                 legend:
                   position: bottom
                 grid:
@@ -446,6 +448,8 @@ sections:
                 start: isoWeek
               stacked: true
               apex_config:
+                chart:
+                  stacked: true
                 legend:
                   position: bottom
                 grid:

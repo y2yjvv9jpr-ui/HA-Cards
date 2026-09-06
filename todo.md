@@ -1,4 +1,4 @@
-# todo.md — offene Punkte (Stand 06.09.2026, 16:05)
+# todo.md — offene Punkte (Stand 06.09.2026, 16:57)
 
 Reihenfolge = Vorschlag. Jeder Punkt wird erst abgestimmt, dann freigegeben,
 dann umgesetzt (siehe claude.md).
@@ -45,6 +45,10 @@ dann umgesetzt (siehe claude.md).
 - [x] 06.09. Chart „Speicher-Füllstand" fertig: gestapelte kWh-Flächen
       (Hausakkus `x*13.1/100`, Zendure `x*2.4/100`), yaxis 0–15.5,
       `extend_to: false`, Zeiträume Tag + Woche.
+- [x] 06.09. Chart „Speicher-Füllstand“: Stapelung zusätzlich in
+      `apex_config.chart.stacked: true` gesetzt (Tag und Woche) — das
+      `stacked: true` der Karte allein reichte ApexCharts nicht. (Extern in HA
+      gemacht, ins Repo nachgezogen.)
 - [x] 06.09. Debug-Sektionen im Dashboard entfernt (power-flow-card-plus und
       die zweite Hauskarte); Datei endet nach dem Füllstand-Chart.
 - [x] 06.09. des-chart-card (v0.6.5): Legende bekommt Default-Abstand zwischen
