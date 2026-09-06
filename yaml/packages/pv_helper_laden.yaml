@@ -8,9 +8,12 @@
 # Überschuss (Laden):
 #   sensor.pv_helper_uberschuss_leistung = Einspeisung − Hausakku-Entladung.
 #   Laden der Hausakkus zählt NICHT als Überschuss (deren Vorrang beim Laden).
-# Ladepriorität (06.09.2026): Der Zendure lädt nur, wenn die Hausakkus NICHT
-#   laden (Aufnahme ≤ 100 W). Laden sie während des Zendure-Ladens wieder mehr
-#   als 100 W, stoppt der Zendure nach 1 Minute (Ladestopp).
+# Ladepriorität (06.09.2026, nachmittags präzisiert): Hausakkus zuerst, aber
+#   Einspeisung wird vermieden. Der Zendure lädt, sobald Einspeisung > 450 W
+#   ansteht — auch parallel zu ladenden Hausakkus (der Überschuss-Sensor zählt
+#   Hausakku-Laden nicht als Überschuss, der Zendure nimmt nur, was sonst ins
+#   Netz ginge). Laden die Hausakkus und ist keine Einspeisung mehr da
+#   (Überschuss < 100 W, 1 min), stoppt der Zendure sofort (Ladestopp).
 # Entladen:
 #   Sollwert = Abgabe − Einspeisung − Hausakku-LADUNG − 50 W. Hier zählt das
 #   Laden der Hausakkus als „zu viel", sonst pumpt der Zendure in die Hausakkus.
@@ -24,9 +27,10 @@
 #
 # Ein Schalter: input_select.pv_helper_zendure_lademodus (Karte Laden|Auto)
 #   Laden → Quick Charge mit 2400 W bis zur Ladegrenze, egal was los ist.
-#   Auto  → Laden:    Überschuss > 450 W und Hausakkus laden nicht → Quick Charge
-#                     mit (Überschuss − 50 W), 400–2400 W. Sollwert < 400 W →
-#                     sofort 400 W, nach 1 min weiterhin < 400 W → Standby.
+#   Auto  → Laden:    Einspeisung > 450 W → Quick Charge mit (Überschuss − 50 W),
+#                     400–2400 W, auch parallel zu ladenden Hausakkus. Sollwert
+#                     < 400 W oder (Hausakkus laden und Überschuss < 100 W), 1 min
+#                     → Standby.
 #           Entladen: Hausakku-Entnahme > Minimum + 50 W → Quick Discharge mit
 #                     (Hausakku-Entnahme − 50 W), Minimum–2400 W. Sollwert 1 min
 #                     unter Minimum oder SoC ≤ min. SoC → Standby.
@@ -155,12 +159,14 @@ template:
         icon: mdi:stop-circle-outline
         delay_on:
           minutes: 1
-        # Lädt, aber Sollwert seit 1 min unter 400 W ODER Hausakkus laden seit
-        # 1 min → Laden beenden (Hausakkus haben Vorrang).
+        # Lädt, aber (Sollwert seit 1 min unter 400 W) ODER (Hausakkus laden und
+        # keine Einspeisung mehr, Überschuss < 100 W, seit 1 min) → Laden beenden:
+        # der Strom gehört dann den Hausakkus.
         state: >-
           {{ is_state('input_select.zendure_operation_mode', 'Quick Charge')
              and (states('sensor.pv_helper_zendure_ladeleistung_soll') | float(400) < 400
-                  or is_state('binary_sensor.pv_helper_hausakku_laedt', 'on')) }}
+                  or (is_state('binary_sensor.pv_helper_hausakku_laedt', 'on')
+                      and states('sensor.pv_helper_uberschuss_leistung') | float(0) < 100)) }}
         availability: "{{ has_value('sensor.pv_helper_zendure_ladeleistung_soll') }}"
 
       - name: PV Helper Zendure Entladestopp
@@ -221,10 +227,10 @@ automation:
   - id: pv_helper_zendure_ueberschussladen
     alias: PV Helper Zendure Überschussladen
     description: >-
-      Lädt den Zendure aus PV-Überschuss (Einspeisung − Hausakku-Entladung) mit
-      (Überschuss − 50 W), 400–2400 W — nur, wenn die Hausakkus nicht laden.
-      Regelt sofort in beide Richtungen; Stopp über
-      binary_sensor.pv_helper_zendure_ladestopp. Nur im Lademodus Auto.
+      Lädt den Zendure aus Einspeisung (Überschuss = Einspeisung − Hausakku-
+      Entladung) mit (Überschuss − 50 W), 400–2400 W — auch parallel zu ladenden
+      Hausakkus. Stopp über binary_sensor.pv_helper_zendure_ladestopp
+      (Sollwert < 400 W oder Hausakkus laden ohne Einspeisung). Nur im Lademodus Auto.
     triggers:
       - trigger: time_pattern
         seconds: /30
@@ -261,7 +267,7 @@ automation:
                   option: Standby
           - conditions:
               - condition: template
-                value_template: "{{ modus == 'Standby' and not voll and not hausakku_laedt and ueberschuss > 450 }}"
+                value_template: "{{ modus == 'Standby' and not voll and ueberschuss > 450 }}"
             sequence:
               - action: input_number.set_value
                 target:
