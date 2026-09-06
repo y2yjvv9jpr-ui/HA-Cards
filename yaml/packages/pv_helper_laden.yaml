@@ -32,7 +32,9 @@
 #                     < 400 W oder (Hausakkus laden und Überschuss < 100 W), 1 min
 #                     → Standby.
 #           Entladen: Hausakku-Entnahme > Minimum + 50 W → Quick Discharge mit
-#                     (Hausakku-Entnahme − 50 W), Minimum–2400 W. Sollwert 1 min
+#                     (Hausakku-Entnahme − 50 W), Minimum–2400 W. Start nur ab
+#                     SoC ≥ Minimum-SoC + 5 % (Hysterese gegen die Gielz-
+#                     Schutzladung, 06.09.). Sollwert 1 min
 #                     unter Minimum oder SoC ≤ min. SoC → Standby.
 #   Beide nur aus Standby heraus. Alle Entscheidungen im 30-s-Takt, keine
 #   Kanten-Trigger.
@@ -316,6 +318,7 @@ automation:
       soc: "{{ states('sensor.zendure_total_state_of_charge') | float(0) }}"
       soc_min: "{{ states('input_number.zendure_setting_minimum_allowed_state_of_charge') | float(0) }}"
       leer: "{{ soc <= soc_min }}"
+      startbereit: "{{ soc >= soc_min + 5 }}"
       stopp: "{{ is_state('binary_sensor.pv_helper_zendure_entladestopp', 'on') }}"
       hausakku: "{{ states('sensor.inverter_battery_power') | float(0) }}"
       soll: "{{ states('sensor.pv_helper_zendure_entladeleistung_soll') | float(0) }}"
@@ -336,7 +339,7 @@ automation:
                   option: Standby
           - conditions:
               - condition: template
-                value_template: "{{ modus == 'Standby' and not leer and hausakku > minimum + 50 }}"
+                value_template: "{{ modus == 'Standby' and startbereit and hausakku > minimum + 50 }}"
             sequence:
               - action: input_number.set_value
                 target:
