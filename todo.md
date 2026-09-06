@@ -1,4 +1,4 @@
-# todo.md — offene Punkte (Stand 06.09.2026, 12:30)
+# todo.md — offene Punkte (Stand 06.09.2026, 12:45)
 
 Reihenfolge = Vorschlag. Jeder Punkt wird erst abgestimmt, dann freigegeben,
 dann umgesetzt (siehe claude.md).
@@ -80,6 +80,11 @@ dann umgesetzt (siehe claude.md).
 
 ## 5. Karten (HA-Cards)
 
+- [x] 06.09. des-inverter-card: Export-Balken unter PV2 (v0.6.0). Wert = Summe
+      der `grid_power_entities` invertiert (nur Einspeisung, < 40 W → 0 W),
+      Balken relativ zu `kwp_total`, Farbe Token `--des-export-color` (#F29B9A,
+      wie Chart-Einspeisung). In Sections-View auf Überlauf prüfen (Bar-Abstand
+      vorsorglich leicht verringert). → per HACS aktualisieren.
 - [ ] des-storage-card: geschätzte Restzeit der Hausakkus im Betrieb prüfen
       (Glättung, „< 10 min"/„> 48 h").
 - [ ] des-inverter-card: Uhr-Pille läuft; Zeitzonen-Unterschied Browser/HA nur
