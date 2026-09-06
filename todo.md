@@ -1,4 +1,4 @@
-# todo.md — offene Punkte (Stand 06.09.2026, 15:10)
+# todo.md — offene Punkte (Stand 06.09.2026, 15:35)
 
 Reihenfolge = Vorschlag. Jeder Punkt wird erst abgestimmt, dann freigegeben,
 dann umgesetzt (siehe claude.md).
@@ -39,8 +39,14 @@ dann umgesetzt (siehe claude.md).
       → Dashboard-YAML (Chart-Karte) in HA ersetzen.
 - [x] 06.09. Chart-Lücke endgültig gelöst über die **Reihenfolge**: negative
       Reihe (Einspeisung) steht zuerst, dann Solar/Speicher/Netz; zusätzlich
-      `statistics.align: start` in allen vier Zeiträumen. In `docs/logik.md`
-      Block E vermerkt. (Extern in HA gemacht, ins Repo nachgezogen.)
+      `statistics.align: start` und `show.legend_value: false` in allen vier
+      Zeiträumen. In `docs/logik.md` Block E vermerkt. (Extern in HA gemacht,
+      ins Repo nachgezogen.)
+- [x] 06.09. Chart „Speicher-Füllstand" fertig: gestapelte kWh-Flächen
+      (Hausakkus `x*13.1/100`, Zendure `x*2.4/100`), yaxis 0–15.5,
+      `extend_to: false`, Zeiträume Tag + Woche.
+- [x] 06.09. Debug-Sektionen im Dashboard entfernt (power-flow-card-plus und
+      die zweite Hauskarte); Datei endet nach dem Füllstand-Chart.
 - [ ] Repo direkt in HA einbinden statt manuell kopieren: Git-Pull (Add-on oder
       Cron) nach `/config/ha-cards`, `packages: !include_dir_named ha-cards/yaml/packages`;
       Heizer-Automation und Kalibrierskript als Packages; optional Dashboard im
