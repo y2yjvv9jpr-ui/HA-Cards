@@ -1,4 +1,4 @@
-# todo.md — offene Punkte (Stand 06.09.2026, 15:35)
+# todo.md — offene Punkte (Stand 06.09.2026, 16:05)
 
 Reihenfolge = Vorschlag. Jeder Punkt wird erst abgestimmt, dann freigegeben,
 dann umgesetzt (siehe claude.md).
@@ -47,6 +47,10 @@ dann umgesetzt (siehe claude.md).
       `extend_to: false`, Zeiträume Tag + Woche.
 - [x] 06.09. Debug-Sektionen im Dashboard entfernt (power-flow-card-plus und
       die zweite Hauskarte); Datei endet nach dem Füllstand-Chart.
+- [x] 06.09. des-chart-card (v0.6.5): Legende bekommt Default-Abstand zwischen
+      Marker und Text (`legend.markers.offsetX: -4`, ~6 px) und
+      `legend.itemMargin.horizontal: 10`, per Deep-Merge unter Nutzer-
+      `apex_config.legend`. → Karte per HACS auf 0.6.5 aktualisieren.
 - [ ] Repo direkt in HA einbinden statt manuell kopieren: Git-Pull (Add-on oder
       Cron) nach `/config/ha-cards`, `packages: !include_dir_named ha-cards/yaml/packages`;
       Heizer-Automation und Kalibrierskript als Packages; optional Dashboard im
