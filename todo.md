@@ -1,4 +1,4 @@
-# todo.md — offene Punkte (Stand 06.09.2026, 12:45)
+# todo.md — offene Punkte (Stand 06.09.2026, 13:15)
 
 Reihenfolge = Vorschlag. Jeder Punkt wird erst abgestimmt, dann freigegeben,
 dann umgesetzt (siehe claude.md).
@@ -82,9 +82,16 @@ dann umgesetzt (siehe claude.md).
 
 - [x] 06.09. des-inverter-card: Export-Balken unter PV2 (v0.6.0). Wert = Summe
       der `grid_power_entities` invertiert (nur Einspeisung, < 40 W → 0 W),
-      Balken relativ zu `kwp_total`, Farbe Token `--des-export-color` (#F29B9A,
-      wie Chart-Einspeisung). In Sections-View auf Überlauf prüfen (Bar-Abstand
-      vorsorglich leicht verringert). → per HACS aktualisieren.
+      Balken relativ zu `kwp_total`. In Sections-View auf Überlauf prüfen
+      (Bar-Abstand vorsorglich leicht verringert). → per HACS aktualisieren.
+- [x] 06.09. Export-Farbe vereinheitlicht (v0.6.1): gemeinsamer Token
+      `--des-export-color` (`src/tokens.ts`), Standard `#639922` (Olivgrün der
+      Statistik-Export-Zeile), `#F29B9A` entfällt. Stats- und Inverter-Karte
+      nutzen den Token; Dashboard-Chart „Einspeisung" auf `#639922` (Literal,
+      Chart liest keine CSS-Variablen). → Karte per HACS aktualisieren,
+      Dashboard-YAML in HA ersetzen. **Achtung:** Solar-Reihe im Chart ist
+      ebenfalls `#639922` → Solar und Einspeisung jetzt gleichfarbig (Einspeisung
+      liegt unter 0). Falls unerwünscht: Solar-Farbe abstimmen und ändern.
 - [ ] des-storage-card: geschätzte Restzeit der Hausakkus im Betrieb prüfen
       (Glättung, „< 10 min"/„> 48 h").
 - [ ] des-inverter-card: Uhr-Pille läuft; Zeitzonen-Unterschied Browser/HA nur
