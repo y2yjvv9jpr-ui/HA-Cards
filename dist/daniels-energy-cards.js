@@ -263,7 +263,7 @@ N.elementStyles = [], N.shadowRootOptions = { mode: "open" }, N[F("elementProper
  * SPDX-License-Identifier: BSD-3-Clause
  */
 const Te = globalThis, We = (i) => i, re = Te.trustedTypes, Be = re ? re.createPolicy("lit-html", { createHTML: (i) => i }) : void 0, _t = "$lit$", A = `lit$${Math.random().toFixed(9).slice(2)}$`, gt = "?" + A, zt = `<${gt}>`, L = document, W = () => L.createComment(""), B = (i) => i === null || typeof i != "object" && typeof i != "function", Pe = Array.isArray, Dt = (i) => Pe(i) || typeof i?.[Symbol.iterator] == "function", _e = `[ 	
-\f\r]`, H = /<(?:(!--|\/[^a-zA-Z])|(\/?[a-zA-Z][^>\s]*)|(\/?$))/g, je = /-->/g, Ge = />/g, T = RegExp(`>|${_e}(?:([^\\s"'>=/]+)(${_e}*=${_e}*(?:[^ 	
+\f\r]`, H = /<(?:(!--|\/[^a-zA-Z])|(\/?[a-zA-Z][^>\s]*)|(\/?$))/g, Ge = /-->/g, je = />/g, T = RegExp(`>|${_e}(?:([^\\s"'>=/]+)(${_e}*=${_e}*(?:[^ 	
 \f\r"'\`<>=]|("|')|))|$)`, "g"), Ve = /'/g, Ke = /"/g, mt = /^(?:script|style|textarea|title)$/i, ft = (i) => (e, ...t) => ({ _$litType$: i, strings: e, values: t }), o = ft(1), It = ft(2), z = Symbol.for("lit-noChange"), d = Symbol.for("lit-nothing"), qe = /* @__PURE__ */ new WeakMap(), M = L.createTreeWalker(L, 129);
 function vt(i, e) {
   if (!Pe(i) || !i.hasOwnProperty("raw")) throw Error("invalid template strings array");
@@ -275,19 +275,19 @@ const Ht = (i, e) => {
   for (let c = 0; c < t; c++) {
     const l = i[c];
     let u, _, h = -1, m = 0;
-    for (; m < l.length && (a.lastIndex = m, _ = a.exec(l), _ !== null); ) m = a.lastIndex, a === H ? _[1] === "!--" ? a = je : _[1] !== void 0 ? a = Ge : _[2] !== void 0 ? (mt.test(_[2]) && (s = RegExp("</" + _[2], "g")), a = T) : _[3] !== void 0 && (a = T) : a === T ? _[0] === ">" ? (a = s ?? H, h = -1) : _[1] === void 0 ? h = -2 : (h = a.lastIndex - _[2].length, u = _[1], a = _[3] === void 0 ? T : _[3] === '"' ? Ke : Ve) : a === Ke || a === Ve ? a = T : a === je || a === Ge ? a = H : (a = T, s = void 0);
+    for (; m < l.length && (a.lastIndex = m, _ = a.exec(l), _ !== null); ) m = a.lastIndex, a === H ? _[1] === "!--" ? a = Ge : _[1] !== void 0 ? a = je : _[2] !== void 0 ? (mt.test(_[2]) && (s = RegExp("</" + _[2], "g")), a = T) : _[3] !== void 0 && (a = T) : a === T ? _[0] === ">" ? (a = s ?? H, h = -1) : _[1] === void 0 ? h = -2 : (h = a.lastIndex - _[2].length, u = _[1], a = _[3] === void 0 ? T : _[3] === '"' ? Ke : Ve) : a === Ke || a === Ve ? a = T : a === Ge || a === je ? a = H : (a = T, s = void 0);
     const v = a === T && i[c + 1].startsWith("/>") ? " " : "";
     n += a === H ? l + zt : h >= 0 ? (r.push(u), l.slice(0, h) + _t + l.slice(h) + A + v) : l + A + (h === -2 ? c : v);
   }
   return [vt(i, n + (i[t] || "<?>") + (e === 2 ? "</svg>" : e === 3 ? "</math>" : "")), r];
 };
-class j {
+class G {
   constructor({ strings: e, _$litType$: t }, r) {
     let s;
     this.parts = [];
     let n = 0, a = 0;
     const c = e.length - 1, l = this.parts, [u, _] = Ht(e, t);
-    if (this.el = j.createElement(u, r), M.currentNode = this.el.content, t === 2 || t === 3) {
+    if (this.el = G.createElement(u, r), M.currentNode = this.el.content, t === 2 || t === 3) {
       const h = this.el.content.firstChild;
       h.replaceWith(...h.childNodes);
     }
@@ -341,7 +341,7 @@ class Ut {
     for (; l !== void 0; ) {
       if (a === l.index) {
         let u;
-        l.type === 2 ? u = new K(n, n.nextSibling, this, e) : l.type === 1 ? u = new l.ctor(n, l.name, l.strings, this, e) : l.type === 6 && (u = new jt(n, this, e)), this._$AV.push(u), l = r[++c];
+        l.type === 2 ? u = new K(n, n.nextSibling, this, e) : l.type === 1 ? u = new l.ctor(n, l.name, l.strings, this, e) : l.type === 6 && (u = new Gt(n, this, e)), this._$AV.push(u), l = r[++c];
       }
       a !== l?.index && (n = M.nextNode(), a++);
     }
@@ -383,7 +383,7 @@ class K {
     this._$AH !== d && B(this._$AH) ? this._$AA.nextSibling.data = e : this.T(L.createTextNode(e)), this._$AH = e;
   }
   $(e) {
-    const { values: t, _$litType$: r } = e, s = typeof r == "number" ? this._$AC(e) : (r.el === void 0 && (r.el = j.createElement(vt(r.h, r.h[0]), this.options)), r);
+    const { values: t, _$litType$: r } = e, s = typeof r == "number" ? this._$AC(e) : (r.el === void 0 && (r.el = G.createElement(vt(r.h, r.h[0]), this.options)), r);
     if (this._$AH?._$AD === s) this._$AH.p(t);
     else {
       const n = new Ut(s, this), a = n.u(this.options);
@@ -392,7 +392,7 @@ class K {
   }
   _$AC(e) {
     let t = qe.get(e.strings);
-    return t === void 0 && qe.set(e.strings, t = new j(e)), t;
+    return t === void 0 && qe.set(e.strings, t = new G(e)), t;
   }
   k(e) {
     Pe(this._$AH) || (this._$AH = [], this._$AR());
@@ -465,7 +465,7 @@ class Bt extends ce {
     typeof this._$AH == "function" ? this._$AH.call(this.options?.host ?? this.element, e) : this._$AH.handleEvent(e);
   }
 }
-class jt {
+class Gt {
   constructor(e, t, r) {
     this.element = e, this.type = 6, this._$AN = void 0, this._$AM = t, this.options = r;
   }
@@ -476,8 +476,8 @@ class jt {
     D(this, e);
   }
 }
-const Gt = Te.litHtmlPolyfillSupport;
-Gt?.(j, K), (Te.litHtmlVersions ??= []).push("3.3.3");
+const jt = Te.litHtmlPolyfillSupport;
+jt?.(G, K), (Te.litHtmlVersions ??= []).push("3.3.3");
 const Vt = (i, e, t) => {
   const r = t?.renderBefore ?? e;
   let s = r._$litPart$;
@@ -603,19 +603,19 @@ function I(i) {
   const e = i.indexOf(".");
   return e === -1 ? "" : i.slice(0, e);
 }
-function G(i, e) {
+function j(i, e) {
   return typeof i == "string" && O(i) && e.has(I(i));
 }
 function X(i) {
-  return G(i, wt);
+  return j(i, wt);
 }
 function Qt(i) {
-  return G(i, q);
+  return j(i, q);
 }
 function bt(i) {
   if (!i || typeof i != "object") return !1;
   const e = i.entity;
-  return G(e, he) || G(e, q);
+  return j(e, he) || j(e, q);
 }
 function Oe(i, e, t, r) {
   if (typeof i?.callService != "function")
@@ -646,7 +646,7 @@ function er(i, e, t) {
 }
 function $t(i, e) {
   const t = e === "charge" ? i.charge_state : i.auto_state;
-  return t !== void 0 ? t : G(i.entity, q) ? e === "charge" ? "on" : "off" : void 0;
+  return t !== void 0 ? t : j(i.entity, q) ? e === "charge" ? "on" : "off" : void 0;
 }
 function Ze(i, e) {
   const t = $t(i, "charge");
@@ -3010,7 +3010,7 @@ const Ir = /* @__PURE__ */ new Set([
   "normal",
   "night",
   "export"
-]), st = 4, Hr = 4, Ur = 12, Fr = "sensor.pv_helper_solar_direkt_leistung", Wr = "sensor.pv_helper_speicher_leistung", Br = "sensor.inverter_external_power", it = "sensor.pv_helper_energie_solar_direkt", nt = "sensor.pv_helper_energie_entladen_gesamt", at = "sensor.pv_helper_energie_import_gesamt", ot = "var(--success-color)", lt = "#378ADD", ct = "#E24B4A", jr = ["day", "week", "month", "year"], Gr = {
+]), st = 4, Hr = 4, Ur = 12, Fr = "sensor.pv_helper_solar_direkt_leistung", Wr = "sensor.pv_helper_speicher_leistung", Br = "sensor.inverter_external_power", it = "sensor.pv_helper_energie_solar_direkt", nt = "sensor.pv_helper_energie_entladen_gesamt", at = "sensor.pv_helper_energie_import_gesamt", ot = "var(--success-color)", lt = "#378ADD", ct = "#E24B4A", Gr = ["day", "week", "month", "year"], jr = {
   day: "Tag",
   week: "Woche",
   month: "Monat",
@@ -3188,7 +3188,7 @@ const ne = class ne extends k {
     return y(this._chartEntity(e?.solar_energy_entity, it)) && y(this._chartEntity(e?.storage_energy_entity, nt)) && y(this._chartEntity(e?.grid_energy_entity, at));
   }
   _availablePeriods() {
-    return this._energyPeriodsAvailable() ? [...jr] : ["day"];
+    return this._energyPeriodsAvailable() ? [...Gr] : ["day"];
   }
   _effectivePeriod(e) {
     return this._period && e.includes(this._period) ? this._period : e.includes("day") ? "day" : e[0];
@@ -3296,11 +3296,20 @@ const ne = class ne extends k {
     return o`
       <ha-card>
         <div class="card">${this._renderCollapsed(e, t)}</div>
-        ${this._expanded && t.hasToday ? this._renderExpanded(t) : d}
+        ${this._expanded && this._hasExpand(t) ? this._renderExpanded(t) : d}
       </ha-card>
     `;
   }
+  /** Something to expand into: the chart (entity mode) and/or "Heute" values. */
+  _hasExpand(e) {
+    return this._entityMode || e.hasToday;
+  }
   // --- collapsed (always visible) ------------------------------------------
+  //
+  // The collapsed body is the classic house readout: name + meta, the big
+  // consumption figure, the mix bar and the Solar/Speicher/Netz legend rows.
+  // The chart and its period switcher live only in the expanded dropdown, so
+  // the card stays as compact (rows 4) as its neighbours.
   _renderCollapsed(e, t) {
     return o`
       <div class="header">
@@ -3308,14 +3317,13 @@ const ne = class ne extends k {
           <span class="name">${e.name}</span>
           <span class="meta">${this._renderMeta(t)}</span>
         </div>
-        ${this._renderPills(t)}
       </div>
 
       ${this._renderPowerRow(t)}
       ${this._renderMixBar(t)}
-      ${this._entityMode ? this._renderChartSection() : d}
+      ${this._renderLegend(t)}
 
-      ${t.hasToday ? o`<div
+      ${this._hasExpand(t) ? o`<div
             class="chevron-row clickable"
             role="button"
             tabindex="0"
@@ -3336,25 +3344,6 @@ const ne = class ne extends k {
     return o`${this._unit(e.todayConsumption, b, "kWh")} heute ·
     ${this._unit(e.autarky, g, "%")} autark`;
   }
-  /** Solar / Speicher / Netz as coloured pills with the current W value. */
-  _renderPills(e) {
-    const t = (r, s, n) => {
-      const a = !(n > 0);
-      return o`
-        <span class="hpill ${a ? "zero" : ""}" title=${s}>
-          <span class="swatch ${r}"></span>
-          <span class="hpill-value">${g(n)} W</span>
-        </span>
-      `;
-    };
-    return o`
-      <div class="pills">
-        ${t("solar", "Solar", e.solarShare)}
-        ${t("storage", "Speicher", e.storageShare)}
-        ${t("grid", "Netz", e.gridShare)}
-      </div>
-    `;
-  }
   _renderPowerRow(e) {
     return o`
       <div class="power-row">
@@ -3362,15 +3351,41 @@ const ne = class ne extends k {
           <span class="load-value">${this._unit(e.load, g, "W")}</span>
           <span class="load-label">Verbrauch</span>
         </div>
-        ${this._entityMode ? this._renderPeriodSwitcher() : d}
       </div>
     `;
   }
-  /** The Tag/Woche/Monat/Jahr switcher, shown next to the consumption figure. */
+  /** Solar / Speicher / Netz with colour swatch, current W and share in %. */
+  _renderLegend(e) {
+    const t = [
+      { cls: "solar", label: "Solar", power: e.solarShare, pct: e.solarPct },
+      {
+        cls: "storage",
+        label: "Speicher",
+        power: e.storageShare,
+        pct: e.storagePct
+      },
+      { cls: "grid", label: "Netz", power: e.gridShare, pct: e.gridPct }
+    ];
+    return o`
+      <div class="legend">
+        ${t.map(
+      (r) => o`
+            <div class="legend-row">
+              <span class="swatch ${r.cls}"></span>
+              <span class="legend-label">${r.label}</span>
+              <span class="legend-power">${g(r.power)} W</span>
+              <span class="legend-pct">${g(r.pct)} %</span>
+            </div>
+          `
+    )}
+      </div>
+    `;
+  }
+  /** The Tag/Woche/Monat/Jahr switcher, shown above the chart in the dropdown. */
   _renderPeriodSwitcher() {
     const e = this._availablePeriods(), t = this._effectivePeriod(e);
     return V(
-      e.map((r) => ({ value: r, label: Gr[r] })),
+      e.map((r) => ({ value: r, label: jr[r] })),
       t,
       (r) => this._setPeriod(r),
       "Zeitraum"
@@ -3390,18 +3405,19 @@ const ne = class ne extends k {
       </div>
     `;
   }
-  _renderChartSection() {
-    return this._apexAvailable() ? o`<div class="chart" id="chart"></div>` : o`<div class="hint">apexcharts-card nicht installiert</div>`;
-  }
-  // --- expanded ------------------------------------------------------------
+  // --- expanded dropdown: period switcher + chart + "Heute" ----------------
   _renderExpanded(e) {
     return o`
       <div class="overlay">
-        <div class="today">
-          ${this._todayRow("Verbrauch", e.todayConsumption, "")}
-          ${this._todayRow("Netzbezug", e.todayImport, "draw")}
-          ${this._todayRow("Einspeisung", e.todayExport, "feed")}
-        </div>
+        ${this._entityMode ? o`
+              <div class="chart-head">${this._renderPeriodSwitcher()}</div>
+              ${this._apexAvailable() ? o`<div class="chart" id="chart"></div>` : o`<div class="hint">apexcharts-card nicht installiert</div>`}
+            ` : d}
+        ${e.hasToday ? o`<div class="today">
+              ${this._todayRow("Verbrauch", e.todayConsumption, "")}
+              ${this._todayRow("Netzbezug", e.todayImport, "draw")}
+              ${this._todayRow("Einspeisung", e.todayExport, "feed")}
+            </div>` : d}
       </div>
     `;
   }
@@ -3535,9 +3551,6 @@ ne.properties = {
       display: flex;
       flex-direction: column;
       padding: 12px 16px;
-      /* Cap the chart here, not on ha-card: the expand overlay is a sibling of
-         .card and must be able to spill past the card edge. */
-      overflow: hidden;
     }
 
     /* --- header --- */
@@ -3578,43 +3591,11 @@ ne.properties = {
       opacity: 0.7;
     }
 
-    /* --- source pills (Solar / Speicher / Netz) --- */
-
-    .pills {
-      display: flex;
-      flex-wrap: wrap;
-      justify-content: flex-end;
-      gap: 6px;
-      flex-shrink: 0;
-    }
-
-    .hpill {
-      display: inline-flex;
-      align-items: center;
-      gap: 5px;
-      padding: 2px 8px;
-      border-radius: 10px;
-      background: rgba(127, 127, 127, 0.12);
-      font-size: 11px;
-      line-height: 1;
-      white-space: nowrap;
-    }
-
-    .hpill-value {
-      color: var(--primary-text-color);
-      font-variant-numeric: tabular-nums;
-    }
-
-    .hpill.zero .hpill-value {
-      color: var(--secondary-text-color);
-    }
-
-    /* --- power row (consumption figure + period switcher) --- */
+    /* --- power row --- */
 
     .power-row {
       display: flex;
-      align-items: center;
-      justify-content: space-between;
+      align-items: baseline;
       gap: 12px;
       margin-top: 10px;
       flex: 0 0 auto;
@@ -3680,16 +3661,55 @@ ne.properties = {
       flex-shrink: 0;
     }
 
-    /* --- chart section --- */
+    /* --- legend (Solar / Speicher / Netz) --- */
 
-    /* Takes whatever height is left; the height is a start size flex overrides.
-       overflow:hidden keeps a chart that briefly overshoots from scrolling. */
-    .chart {
-      flex: 1 1 auto;
-      min-height: 0;
-      height: 140px;
-      position: relative;
+    .legend {
       margin-top: 10px;
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+      flex: 0 0 auto;
+    }
+
+    .legend-row {
+      display: grid;
+      grid-template-columns: 8px 1fr auto auto;
+      align-items: center;
+      gap: 8px;
+      font-size: 12px;
+    }
+
+    .legend-label {
+      color: var(--secondary-text-color);
+    }
+
+    .legend-power {
+      text-align: right;
+      color: var(--primary-text-color);
+      font-variant-numeric: tabular-nums;
+      white-space: nowrap;
+    }
+
+    .legend-pct {
+      text-align: right;
+      min-width: 38px;
+      color: var(--secondary-text-color);
+      font-variant-numeric: tabular-nums;
+      white-space: nowrap;
+    }
+
+    /* --- chart (only inside the expanded dropdown) --- */
+
+    .chart-head {
+      display: flex;
+      justify-content: flex-end;
+      margin-bottom: 8px;
+    }
+
+    /* Fixed height inside the dropdown; the embedded chart fills it absolutely. */
+    .chart {
+      height: 200px;
+      position: relative;
       overflow: hidden;
     }
 
@@ -3719,6 +3739,12 @@ ne.properties = {
       align-items: center;
       gap: 4px 12px;
       font-size: 12px;
+    }
+
+    /* Space between the chart and the "Heute" block when both are shown. */
+    .chart + .today,
+    .hint + .today {
+      margin-top: 12px;
     }
 
     .today-label {

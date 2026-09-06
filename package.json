@@ -1,6 +1,6 @@
 {
   "name": "daniels-energy-cards",
-  "version": "0.7.5",
+  "version": "0.7.6",
   "private": true,
   "description": "Custom Lovelace cards for Home Assistant - storage cards for house batteries and thermal (aquarium) storage.",
   "type": "module",

@@ -4,6 +4,19 @@ Alle nennenswerten Änderungen an diesem Projekt werden hier festgehalten.
 Format grob nach [Keep a Changelog](https://keepachangelog.com/de/1.1.0/),
 Versionierung nach [SemVer](https://semver.org/lang/de/).
 
+## [0.7.6]
+
+### Geändert
+
+- **des-house-card:** Der Chart wandert komplett in den Aufklappbereich, damit
+  die Karte bei `rows 4` nicht mehr überfüllt ist. **Eingeklappt** wieder die
+  klassische Darstellung: Kopfzeile (Name + Meta), große Verbrauchszahl,
+  Mix-Balken und die drei Legendenzeilen Solar/Speicher/Netz (W + %) — die
+  Pillen entfallen. **Aufgeklappt** (Chevron) das Dropdown mit dem Perioden-
+  Umschalter Tag/Woche/Monat/Jahr, dem gestapelten Säulen-Chart und den
+  Heute-Werten. Der Chevron erscheint, sobald es etwas aufzuklappen gibt (Chart
+  oder Heute-Werte).
+
 ## [0.7.5]
 
 ### Behoben

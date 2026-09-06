@@ -581,12 +581,24 @@ export class DesHouseCard extends LitElement {
     return html`
       <ha-card>
         <div class="card">${this._renderCollapsed(config, view)}</div>
-        ${this._expanded && view.hasToday ? this._renderExpanded(view) : nothing}
+        ${this._expanded && this._hasExpand(view)
+          ? this._renderExpanded(view)
+          : nothing}
       </ha-card>
     `;
   }
 
+  /** Something to expand into: the chart (entity mode) and/or "Heute" values. */
+  private _hasExpand(view: HouseView): boolean {
+    return this._entityMode || view.hasToday;
+  }
+
   // --- collapsed (always visible) ------------------------------------------
+  //
+  // The collapsed body is the classic house readout: name + meta, the big
+  // consumption figure, the mix bar and the Solar/Speicher/Netz legend rows.
+  // The chart and its period switcher live only in the expanded dropdown, so
+  // the card stays as compact (rows 4) as its neighbours.
 
   private _renderCollapsed(
     config: DesHouseCardConfig,
@@ -598,14 +610,13 @@ export class DesHouseCard extends LitElement {
           <span class="name">${config.name}</span>
           <span class="meta">${this._renderMeta(view)}</span>
         </div>
-        ${this._renderPills(view)}
       </div>
 
       ${this._renderPowerRow(view)}
       ${this._renderMixBar(view)}
-      ${this._entityMode ? this._renderChartSection() : nothing}
+      ${this._renderLegend(view)}
 
-      ${view.hasToday
+      ${this._hasExpand(view)
         ? html`<div
             class="chevron-row clickable"
             role="button"
@@ -630,34 +641,6 @@ export class DesHouseCard extends LitElement {
     ${this._unit(view.autarky, formatInt, '%')} autark`;
   }
 
-  /** Solar / Speicher / Netz as coloured pills with the current W value. */
-  private _renderPills(view: HouseView): TemplateResult {
-    const pill = (
-      cls: string,
-      label: string,
-      watts: number,
-    ): TemplateResult => {
-      const zero = !(watts > 0);
-      // No text label — the colours are self-explanatory (and match the mix bar
-      // and chart). Swatch always carries the source colour; the value dims at
-      // 0 W. The name stays as a title for hover/screen readers.
-      return html`
-        <span class="hpill ${zero ? 'zero' : ''}" title=${label}>
-          <span class="swatch ${cls}"></span>
-          <span class="hpill-value">${formatInt(watts)} W</span>
-        </span>
-      `;
-    };
-
-    return html`
-      <div class="pills">
-        ${pill('solar', 'Solar', view.solarShare)}
-        ${pill('storage', 'Speicher', view.storageShare)}
-        ${pill('grid', 'Netz', view.gridShare)}
-      </div>
-    `;
-  }
-
   private _renderPowerRow(view: HouseView): TemplateResult {
     return html`
       <div class="power-row">
@@ -665,12 +648,40 @@ export class DesHouseCard extends LitElement {
           <span class="load-value">${this._unit(view.load, formatInt, 'W')}</span>
           <span class="load-label">Verbrauch</span>
         </div>
-        ${this._entityMode ? this._renderPeriodSwitcher() : nothing}
       </div>
     `;
   }
 
-  /** The Tag/Woche/Monat/Jahr switcher, shown next to the consumption figure. */
+  /** Solar / Speicher / Netz with colour swatch, current W and share in %. */
+  private _renderLegend(view: HouseView): TemplateResult {
+    const rows: Array<{ cls: string; label: string; power: number; pct: number }> = [
+      { cls: 'solar', label: 'Solar', power: view.solarShare, pct: view.solarPct },
+      {
+        cls: 'storage',
+        label: 'Speicher',
+        power: view.storageShare,
+        pct: view.storagePct,
+      },
+      { cls: 'grid', label: 'Netz', power: view.gridShare, pct: view.gridPct },
+    ];
+
+    return html`
+      <div class="legend">
+        ${rows.map(
+          (row) => html`
+            <div class="legend-row">
+              <span class="swatch ${row.cls}"></span>
+              <span class="legend-label">${row.label}</span>
+              <span class="legend-power">${formatInt(row.power)} W</span>
+              <span class="legend-pct">${formatInt(row.pct)} %</span>
+            </div>
+          `,
+        )}
+      </div>
+    `;
+  }
+
+  /** The Tag/Woche/Monat/Jahr switcher, shown above the chart in the dropdown. */
   private _renderPeriodSwitcher(): TemplateResult {
     const available = this._availablePeriods();
     const period = this._effectivePeriod(available);
@@ -697,22 +708,26 @@ export class DesHouseCard extends LitElement {
     `;
   }
 
-  private _renderChartSection(): TemplateResult {
-    return this._apexAvailable()
-      ? html`<div class="chart" id="chart"></div>`
-      : html`<div class="hint">apexcharts-card nicht installiert</div>`;
-  }
-
-  // --- expanded ------------------------------------------------------------
+  // --- expanded dropdown: period switcher + chart + "Heute" ----------------
 
   private _renderExpanded(view: HouseView): TemplateResult {
     return html`
       <div class="overlay">
-        <div class="today">
-          ${this._todayRow('Verbrauch', view.todayConsumption, '')}
-          ${this._todayRow('Netzbezug', view.todayImport, 'draw')}
-          ${this._todayRow('Einspeisung', view.todayExport, 'feed')}
-        </div>
+        ${this._entityMode
+          ? html`
+              <div class="chart-head">${this._renderPeriodSwitcher()}</div>
+              ${this._apexAvailable()
+                ? html`<div class="chart" id="chart"></div>`
+                : html`<div class="hint">apexcharts-card nicht installiert</div>`}
+            `
+          : nothing}
+        ${view.hasToday
+          ? html`<div class="today">
+              ${this._todayRow('Verbrauch', view.todayConsumption, '')}
+              ${this._todayRow('Netzbezug', view.todayImport, 'draw')}
+              ${this._todayRow('Einspeisung', view.todayExport, 'feed')}
+            </div>`
+          : nothing}
       </div>
     `;
   }
@@ -921,9 +936,6 @@ export class DesHouseCard extends LitElement {
       display: flex;
       flex-direction: column;
       padding: 12px 16px;
-      /* Cap the chart here, not on ha-card: the expand overlay is a sibling of
-         .card and must be able to spill past the card edge. */
-      overflow: hidden;
     }
 
     /* --- header --- */
@@ -964,43 +976,11 @@ export class DesHouseCard extends LitElement {
       opacity: 0.7;
     }
 
-    /* --- source pills (Solar / Speicher / Netz) --- */
-
-    .pills {
-      display: flex;
-      flex-wrap: wrap;
-      justify-content: flex-end;
-      gap: 6px;
-      flex-shrink: 0;
-    }
-
-    .hpill {
-      display: inline-flex;
-      align-items: center;
-      gap: 5px;
-      padding: 2px 8px;
-      border-radius: 10px;
-      background: rgba(127, 127, 127, 0.12);
-      font-size: 11px;
-      line-height: 1;
-      white-space: nowrap;
-    }
-
-    .hpill-value {
-      color: var(--primary-text-color);
-      font-variant-numeric: tabular-nums;
-    }
-
-    .hpill.zero .hpill-value {
-      color: var(--secondary-text-color);
-    }
-
-    /* --- power row (consumption figure + period switcher) --- */
+    /* --- power row --- */
 
     .power-row {
       display: flex;
-      align-items: center;
-      justify-content: space-between;
+      align-items: baseline;
       gap: 12px;
       margin-top: 10px;
       flex: 0 0 auto;
@@ -1066,16 +1046,55 @@ export class DesHouseCard extends LitElement {
       flex-shrink: 0;
     }
 
-    /* --- chart section --- */
+    /* --- legend (Solar / Speicher / Netz) --- */
 
-    /* Takes whatever height is left; the height is a start size flex overrides.
-       overflow:hidden keeps a chart that briefly overshoots from scrolling. */
-    .chart {
-      flex: 1 1 auto;
-      min-height: 0;
-      height: 140px;
-      position: relative;
+    .legend {
       margin-top: 10px;
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+      flex: 0 0 auto;
+    }
+
+    .legend-row {
+      display: grid;
+      grid-template-columns: 8px 1fr auto auto;
+      align-items: center;
+      gap: 8px;
+      font-size: 12px;
+    }
+
+    .legend-label {
+      color: var(--secondary-text-color);
+    }
+
+    .legend-power {
+      text-align: right;
+      color: var(--primary-text-color);
+      font-variant-numeric: tabular-nums;
+      white-space: nowrap;
+    }
+
+    .legend-pct {
+      text-align: right;
+      min-width: 38px;
+      color: var(--secondary-text-color);
+      font-variant-numeric: tabular-nums;
+      white-space: nowrap;
+    }
+
+    /* --- chart (only inside the expanded dropdown) --- */
+
+    .chart-head {
+      display: flex;
+      justify-content: flex-end;
+      margin-bottom: 8px;
+    }
+
+    /* Fixed height inside the dropdown; the embedded chart fills it absolutely. */
+    .chart {
+      height: 200px;
+      position: relative;
       overflow: hidden;
     }
 
@@ -1105,6 +1124,12 @@ export class DesHouseCard extends LitElement {
       align-items: center;
       gap: 4px 12px;
       font-size: 12px;
+    }
+
+    /* Space between the chart and the "Heute" block when both are shown. */
+    .chart + .today,
+    .hint + .today {
+      margin-top: 12px;
     }
 
     .today-label {
