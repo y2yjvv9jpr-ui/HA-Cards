@@ -1104,8 +1104,8 @@ export class DesInverterCard extends LitElement {
 
     .pill-ok {
       background: rgba(46, 125, 50, 0.16);
-      background: color-mix(in srgb, var(--success-color, #2e7d32) 16%, transparent);
-      color: var(--success-color, #2e7d32);
+      background: color-mix(in srgb, var(--des-status-ok-color, #2e7d32) 16%, transparent);
+      color: var(--des-status-ok-color, #2e7d32);
     }
 
     .pill-alarm {
@@ -1146,7 +1146,7 @@ export class DesInverterCard extends LitElement {
     }
 
     .pv-value.producing {
-      color: var(--success-color, #2e7d32);
+      color: var(--des-production-color, #2e7d32);
     }
 
     .pv-value.idle {
@@ -1205,7 +1205,7 @@ export class DesInverterCard extends LitElement {
     .bar-fill {
       height: 100%;
       border-radius: 3px;
-      background: var(--success-color, #2e7d32);
+      background: var(--des-production-color, #2e7d32);
       transition: width 0.25s ease-out;
     }
 
@@ -1270,7 +1270,7 @@ export class DesInverterCard extends LitElement {
     }
 
     .grid-feed {
-      color: var(--success-color, #2e7d32);
+      color: var(--des-export-color, #639922);
     }
 
     .grid-draw {
