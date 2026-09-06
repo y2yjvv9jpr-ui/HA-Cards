@@ -1,0 +1,45 @@
+# pv_helper_charts.yaml
+# Zweck:  Helfer für die Verbrauchs-Charts (des-chart-card) auf der Solarseite.
+#
+# Solar direkt (06.09.2026 neu):
+#   Der bisherige Zähler (Verbrauch − Netz − Entladen) wurde nachts negativ,
+#   weil die Speicher wegen Wandlungsverlusten mehr abgeben, als beim Haus
+#   ankommt. Jetzt wird die Leistung gemessen und integriert:
+#     Solar direkt [W] = PV − Einspeisung − Hausakku-Ladung − Zendure-Ladung,
+#     auf 0 begrenzt. Nachts exakt 0, nie negativ.
+#   Deye-Vorzeichen: external_power positiv = Netzbezug (Einspeisung = negativ),
+#   battery_power negativ = Laden.
+#   sensor.pv_helper_energie_solar_direkt = Integration (kWh, monoton) dieser
+#   Leistung; Quelle für die Reihe „Solar" im Chart.
+# Stand:  2026-09-06
+
+template:
+  - sensor:
+      - name: PV Helper Solar Direkt Leistung
+        unique_id: pv_helper_solar_direkt_leistung
+        unit_of_measurement: W
+        device_class: power
+        state_class: measurement
+        icon: mdi:solar-power
+        state: >-
+          {% set pv = states('sensor.inverter_pv_power') | float(0) %}
+          {% set netz = states('sensor.inverter_external_power') | float(0) %}
+          {% set akku = states('sensor.inverter_battery_power') | float(0) %}
+          {% set zendure = states('sensor.zendure_power_from_home') | float(0) %}
+          {% set einspeisung = [0, -netz] | max %}
+          {% set hausakku_ladung = [0, -akku] | max %}
+          {{ [0, pv - einspeisung - hausakku_ladung - zendure] | max | round(0) }}
+        availability: >-
+          {{ has_value('sensor.inverter_pv_power')
+             and has_value('sensor.inverter_external_power')
+             and has_value('sensor.inverter_battery_power') }}
+
+sensor:
+  - platform: integration
+    name: PV Helper Energie Solar Direkt
+    unique_id: pv_helper_energie_solar_direkt_integral
+    source: sensor.pv_helper_solar_direkt_leistung
+    method: left
+    unit_prefix: k
+    unit_time: h
+    round: 3
