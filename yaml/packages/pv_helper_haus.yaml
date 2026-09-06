@@ -1,0 +1,33 @@
+# pv_helper_haus.yaml
+# Zweck:  Tatsächlicher Hausverbrauch.
+#         Haus = Deye-AC-Ausgang + Netz + Zendure-Abgabe − Zendure-Aufnahme
+#
+#         Warum so (06.09.2026):
+#         - Der Deye-Lastwert (inverter_load_power) stimmt, solange der Zendure
+#           nichts einspeist; speist der Zendure ein, liegt er daneben (05.09.
+#           23:5x: −67 W bei ~750 W echter Last).
+#         - PV + Speicher + Netz enthält die DC/AC-Wandlungsverluste (~8 %,
+#           06.09. 08:50: 4.800 W gegen 4.300 W Deye-Last).
+#         - Der AC-Ausgang des Deye (inverter_power) ist gemessen und liegt
+#           hinter den Verlusten; plus Netz plus Zendure-Abgabe ergibt exakt,
+#           was das Haus zieht. Zendure-Laden ist bereits Deye-Ausgangslast und
+#           wird abgezogen, damit es nicht als Hausverbrauch zählt.
+#         Deye-Vorzeichen: external_power positiv = Netzbezug.
+# Nutzer: des-house-card (load_power_entity).
+# Stand:  2026-09-06
+template:
+  - sensor:
+      - name: PV Helper Haus Leistung
+        unique_id: pv_helper_haus_leistung
+        unit_of_measurement: W
+        device_class: power
+        state_class: measurement
+        icon: mdi:home-lightning-bolt
+        state: >-
+          {% set ausgang = states('sensor.inverter_power') | float(0) %}
+          {% set netz = states('sensor.inverter_external_power') | float(0) %}
+          {% set zen_aus = states('sensor.zendure_power_to_home') | float(0) %}
+          {% set zen_ein = states('sensor.zendure_power_from_home') | float(0) %}
+          {{ [0, ausgang + netz + zen_aus - zen_ein] | max | round(0) }}
+        availability: >-
+          {{ has_value('sensor.inverter_power') and has_value('sensor.inverter_external_power') }}
