@@ -9,7 +9,7 @@ sections:
       - type: custom:des-house-card
         grid_options:
           columns: 12
-          rows: 4
+          rows: 6
         name: Haus
         load_power_entity: sensor.pv_helper_haus_leistung
         grid_power_entity: sensor.inverter_external_power
