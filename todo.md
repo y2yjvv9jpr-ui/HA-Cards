@@ -47,8 +47,9 @@ dann umgesetzt (siehe claude.md).
       nächsten Programm-Zeitpunkt? (Test 166 = 14 lief 06.09. 01:15, Ergebnis prüfen.)
 - [ ] „SoC-Bug": Pendeln discharging/idle/charging alle paar Sekunden
       (05.09. 18:05–21:08) — Ursache noch nicht analysiert.
-- [ ] Deye-Uhr drifted ~2 min in 7 h trotz „Time Syncs" — beobachten; ggf.
-      Automation, die bei ≥ 2 min automatisch stellt.
+- [x] 06.09. Deye-Uhr: Abweichung springt zwischen 1 und 3 min (Time Syncs des
+      Deye); Toleranz der Uhr-Pille auf 5 min gesetzt (`time_warn_minutes: 5` im
+      Dashboard). → Zeile in der Inverter-Karte in HA ergänzen.
 
 ## 3. Zendure
 
