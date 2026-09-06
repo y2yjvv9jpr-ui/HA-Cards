@@ -225,12 +225,12 @@ sections:
                 - entity: sensor.pv_helper_energie_entladen_gesamt
                   name: Speicher
                   color: '#378ADD'
-                - entity: sensor.inverter_total_energy_import
+                - entity: sensor.pv_helper_energie_import_gesamt
                   name: Netz
                   color: '#E24B4A'
-                - entity: sensor.inverter_total_energy_export
+                - entity: sensor.pv_helper_energie_export_gesamt
                   name: Einspeisung
-                  color: '#8FBF5A'
+                  color: '#F29B9A'
                   invert: true
           week:
             meta: kWh je Tag
@@ -268,12 +268,12 @@ sections:
                 - entity: sensor.pv_helper_energie_entladen_gesamt
                   name: Speicher
                   color: '#378ADD'
-                - entity: sensor.inverter_total_energy_import
+                - entity: sensor.pv_helper_energie_import_gesamt
                   name: Netz
                   color: '#E24B4A'
-                - entity: sensor.inverter_total_energy_export
+                - entity: sensor.pv_helper_energie_export_gesamt
                   name: Einspeisung
-                  color: '#8FBF5A'
+                  color: '#F29B9A'
                   invert: true
           month:
             meta: kWh je Tag
@@ -311,12 +311,12 @@ sections:
                 - entity: sensor.pv_helper_energie_entladen_gesamt
                   name: Speicher
                   color: '#378ADD'
-                - entity: sensor.inverter_total_energy_import
+                - entity: sensor.pv_helper_energie_import_gesamt
                   name: Netz
                   color: '#E24B4A'
-                - entity: sensor.inverter_total_energy_export
+                - entity: sensor.pv_helper_energie_export_gesamt
                   name: Einspeisung
-                  color: '#8FBF5A'
+                  color: '#F29B9A'
                   invert: true
           year:
             meta: kWh je Monat
@@ -354,13 +354,83 @@ sections:
                 - entity: sensor.pv_helper_energie_entladen_gesamt
                   name: Speicher
                   color: '#378ADD'
-                - entity: sensor.inverter_total_energy_import
+                - entity: sensor.pv_helper_energie_import_gesamt
                   name: Netz
                   color: '#E24B4A'
-                - entity: sensor.inverter_total_energy_export
+                - entity: sensor.pv_helper_energie_export_gesamt
                   name: Einspeisung
-                  color: '#8FBF5A'
+                  color: '#F29B9A'
                   invert: true
+  - type: grid
+    cards:
+      - type: heading
+        heading: Neuer Abschnitt
+      - type: custom:power-flow-card-plus
+        entities:
+          battery:
+            entity: sensor.inverter_battery_power
+            state_of_charge: sensor.inverter_battery
+          grid:
+            secondary_info: {}
+            entity: sensor.inverter_external_power
+          solar:
+            display_zero_state: true
+            secondary_info: {}
+            entity: sensor.inverter_pv_power
+            color_icon: false
+            color_value: false
+          home:
+            secondary_info: {}
+            entity: sensor.inverter_load_power
+            circle_animation: true
+            subtract_individual: false
+            override_state: true
+            use_metadata: false
+          individual:
+            - entity: sensor.garage_licht_power
+              secondary_info: {}
+              color_value: false
+              icon: gara
+              name: Garage
+            - entity: sensor.garage_steckdose_werkbank_power
+        clickable_entities: true
+        display_zero_lines:
+          mode: show
+          transparency: 50
+          grey_color:
+            - 189
+            - 189
+            - 189
+        use_new_flow_rate_model: true
+        w_decimals: 0
+        kw_decimals: 1
+        min_flow_rate: 0.75
+        max_flow_rate: 6
+        max_expected_power: 2000
+        min_expected_power: 0.01
+        watt_threshold: 1000
+        transparency_zero_lines: 0
+        disable_dots: false
+  - type: grid
+    cards:
+      - type: heading
+        heading: Neuer Abschnitt
+      - type: custom:des-house-card
+        grid_options:
+          columns: 12
+          rows: 4
+        name: Haus
+        load_power_entity: sensor.pv_helper_haus_leistung
+        grid_power_entity: sensor.inverter_external_power
+        pv_power_entity: sensor.inverter_pv_power
+        invert_grid: false
+        grid_min_w: 40
+        storage_power_entities:
+          - sensor.pv_helper_speicher_leistung
+        storage_positive: discharge
+        today_consumption_entity: sensor.pv_helper_energie_verbrauch_tag
+        today_import_entity: sensor.inverter_today_energy_import
+        today_export_entity: sensor.inverter_today_energy_export                  
 cards: []
 dense_section_placement: false
 icon: mdi:solar-power-variant
