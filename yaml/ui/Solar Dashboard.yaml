@@ -234,7 +234,7 @@ sections:
                   transform: 'return Math.max(0, x);'
                 - entity: sensor.pv_helper_energie_export_gesamt
                   name: Einspeisung
-                  color: '#F29B9A'
+                  color: '#639922'
                   transform: 'return -Math.max(0, x);'
           week:
             meta: kWh je Tag
@@ -280,7 +280,7 @@ sections:
                   transform: 'return Math.max(0, x);'
                 - entity: sensor.pv_helper_energie_export_gesamt
                   name: Einspeisung
-                  color: '#F29B9A'
+                  color: '#639922'
                   transform: 'return -Math.max(0, x);'
           month:
             meta: kWh je Tag
@@ -326,7 +326,7 @@ sections:
                   transform: 'return Math.max(0, x);'
                 - entity: sensor.pv_helper_energie_export_gesamt
                   name: Einspeisung
-                  color: '#F29B9A'
+                  color: '#639922'
                   transform: 'return -Math.max(0, x);'
           year:
             meta: kWh je Monat
@@ -372,7 +372,7 @@ sections:
                   transform: 'return Math.max(0, x);'
                 - entity: sensor.pv_helper_energie_export_gesamt
                   name: Einspeisung
-                  color: '#F29B9A'
+                  color: '#639922'
                   transform: 'return -Math.max(0, x);'
   - type: grid
     cards:
