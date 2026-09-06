@@ -1,4 +1,4 @@
-# todo.md — offene Punkte (Stand 06.09.2026, 16:57)
+# todo.md — offene Punkte (Stand 06.09.2026, 17:20)
 
 Reihenfolge = Vorschlag. Jeder Punkt wird erst abgestimmt, dann freigegeben,
 dann umgesetzt (siehe claude.md).
@@ -134,6 +134,14 @@ dann umgesetzt (siehe claude.md).
       Solar-Balken auf? Falls nicht, Rückmeldung — dann Hex `#2e7d32`. Am
       Dashboard-House-Card-Config ist `grid_min_w: 40` jetzt wirkungslos (wird
       ignoriert), kann bei Gelegenheit raus.
+- [x] 06.09. des-house-card umgebaut (v0.7.0): Kopfzeile rechts drei Pillen
+      Solar/Speicher/Netz (W, Farbquadrat, 0 W → grau), Legendenzeilen entfernt,
+      Mix-Balken bleibt. Neu darunter Flächen-Chart mit Umschalter Tag/Woche/
+      Monat/Jahr (eingebettete apexcharts-card): Tag = W (avg 10 min), Woche/
+      Monat/Jahr = kWh (statistics change, align start). Quellen per Config mit
+      Standard-Helfern. rows 6 (min 5), Dashboard-Hauskarte auf rows 6. → per
+      HACS auf 0.7.0, Dashboard-YAML in HA ersetzen. **Prüfen:** Sections-View
+      kein Überlauf; löst apexcharts `var(--des-production-color)` im Solar auf?
 - [ ] des-storage-card: geschätzte Restzeit der Hausakkus im Betrieb prüfen
       (Glättung, „< 10 min"/„> 48 h").
 - [ ] des-inverter-card: Uhr-Pille läuft; Zeitzonen-Unterschied Browser/HA nur
