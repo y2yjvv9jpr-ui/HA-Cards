@@ -29,7 +29,7 @@ kann („Regel L3"). Spalte „Vorgabe Daniel" = die ursprüngliche Anforderung;
 | B3 | Laden beenden | A6 (1 min < 400 W oder Hausakkus laden) **oder** A5 → Standby | „< 50 W → kein Laden" / „Hausakkus zuerst" | Stoppgrenze 400 W statt 50 W (Gerätegrenze) |
 | B4 | Entladen starten | Standby **und** SoC > Minimum-SoC **und** Hausakku-Entnahme > Entlademinimum + 50 W (aktuell 450 W) → Quick Discharge mit A3 | „Sobald > 100 W aus den Hausakkus kommen, regelt der Zendure gegen" | Start bei 450 statt 100 W, weil das Gerät nicht unter 400 W entlädt; mit 100 W Start würde er das Haus überversorgen und die Hausakkus laden. Unter 400 W nur mit Modus Manual (offen). |
 | B5 | Entladen regeln | jede 30 s Entladeleistung = A3, Totband 30 W | „Delta unter 100 W drücken, Totband ±30 W" | Ziel ist Hausakku-Entnahme ≈ 50 W (Reserve), Totband 30 W |
-| B6 | Entladen beenden | A7 **oder** SoC ≤ Minimum-SoC → Standby | „bis zum SoC-Limit" | keine; **offen:** Hysterese Minimum + 5 % beim Start (Gielz-Schutzladung) |
+| B6 | Entladen beenden | A7 **oder** SoC ≤ Minimum-SoC → Standby; Neustart erst ab SoC ≥ Minimum-SoC + 5 % (Hysterese, 06.09.) | „bis zum SoC-Limit" | keine |
 | B7 | Karten-Schalter | Laden → Quick Charge 2400 W bis Ladegrenze; Auto → Standby, dann B1–B6 | „Laden = hart laden, Auto = Regel" | keine |
 
 ## C. Regeln Hausakkus (Deye)
@@ -71,7 +71,6 @@ Balkenanfang sitzen und Reihen bündig übereinanderliegen.
 ## F. Bekannte Lücken
 
 - B1/B4: 100–400 W Bereich nicht nutzbar (Gerätegrenze) — Manual-Modus prüfen.
-- B6: Start-Hysterese fehlt.
 - C2: Programm-SoC 13 % noch nicht gesetzt.
 - C3: ungetestet.
 - E4: ob der Deye-Verbrauchszähler denselben Zendure-Fehler hat wie die Lastleistung, ist nicht geprüft.
