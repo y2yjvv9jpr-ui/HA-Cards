@@ -63,6 +63,11 @@ kann („Regel L3"). Spalte „Vorgabe Daniel" = die ursprüngliche Anforderung;
 | E7 | Tag/Woche/Monat/Jahr | Utility-Meter auf E2–E5 | Tag zusätzlich für Laden/Entladen/Verbrauch; Produktion/Import/Export Tag direkt vom Deye |
 | E8 | Kalibrierung | Woche/Monat/Jahr = aktueller Gesamtwert − Wert zu Periodenbeginn (Referenzen 05.09.2026) | Skript; Referenzen bei Periodenwechsel nachziehen |
 
+**Gestapelter Chart (Verbrauch nach Quelle):** Die negative Reihe (Einspeisung)
+steht **zuerst** in der Reihenfolge, sonst reißt der Stapel unter 0 eine Lücke.
+Alle Reihen mit `statistics.align: start`, damit die Stunden-/Tageswerte am
+Balkenanfang sitzen und Reihen bündig übereinanderliegen.
+
 ## F. Bekannte Lücken
 
 - B1/B4: 100–400 W Bereich nicht nutzbar (Gerätegrenze) — Manual-Modus prüfen.

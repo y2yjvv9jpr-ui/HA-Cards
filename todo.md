@@ -1,4 +1,4 @@
-# todo.md — offene Punkte (Stand 06.09.2026, 14:45)
+# todo.md — offene Punkte (Stand 06.09.2026, 15:10)
 
 Reihenfolge = Vorschlag. Jeder Punkt wird erst abgestimmt, dann freigegeben,
 dann umgesetzt (siehe claude.md).
@@ -37,6 +37,10 @@ dann umgesetzt (siehe claude.md).
       Statistik-Änderungen anderer Reihen werden mitgestapelt. Fix: Solar/Speicher/Netz
       per `transform` auf ≥ 0, Einspeisung per `transform` negativ (statt `invert`).
       → Dashboard-YAML (Chart-Karte) in HA ersetzen.
+- [x] 06.09. Chart-Lücke endgültig gelöst über die **Reihenfolge**: negative
+      Reihe (Einspeisung) steht zuerst, dann Solar/Speicher/Netz; zusätzlich
+      `statistics.align: start` in allen vier Zeiträumen. In `docs/logik.md`
+      Block E vermerkt. (Extern in HA gemacht, ins Repo nachgezogen.)
 - [ ] Repo direkt in HA einbinden statt manuell kopieren: Git-Pull (Add-on oder
       Cron) nach `/config/ha-cards`, `packages: !include_dir_named ha-cards/yaml/packages`;
       Heizer-Automation und Kalibrierskript als Packages; optional Dashboard im
