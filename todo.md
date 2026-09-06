@@ -1,4 +1,4 @@
-# todo.md — offene Punkte (Stand 06.09.2026, 19:35)
+# todo.md — offene Punkte (Stand 06.09.2026, 19:50)
 
 Reihenfolge = Vorschlag. Jeder Punkt wird erst abgestimmt, dann freigegeben,
 dann umgesetzt (siehe claude.md).
@@ -31,8 +31,7 @@ dann umgesetzt (siehe claude.md).
       Einspeisung hellrot statt grün. → Dashboard-YAML in HA ersetzen.
 - [x] 06.09. Ausreißer −8.000 kWh in der Langzeitstatistik von `inverter_total_energy_export`
       (Neustart 09:00): irrelevant, Chart liest jetzt `_export_gesamt`; Sensorverlauf sauber.
-- [ ] Tageszähler 06.09. kalibrieren: verbrauch 18.5 / laden 12.5 / entladen 14.9
-      (Offsets des Sprungs 7,5 / 3,6 / 8,1 abgezogen; ab 07.09. 00:00 exakt).
+- [x] 06.09. Tageszähler-Kalibrierung obsolet (ab 07.09. 00:00 exakt).
 - [x] 06.09. Chart: Lücke unter 0 beim Einspeisungs-Balken — Ursache: negative
       Statistik-Änderungen anderer Reihen werden mitgestapelt. Fix: Solar/Speicher/Netz
       per `transform` auf ≥ 0, Einspeisung per `transform` negativ (statt `invert`).
@@ -79,9 +78,10 @@ dann umgesetzt (siehe claude.md).
 
 ## 3. Zendure
 
-- [ ] Entlade-Hysterese: Bedarfsentladen erst ab Minimum-SoC + 5 % starten
-      (sonst Pingpong mit der Gielz-Schutzladung).
-- [ ] Minimum-SoC zurück auf 30 % (aktuell 20 %) — Daniels Entscheidung.
+- [x] 06.09. Entlade-Hysterese: Bedarfsentladen startet erst ab Minimum-SoC + 5 %
+      (`startbereit` in `pv_helper_laden.yaml`, docs/logik B6). → in HA einspielen
+      (Automationen neu laden).
+- [x] 06.09. Zendure Minimum-SoC auf 15 % gesetzt (Daniel, nach Recherche).
 - [ ] Leistungen unter 400 W: Modus **Manual** mit
       `input_number.zendure_manual_power` prüfen (Laden 100–400 W, Entladen 100–400 W).
 - [ ] Gielz-Automation `zendure_zensdk_gielz_global` (10-min-Takt) daraufhin
