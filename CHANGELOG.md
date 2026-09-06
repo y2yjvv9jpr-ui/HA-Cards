@@ -4,6 +4,25 @@ Alle nennenswerten Änderungen an diesem Projekt werden hier festgehalten.
 Format grob nach [Keep a Changelog](https://keepachangelog.com/de/1.1.0/),
 Versionierung nach [SemVer](https://semver.org/lang/de/).
 
+## [0.7.5]
+
+### Behoben
+
+- **des-house-card:** Der Aufklapp-Chevron (Heute-Block) tat nichts — das in
+  0.7.0 gesetzte `overflow: hidden` auf `ha-card` überschrieb das
+  `overflow: visible` des Overlays und schnitt das Dropdown ab. Der Chart-Cap
+  sitzt jetzt auf `.card` (Geschwister des Overlays), `ha-card` bleibt sichtbar.
+
+### Geändert
+
+- **des-house-card:** Platz für den Chart in der rows-4-Höhe geschaffen. Die
+  Kopfzeilen-Pillen zeigen nur noch Farbquadrat + Wert (ohne Text „Solar/
+  Speicher/Netz" — die Farben sind selbsterklärend; der Name bleibt als
+  Hover-Titel). Der Perioden-Umschalter Tag/Woche/Monat/Jahr sitzt jetzt rechts
+  in der Verbrauchszeile statt in einer eigenen Zeile über dem Chart, und die
+  separate Meta-Zeile (`W`/`kWh je Tag`) entfällt. Der Chart bekommt dadurch die
+  frei gewordene Höhe.
+
 ## [0.7.4]
 
 ### Geändert

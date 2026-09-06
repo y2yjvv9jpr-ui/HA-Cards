@@ -49,12 +49,6 @@ const PERIOD_LABEL: Record<StatsPeriod, string> = {
   month: 'Monat',
   year: 'Jahr',
 };
-const PERIOD_META: Record<StatsPeriod, string> = {
-  day: 'W',
-  week: 'kWh je Tag',
-  month: 'kWh je Tag',
-  year: 'kWh je Monat',
-};
 
 /** Chart height in a view that imposes none; flex overrides it where sized. */
 const FALLBACK_CHART_HEIGHT = 180;
@@ -644,11 +638,12 @@ export class DesHouseCard extends LitElement {
       watts: number,
     ): TemplateResult => {
       const zero = !(watts > 0);
-      // Swatch always carries the source colour; only the value dims at 0 W.
+      // No text label — the colours are self-explanatory (and match the mix bar
+      // and chart). Swatch always carries the source colour; the value dims at
+      // 0 W. The name stays as a title for hover/screen readers.
       return html`
-        <span class="hpill ${zero ? 'zero' : ''}">
+        <span class="hpill ${zero ? 'zero' : ''}" title=${label}>
           <span class="swatch ${cls}"></span>
-          <span class="hpill-label">${label}</span>
           <span class="hpill-value">${formatInt(watts)} W</span>
         </span>
       `;
@@ -670,8 +665,21 @@ export class DesHouseCard extends LitElement {
           <span class="load-value">${this._unit(view.load, formatInt, 'W')}</span>
           <span class="load-label">Verbrauch</span>
         </div>
+        ${this._entityMode ? this._renderPeriodSwitcher() : nothing}
       </div>
     `;
+  }
+
+  /** The Tag/Woche/Monat/Jahr switcher, shown next to the consumption figure. */
+  private _renderPeriodSwitcher(): TemplateResult {
+    const available = this._availablePeriods();
+    const period = this._effectivePeriod(available);
+    return renderSegmented(
+      available.map((p) => ({ value: p, label: PERIOD_LABEL[p] })),
+      period,
+      (value) => this._setPeriod(value),
+      'Zeitraum',
+    );
   }
 
   private _renderMixBar(view: HouseView): TemplateResult {
@@ -690,23 +698,9 @@ export class DesHouseCard extends LitElement {
   }
 
   private _renderChartSection(): TemplateResult {
-    const available = this._availablePeriods();
-    const period = this._effectivePeriod(available);
-
-    return html`
-      <div class="chart-head">
-        ${renderSegmented(
-          available.map((p) => ({ value: p, label: PERIOD_LABEL[p] })),
-          period,
-          (value) => this._setPeriod(value),
-          'Zeitraum',
-        )}
-      </div>
-      <div class="chart-meta">${PERIOD_META[period]}</div>
-      ${this._apexAvailable()
-        ? html`<div class="chart" id="chart"></div>`
-        : html`<div class="hint">apexcharts-card nicht installiert</div>`}
-    `;
+    return this._apexAvailable()
+      ? html`<div class="chart" id="chart"></div>`
+      : html`<div class="hint">apexcharts-card nicht installiert</div>`;
   }
 
   // --- expanded ------------------------------------------------------------
@@ -917,8 +911,6 @@ export class DesHouseCard extends LitElement {
       box-sizing: border-box;
       display: flex;
       flex-direction: column;
-      /* Cap the card at the grid height so the chart fits instead of pushing. */
-      overflow: hidden;
       background: var(--ha-card-background, var(--card-background-color, #fff));
       color: var(--primary-text-color);
     }
@@ -929,6 +921,9 @@ export class DesHouseCard extends LitElement {
       display: flex;
       flex-direction: column;
       padding: 12px 16px;
+      /* Cap the chart here, not on ha-card: the expand overlay is a sibling of
+         .card and must be able to spill past the card edge. */
+      overflow: hidden;
     }
 
     /* --- header --- */
@@ -991,10 +986,6 @@ export class DesHouseCard extends LitElement {
       white-space: nowrap;
     }
 
-    .hpill-label {
-      color: var(--secondary-text-color);
-    }
-
     .hpill-value {
       color: var(--primary-text-color);
       font-variant-numeric: tabular-nums;
@@ -1004,11 +995,12 @@ export class DesHouseCard extends LitElement {
       color: var(--secondary-text-color);
     }
 
-    /* --- power row --- */
+    /* --- power row (consumption figure + period switcher) --- */
 
     .power-row {
       display: flex;
-      align-items: baseline;
+      align-items: center;
+      justify-content: space-between;
       gap: 12px;
       margin-top: 10px;
       flex: 0 0 auto;
@@ -1076,29 +1068,14 @@ export class DesHouseCard extends LitElement {
 
     /* --- chart section --- */
 
-    .chart-head {
-      display: flex;
-      justify-content: flex-end;
-      margin-top: 12px;
-      flex: 0 0 auto;
-    }
-
-    .chart-meta {
-      margin-top: 4px;
-      font-size: 12px;
-      color: var(--secondary-text-color);
-      white-space: nowrap;
-      flex: 0 0 auto;
-    }
-
     /* Takes whatever height is left; the height is a start size flex overrides.
        overflow:hidden keeps a chart that briefly overshoots from scrolling. */
     .chart {
       flex: 1 1 auto;
       min-height: 0;
-      height: 180px;
+      height: 140px;
       position: relative;
-      margin-top: 6px;
+      margin-top: 10px;
       overflow: hidden;
     }
 
