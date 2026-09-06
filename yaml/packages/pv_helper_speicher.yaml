@@ -1,0 +1,21 @@
+# pv_helper_speicher.yaml
+# Zweck:  Alle Speicher (Deye-Hausakkus + Zendure) als eine Leistungsreihe.
+# Vorzeichen: positiv = Speicher liefert ins Haus (Entladen), negativ = Speicher lädt.
+#             Deye meldet negativ = Laden (passt), Zendure aus to_home - from_home.
+# Nutzer: ApexCharts-Verlauf (Dashboard "Solar").
+# Stand:  2026-09-05
+
+template:
+  - sensor:
+      - name: PV Helper Speicher Leistung
+        unique_id: pv_helper_speicher_leistung
+        unit_of_measurement: W
+        device_class: power
+        state_class: measurement
+        state: >-
+          {% set deye = states('sensor.inverter_battery_power') | float(0) %}
+          {% set zen_aus = states('sensor.zendure_power_to_home') | float(0) %}
+          {% set zen_ein = states('sensor.zendure_power_from_home') | float(0) %}
+          {{ (deye + zen_aus - zen_ein) | round(0) }}
+        availability: >-
+          {{ has_value('sensor.inverter_battery_power') }}
