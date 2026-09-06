@@ -1,4 +1,4 @@
-# todo.md — offene Punkte (Stand 06.09.2026, 18:30)
+# todo.md — offene Punkte (Stand 06.09.2026, 18:45)
 
 Reihenfolge = Vorschlag. Jeder Punkt wird erst abgestimmt, dann freigegeben,
 dann umgesetzt (siehe claude.md).
@@ -150,8 +150,12 @@ dann umgesetzt (siehe claude.md).
       **Säulen** schon (apexcharts.js#4132). Zusätzlich stapelt es mit `yaxis`
       teils nur mit `stack_group` je Reihe (apexcharts-card#827).
 - [x] 06.09. des-house-card (v0.7.2): Quellen-Chart auf gestapelte **Säulen**
-      umgestellt (type column, `stack_group: quellen`, `group_by.fill: last`) —
-      stapelt zuverlässig. → per HACS auf 0.7.2.
+      umgestellt. v0.7.3: Dauer-Ladekringel behoben (ungültiges
+      `apex_config.chart.type: column` entfernt; Serientyp bleibt in
+      `all_series_config`). v0.7.4: Pillen-Farbquadrate immer farbig, Solar-Reihe
+      auf `var(--success-color)` (Token löste im Chart nicht auf → war schwarz),
+      Chart-Legende entfernt, Höhe wieder rows 4 (bündig mit den Nachbarkarten).
+      → per HACS auf 0.7.4.
 - [ ] **Speicher-Füllstand** (Dashboard) bleibt bewusst Fläche — als Balken
       wertlos (Daniel). Offen: echte gestapelte Flächen nur über anderes Tool.
       Optionen: (a) `plotly-graph-card` standalone (Plotly stapelt Flächen,
