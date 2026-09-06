@@ -1,4 +1,4 @@
-# todo.md — offene Punkte (Stand 06.09.2026, 13:15)
+# todo.md — offene Punkte (Stand 06.09.2026, 13:40)
 
 Reihenfolge = Vorschlag. Jeder Punkt wird erst abgestimmt, dann freigegeben,
 dann umgesetzt (siehe claude.md).
@@ -92,6 +92,12 @@ dann umgesetzt (siehe claude.md).
       Dashboard-YAML in HA ersetzen. **Achtung:** Solar-Reihe im Chart ist
       ebenfalls `#639922` → Solar und Einspeisung jetzt gleichfarbig (Einspeisung
       liegt unter 0). Falls unerwünscht: Solar-Farbe abstimmen und ändern.
+- [x] 06.09. Farbkollision aufgelöst (v0.6.2): neuer Token
+      `--des-production-color` (`#2e7d32`, HA-Erfolgsgrün), Stats-Karte
+      „Produktion" nutzt ihn; Dashboard-Chart „Solar" auf `#2e7d32`. Solar (grün)
+      und Einspeisung (`#639922`, oliv) jetzt wieder unterscheidbar. → Karte per
+      HACS aktualisieren, Dashboard-YAML in HA ersetzen (Chart zieht erst danach
+      nach).
 - [ ] des-storage-card: geschätzte Restzeit der Hausakkus im Betrieb prüfen
       (Glättung, „< 10 min"/„> 48 h").
 - [ ] des-inverter-card: Uhr-Pille läuft; Zeitzonen-Unterschied Browser/HA nur
