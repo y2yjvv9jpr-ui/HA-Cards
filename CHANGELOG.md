@@ -4,6 +4,28 @@ Alle nennenswerten Änderungen an diesem Projekt werden hier festgehalten.
 Format grob nach [Keep a Changelog](https://keepachangelog.com/de/1.1.0/),
 Versionierung nach [SemVer](https://semver.org/lang/de/).
 
+## [0.6.4]
+
+### Geändert
+
+- **Farb-Audit korrigiert.** Nur noch zwei Energie-Grün-Tokens in `src/tokens.ts`:
+  `--des-production-color` = `var(--success-color, #2e7d32)` (folgt jetzt dem
+  Theme-Grün) und `--des-export-color` = `#2e7d32` (fester Hex). Der Token
+  `--des-status-ok-color` entfällt; alle Status-Stellen (Pillen Normal/Bereit/
+  Notstrom, Akku-Füllung, Lade-/Heiz-Werte, Punkte) stehen wieder direkt auf
+  `var(--success-color, #2e7d32)` wie vor 0.6.3 — die Pillen werden nicht mehr
+  über Tokens gefärbt. Das Oliv `#639922` entfällt vollständig.
+- **Dashboard-Chart „Verbrauch nach Quelle":** Reihe „Solar" auf
+  `var(--success-color)` (apexcharts-card löst die Variable auf), Reihe
+  „Einspeisung" auf `#2e7d32`; `transform`-Zeilen unverändert.
+
+### Entfernt
+
+- **des-house-card:** Die Kopfzeilen-Pille „Einspeisung … W" / „Netzbezug … W"
+  samt Option `grid_min_w` ist entfernt. Die Netz-Einspeisung steht jetzt als
+  Zeile „Export" auf der Wechselrichterkarte; der Mix-Balken und der „Heute"-
+  Block (inkl. Einspeisungs-Tageswert) bleiben unverändert.
+
 ## [0.6.3]
 
 ### Geändert
