@@ -14,7 +14,7 @@ kann („Regel L3"). Spalte „Vorgabe Daniel" = die ursprüngliche Anforderung;
 | A3 | Zendure-Entladesollwert `pv_helper_zendure_entladeleistung_soll` | aktuelle Abgabe + Netz + Akku − 50 W, begrenzt 0 … Entladeleistung-Maximum (2400 seit 06.09., vorher 800). Hausakku-Entnahme erhöht, Hausakku-Ladung und Einspeisung senken. Unter Minimum (400) = Stoppzone. | pv_helper_laden |
 | A4 | Hausakkus laden `pv_helper_hausakku_laedt` | Akku < −100 W | pv_helper_laden |
 | A5 | Zendure voll `pv_helper_zendure_voll` | SoC ≥ Ladegrenze **oder** Quick Charge nimmt 2 min < 100 W an | pv_helper_laden |
-| A6 | Ladestopp `pv_helper_zendure_ladestopp` | Quick Charge **und** (A2 < 400 **oder** A4 an), 1 min lang | pv_helper_laden |
+| A6 | Ladestopp `pv_helper_zendure_ladestopp` | Quick Charge **und** (A2 < 400 **oder** (A4 an **und** A1 < 100 W)), 1 min lang — Hausakkus laden und keine Einspeisung mehr → Strom gehört den Hausakkus (06.09. nachmittags) | pv_helper_laden |
 | A7 | Entladestopp `pv_helper_zendure_entladestopp` | Quick Discharge **und** A3 < Minimum, 1 min lang | pv_helper_laden |
 | A8 | Speicher gesamt `pv_helper_speicher_leistung` | Akku + Zendure-Abgabe − Zendure-Aufnahme (positiv = liefert ins Haus) | pv_helper_speicher |
 | A9 | Hausverbrauch `pv_helper_haus_leistung` | Deye-AC-Ausgang + Netz + Zendure-Abgabe − Zendure-Aufnahme, ≥ 0 | pv_helper_haus |
@@ -24,7 +24,7 @@ kann („Regel L3"). Spalte „Vorgabe Daniel" = die ursprüngliche Anforderung;
 
 | Nr | Regel | Umsetzung | Vorgabe Daniel | Abweichung |
 | --- | --- | --- | --- | --- |
-| B1 | Laden starten | Standby **und** nicht voll (A5) **und** Hausakkus laden nicht (A4) **und** A1 > 450 W → Quick Charge mit A2 | „Erst Hausakkus, dann ab > 100 W Überschuss Zendure mit Überschuss − 50 W" | Schwelle 450 statt 100, Minimum 400 W: Gerätegrenze `max_charge_power` ≥ 400 (Daniel akzeptiert 05.09.). |
+| B1 | Laden starten | Standby **und** nicht voll (A5) **und** A1 > 450 W → Quick Charge mit A2; auch parallel zu ladenden Hausakkus, da A1 nur Einspeisung zählt (06.09. nachmittags) | „Erst Hausakkus, dann ab > 100 W Überschuss Zendure mit Überschuss − 50 W" | Schwelle 450 statt 100, Minimum 400 W: Gerätegrenze `max_charge_power` ≥ 400 (Daniel akzeptiert 05.09.). |
 | B2 | Laden regeln | jede 30 s Ladeleistung = A2, Totband 20 W, hoch **und** runter sofort | „Ladeleistung = Überschuss − 50 W, max. 2400" | keine |
 | B3 | Laden beenden | A6 (1 min < 400 W oder Hausakkus laden) **oder** A5 → Standby | „< 50 W → kein Laden" / „Hausakkus zuerst" | Stoppgrenze 400 W statt 50 W (Gerätegrenze) |
 | B4 | Entladen starten | Standby **und** SoC > Minimum-SoC **und** Hausakku-Entnahme > Entlademinimum + 50 W (aktuell 450 W) → Quick Discharge mit A3 | „Sobald > 100 W aus den Hausakkus kommen, regelt der Zendure gegen" | Start bei 450 statt 100 W, weil das Gerät nicht unter 400 W entlädt; mit 100 W Start würde er das Haus überversorgen und die Hausakkus laden. Unter 400 W nur mit Modus Manual (offen). |
