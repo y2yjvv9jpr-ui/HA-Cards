@@ -19,9 +19,6 @@ const DEMO_STATES: ReadonlySet<HouseDemoState> = new Set([
 /** How a resolved entity value is rescaled onto the unit the card expects. */
 type Scale = 'power' | 'energy' | 'plain';
 
-/** Grid deadband (W) below which the pill stays neutral. `grid_min_w` wins. */
-const DEFAULT_GRID_MIN_W = 40;
-
 /** Grid size in a HA sections view (column_span 3 → 36 columns): a third wide. */
 const GRID_ROWS = 4;
 const GRID_COLUMNS = 12;
@@ -97,9 +94,6 @@ const DEMO_DATA: Record<HouseDemoState, RawInputs> = {
 
 interface HouseView {
   load: number | null;
-  /** Grid draw/feed after `invert_grid`; both 0 when grid is unreadable. */
-  gridIn: number;
-  gridOut: number;
   solarShare: number;
   storageShare: number;
   gridShare: number;
@@ -317,8 +311,6 @@ export class DesHouseCard extends LitElement {
 
     return {
       load: raw.load,
-      gridIn,
-      gridOut,
       solarShare,
       storageShare,
       gridShare,
@@ -374,7 +366,6 @@ export class DesHouseCard extends LitElement {
           <span class="name">${config.name}</span>
           <span class="meta">${this._renderMeta(view)}</span>
         </div>
-        ${this._renderPill(view)}
       </div>
 
       ${this._renderPowerRow(view)}
@@ -404,28 +395,6 @@ export class DesHouseCard extends LitElement {
   private _renderMeta(view: HouseView): TemplateResult {
     return html`${this._unit(view.todayConsumption, formatFixed, 'kWh')} heute ·
     ${this._unit(view.autarky, formatInt, '%')} autark`;
-  }
-
-  /**
-   * feed-in (green) beats draw (red) beats a neutral "Netz … W". Grid flow
-   * within ±`grid_min_w` reads neutral, since a hybrid inverter always trickles
-   * a little from the grid and that should not paint the pill red.
-   */
-  private _renderPill(view: HouseView): TemplateResult {
-    const gridMin = this._config?.grid_min_w ?? DEFAULT_GRID_MIN_W;
-    // One of gridIn/gridOut is always 0, so their sum is the flow magnitude.
-    const magnitude = view.gridIn + view.gridOut;
-
-    const [text, modifier] =
-      view.gridOut >= gridMin
-        ? [`Einspeisung ${formatInt(view.gridOut)} W`, 'pill-feed']
-        : view.gridIn >= gridMin
-          ? [`Netzbezug ${formatInt(view.gridIn)} W`, 'pill-draw']
-          : [`Netz ${formatInt(magnitude)} W`, 'pill-idle'];
-
-    return html`<span class="pill ${modifier}">
-      <span class="pill-label">${text}</span>
-    </span>`;
   }
 
   private _renderPowerRow(view: HouseView): TemplateResult {
@@ -611,51 +580,6 @@ export class DesHouseCard extends LitElement {
       opacity: 0.7;
     }
 
-    /* --- status pill (shared look with the other cards' badges) --- */
-
-    .pill {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      min-height: 20px;
-      padding: 0 9px;
-      border-radius: 10px;
-      font-size: 11px;
-      font-weight: 500;
-      line-height: 1;
-      white-space: nowrap;
-      flex-shrink: 0;
-      background: rgba(127, 127, 127, 0.15);
-      color: var(--secondary-text-color);
-    }
-
-    .pill-label {
-      display: block;
-      transform: translateY(1px);
-    }
-
-    .pill-feed {
-      background: rgba(99, 153, 34, 0.16);
-      background: color-mix(in srgb, var(--des-export-color, #639922) 16%, transparent);
-      color: var(--des-export-color, #639922);
-    }
-
-    .pill-draw {
-      background: rgba(211, 47, 47, 0.16);
-      background: color-mix(in srgb, var(--error-color, #d32f2f) 16%, transparent);
-      color: var(--error-color, #d32f2f);
-    }
-
-    .pill-idle {
-      background: rgba(127, 127, 127, 0.16);
-      background: color-mix(
-        in srgb,
-        var(--secondary-text-color, #727272) 16%,
-        transparent
-      );
-      color: var(--secondary-text-color);
-    }
-
     /* --- power row --- */
 
     .power-row {
@@ -785,7 +709,7 @@ export class DesHouseCard extends LitElement {
     }
 
     .today-value.feed {
-      color: var(--des-export-color, #639922);
+      color: var(--des-export-color, #2e7d32);
     }
   `,
   ];

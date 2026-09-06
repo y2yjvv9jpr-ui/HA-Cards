@@ -9,26 +9,20 @@ import { css } from 'lit';
  */
 export const tokenStyles = css`
   :host {
-    /* The project uses exactly two energy greens, plus one status green.
+    /* Two energy greens, defined once here.
 
-       Production / solar (#2e7d32, the default Home Assistant success green):
-       everything that means "PV / Erzeugung" — the house card's Solar row and
-       mix segment, the inverter card's PV power figure and PV1/PV2 bars, the
-       stats card's Produktion row, and the chart's "Solar" series (which repeats
-       the literal hex, as a chart cannot read CSS variables). */
-    --des-production-color: #2e7d32;
+       Production / solar: follows the theme's success colour (falling back to
+       #2e7d32). Everything that means "PV / Erzeugung" — the house card's Solar
+       row and mix segment, the inverter card's PV power figure and PV1/PV2 bars,
+       the stats card's Produktion row, and the chart's "Solar" series. */
+    --des-production-color: var(--success-color, #2e7d32);
 
-    /* Export / feed-in (#639922, a muted olive that stays clear of the
-       production green): everything that means "Einspeisung" — the house card's
-       feed pill and feed value, the inverter card's export bar and the grid
-       feed-in figures, the stats card's Export row, and the chart's
-       "Einspeisung" series (repeated as the literal hex). */
-    --des-export-color: #639922;
-
-    /* Status OK (#2e7d32): the "everything is fine / active" green that is NOT
-       an energy colour — the Normal/Bereit status pills, the charging and
-       heating power figures, a healthy battery fill and the running dot. Its own
-       token so it can move independently of the production green later. */
-    --des-status-ok-color: #2e7d32;
+    /* Export / feed-in: a fixed dark green (#2e7d32). Everything that means
+       "Einspeisung" — the inverter card's export bar and grid feed-in figures,
+       the house card's Einspeisung day value, the stats card's Export row, and
+       the chart's "Einspeisung" series (repeated as the literal hex, as a chart
+       cannot read CSS variables). Fixed rather than theme-following so the chart
+       literal matches the card. */
+    --des-export-color: #2e7d32;
   }
 `;
