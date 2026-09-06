@@ -362,8 +362,20 @@ export class DesChartCard extends LitElement {
 
   /**
    * Adds the card type, forces the embedded card's own header off, and sets the
-   * chart height. A height from the user's `apex_config` is deliberately
-   * overwritten - the card's job here is to fill the space it was given.
+   * chart height. `apex_config` is deep-merged: only `chart.height` is forced,
+   * every user key (including `chart.stacked`) survives. A height from the
+   * user's `apex_config` is deliberately overwritten - the card's job here is to
+   * fill the space it was given.
+   *
+   * Stacking: `stacked: true` is set both at apexcharts-card's top level and on
+   * `apex_config.chart` whenever the user asked for it at either level. Bars
+   * stack from the top-level flag alone, but a stacked **area** needs
+   * `chart.stacked: true` on the ApexCharts object - so a config that set only
+   * one of the two now gets the other. On top of that, ApexCharts only stacks
+   * series that share the same x-values, so for a stacked chart that groups its
+   * data (`group_by`) the card defaults `group_by.fill: last`: every bucket then
+   * carries a point in every series and the areas line up. The user's own
+   * `group_by.fill` still wins.
    *
    * The legend gets a default gap between marker and text
    * (`markers.offsetX: -4`, ~6 px) plus `itemMargin.horizontal: 10`, since
@@ -381,9 +393,25 @@ export class DesChartCard extends LitElement {
     const legend = asObject(apex.legend);
     const legendMarkers = asObject(legend.markers);
     const legendItemMargin = asObject(legend.itemMargin);
+    const allSeries = asObject(cfg.all_series_config);
+    const groupBy = asObject(allSeries.group_by);
+
+    const wantStacked = cfg.stacked === true || apexChart.stacked === true;
+    // For a grouped stacked chart, fill every bucket so the series share x-values.
+    const stackedAllSeries =
+      wantStacked && 'group_by' in allSeries
+        ? {
+            all_series_config: {
+              ...allSeries,
+              group_by: { fill: 'last', ...groupBy },
+            },
+          }
+        : {};
 
     return {
       ...cfg,
+      ...(wantStacked ? { stacked: true } : {}),
+      ...stackedAllSeries,
       type: 'custom:apexcharts-card',
       header: { ...header, show: false },
       apex_config: {
@@ -391,6 +419,7 @@ export class DesChartCard extends LitElement {
         chart: {
           ...apexChart,
           height: this._chartHeight ?? FALLBACK_CHART_HEIGHT,
+          ...(wantStacked ? { stacked: true } : {}),
         },
         legend: {
           ...legend,

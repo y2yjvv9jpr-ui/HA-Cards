@@ -4,6 +4,23 @@ Alle nennenswerten Änderungen an diesem Projekt werden hier festgehalten.
 Format grob nach [Keep a Changelog](https://keepachangelog.com/de/1.1.0/),
 Versionierung nach [SemVer](https://semver.org/lang/de/).
 
+## [0.7.1]
+
+### Behoben
+
+- **des-chart-card:** Gestapelte **Flächen** (`type: area`, `stacked: true`)
+  wurden nicht gestapelt gezeichnet, obwohl gestapelte **Säulen** es taten. Beim
+  Einbetten wird jetzt für einen gestapelten Chart `stacked: true` **sowohl** auf
+  der obersten Ebene **als auch** auf `apex_config.chart` gesetzt (eines allein
+  reicht Säulen, Flächen brauchen `chart.stacked`) — egal, auf welcher Ebene der
+  Nutzer es angegeben hat. `apex_config` wird dabei weiterhin **tief** gemischt,
+  nur `chart.height` wird erzwungen.
+- Zusätzlich bekommt ein gestapelter Chart, der seine Daten über `group_by`
+  rastert, standardmäßig `group_by.fill: last`. Damit trägt jede Reihe in jedem
+  Zeitfenster einen Punkt und alle Reihen haben deckungsgleiche Zeitstempel —
+  die Voraussetzung, unter der ApexCharts Flächen überhaupt stapelt. Ein eigener
+  `group_by.fill` in der Nutzer-Config gewinnt.
+
 ## [0.7.0]
 
 ### Geändert
