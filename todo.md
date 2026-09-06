@@ -1,4 +1,4 @@
-# todo.md — offene Punkte (Stand 06.09.2026, 19:05)
+# todo.md — offene Punkte (Stand 06.09.2026, 19:25)
 
 Reihenfolge = Vorschlag. Jeder Punkt wird erst abgestimmt, dann freigegeben,
 dann umgesetzt (siehe claude.md).
@@ -157,7 +157,10 @@ dann umgesetzt (siehe claude.md).
       Chart-Legende entfernt, Höhe wieder rows 4 (bündig mit den Nachbarkarten).
       v0.7.5: Chevron-Overlay repariert (overflow-Cap von ha-card auf .card),
       Pillen ohne Textlabel (nur Farbe + Wert), Perioden-Umschalter in die
-      Verbrauchszeile → mehr Höhe für den Chart. → per HACS auf 0.7.5.
+      Verbrauchszeile → mehr Höhe für den Chart. v0.7.6: rows 4 blieb zu eng;
+      daher eingeklappt wieder die klassische Darstellung (Kopf, Verbrauchszahl,
+      Mix-Balken, Legendenzeilen Solar/Speicher/Netz), Chart + Umschalter nur im
+      Aufklapp-Dropdown (+ Heute-Werte). → per HACS auf 0.7.6.
 - [ ] **Speicher-Füllstand** (Dashboard) bleibt bewusst Fläche — als Balken
       wertlos (Daniel). Offen: echte gestapelte Flächen nur über anderes Tool.
       Optionen: (a) `plotly-graph-card` standalone (Plotly stapelt Flächen,
