@@ -3207,7 +3207,7 @@ const ae = class ae extends k {
   /** The full apexcharts-card config for one period, built from the sources. */
   _apexCardConfig(e) {
     const t = this._config, a = {
-      chart: { height: this._chartHeight ?? Kr, type: "column", stacked: !0 },
+      chart: { height: this._chartHeight ?? Kr, stacked: !0 },
       legend: {
         position: "bottom",
         markers: { offsetX: -4 },
@@ -3234,7 +3234,6 @@ const ae = class ae extends k {
       apex_config: a,
       all_series_config: {
         type: "column",
-        stack_group: "quellen",
         extend_to: !1,
         group_by: { func: "avg", duration: "10min", fill: "last" },
         unit: "W",
@@ -3269,7 +3268,6 @@ const ae = class ae extends k {
       apex_config: a,
       all_series_config: {
         type: "column",
-        stack_group: "quellen",
         extend_to: !1,
         statistics: { type: "change", period: e === "year" ? "month" : "day", align: "start" },
         unit: "kWh",

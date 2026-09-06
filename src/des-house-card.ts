@@ -474,10 +474,12 @@ export class DesHouseCard extends LitElement {
 
     // Stacked columns, not areas: ApexCharts (>= 3.44.1, the version bundled
     // with apexcharts-card) no longer stacks areas — bars still stack. See
-    // apexcharts.js#4132. stack_group (below) is added because stacking also
-    // breaks when a yaxis is present (apexcharts-card#827).
+    // apexcharts.js#4132. The column type goes on `all_series_config.type`
+    // (apexcharts-card translates it to ApexCharts' `bar`); it must NOT be set
+    // on `apex_config.chart.type`, since ApexCharts has no "column" type and an
+    // invalid type leaves the card spinning forever.
     const apex_config = {
-      chart: { height, type: 'column', stacked: true },
+      chart: { height, stacked: true },
       legend: {
         position: 'bottom',
         markers: { offsetX: -4 },
@@ -501,7 +503,6 @@ export class DesHouseCard extends LitElement {
         apex_config,
         all_series_config: {
           type: 'column',
-          stack_group: 'quellen',
           extend_to: false,
           group_by: { func: 'avg', duration: '10min', fill: 'last' },
           unit: 'W',
@@ -546,7 +547,6 @@ export class DesHouseCard extends LitElement {
       apex_config,
       all_series_config: {
         type: 'column',
-        stack_group: 'quellen',
         extend_to: false,
         statistics: { type: 'change', period: statsPeriod, align: 'start' },
         unit: 'kWh',

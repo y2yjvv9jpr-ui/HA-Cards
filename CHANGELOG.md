@@ -4,6 +4,18 @@ Alle nennenswerten Änderungen an diesem Projekt werden hier festgehalten.
 Format grob nach [Keep a Changelog](https://keepachangelog.com/de/1.1.0/),
 Versionierung nach [SemVer](https://semver.org/lang/de/).
 
+## [0.7.3]
+
+### Behoben
+
+- **des-house-card:** Der Quellen-Chart lud nicht (Dauer-Ladekringel). Ursache
+  war die 0.7.2-Umstellung: `apex_config.chart.type: 'column'` — `column` ist
+  **kein** gültiger ApexCharts-`chart.type` (nur `bar`), der Alias gehört auf
+  `all_series_config.type`. Der ungültige Typ ließ die Karte endlos initialisieren.
+  `chart.type` entfernt (der Serientyp bleibt `column` in `all_series_config`,
+  apexcharts-card übersetzt ihn korrekt); das nicht benötigte `stack_group`
+  wieder entfernt (der Chart hat keine `yaxis`, Säulen stapeln ohne).
+
 ## [0.7.2]
 
 ### Behoben
