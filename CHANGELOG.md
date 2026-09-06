@@ -4,6 +4,30 @@ Alle nennenswerten Änderungen an diesem Projekt werden hier festgehalten.
 Format grob nach [Keep a Changelog](https://keepachangelog.com/de/1.1.0/),
 Versionierung nach [SemVer](https://semver.org/lang/de/).
 
+## [0.7.0]
+
+### Geändert
+
+- **des-house-card:** Umbau. Rechts oben statt der Zeilen jetzt drei Pillen
+  **Solar / Speicher / Netz** mit dem aktuellen Wert in W und einem farbigen
+  Quadrat (Farben wie der Mix-Balken: Solar `--des-production-color`, Speicher
+  `#378ADD`, Netz `#E24B4A`); bei 0 W wird die Pille grau. Der Mix-Balken bleibt;
+  die drei Legendenzeilen darunter entfallen.
+- Neu darunter ein **Chart-Bereich** mit Perioden-Umschalter Tag | Woche | Monat
+  | Jahr (gleiche Komponente wie des-stats/des-chart-card, Standard Tag) und einer
+  eingebetteten apexcharts-card: gestapelte Flächen (type area, stacked,
+  fill-opacity 0.6, dünne Linie, `extend_to: false`, Legende unten mit Abstand,
+  ohne Werte). **Tag** = Leistung in W (group_by avg 10 min); **Woche/Monat/Jahr**
+  = Energie in kWh aus der Langzeitstatistik (statistics change, period day bzw.
+  month, align start). Reihen Solar/Speicher/Netz.
+- Quellen per Konfiguration, Standard = Daniels Helfer: `solar_power_entity`,
+  `storage_power_entity` (nur positiver Anteil), `grid_power_entity` (Bezug) für
+  Tag; `solar_energy_entity`, `storage_energy_entity`, `grid_energy_entity` für
+  Woche/Monat/Jahr. Ohne die Energie-Entitäten zeigt die Karte nur „Tag". Die
+  bestehenden Optionen bleiben gültig; der Aufklappbereich (Chevron) mit den
+  Tageswerten bleibt unter dem Chart.
+- Karten-Höhe: `getGridOptions` jetzt `rows: 6` (`min_rows: 5`).
+
 ## [0.6.5]
 
 ### Geändert

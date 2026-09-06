@@ -358,6 +358,27 @@ export interface DesHouseCardConfig {
   today_export_entity?: string;
   /** Self-sufficiency in percent; when set it replaces the computed value. */
   autarky_entity?: string;
+
+  // --- chart sources ------------------------------------------------------
+  // The stacked-area chart below the mix bar. All optional; omitted fields use
+  // Daniel's helpers as defaults. The "Tag" period reads instantaneous power
+  // (W); Woche/Monat/Jahr read energy (kWh) from long-term statistics and are
+  // only offered when all three energy entities are present (set one to "" to
+  // drop them and show only "Tag").
+
+  /** Day series: solar power in W. Default `sensor.pv_helper_solar_direkt_leistung`. */
+  solar_power_entity?: string;
+  /** Day series: storage power in W (only the positive/discharge part is shown).
+   *  Default `sensor.pv_helper_speicher_leistung`. */
+  storage_power_entity?: string;
+  // grid_power_entity (above) doubles as the day grid series (positive = draw).
+
+  /** Week/Month/Year series: solar energy in kWh. Default `sensor.pv_helper_energie_solar_direkt`. */
+  solar_energy_entity?: string;
+  /** Week/Month/Year series: storage discharge energy in kWh. Default `sensor.pv_helper_energie_entladen_gesamt`. */
+  storage_energy_entity?: string;
+  /** Week/Month/Year series: grid import energy in kWh. Default `sensor.pv_helper_energie_import_gesamt`. */
+  grid_energy_entity?: string;
 }
 
 // ===========================================================================

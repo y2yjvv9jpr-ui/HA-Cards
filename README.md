@@ -801,6 +801,22 @@ umgerechnet (`kW`/`MW` → W, `Wh`/`MWh` → kWh).
 | `today_export_entity`      | kWh          | Einspeisung heute (grün, „Heute“-Block).                         |
 | `autarky_entity`           | %            | Autarkie; **wenn gesetzt, ersetzt sie die Berechnung**.           |
 
+**Chart-Quellen** (für den Flächen-Chart unter dem Mix-Balken). Alle optional;
+fehlt eines, greift der Standard (Daniels Helfer). „Tag" liest Leistung (W),
+Woche/Monat/Jahr Energie (kWh) aus der Langzeitstatistik.
+
+| Feld                    | Erwartet | Standard                                  | Reihe / Periode                                    |
+| ----------------------- | -------- | ----------------------------------------- | -------------------------------------------------- |
+| `solar_power_entity`    | W        | `sensor.pv_helper_solar_direkt_leistung`  | Solar, Tag.                                         |
+| `storage_power_entity`  | W        | `sensor.pv_helper_speicher_leistung`      | Speicher, Tag (nur positiver Anteil, `max(0,x)`).  |
+| `grid_power_entity`     | W        | `sensor.inverter_external_power`          | Netz, Tag (nur Bezug, `max(0,x)`) — dasselbe Feld wie oben. |
+| `solar_energy_entity`   | kWh      | `sensor.pv_helper_energie_solar_direkt`   | Solar, Woche/Monat/Jahr.                            |
+| `storage_energy_entity` | kWh      | `sensor.pv_helper_energie_entladen_gesamt`| Speicher, Woche/Monat/Jahr.                         |
+| `grid_energy_entity`    | kWh      | `sensor.pv_helper_energie_import_gesamt`  | Netz, Woche/Monat/Jahr.                             |
+
+Sind die drei Energie-Felder nicht gesetzt (eines auf `""`), zeigt der
+Umschalter nur „Tag".
+
 **Vorzeichen** — `grid_power_entity` ist signiert: nach `invert_grid` gilt
 **positiv = Netzbezug**, **negativ = Einspeisung**. Für die Speicher legt
 `storage_positive` fest, was ein positiver Wert bedeutet: bei `discharge`
@@ -835,7 +851,7 @@ quellen    = solar + speicher + netz
 ```
 
 Die Prozente sind hier `Anteil / quellen` (nicht mehr `/ load`); bei
-`quellen ≤ 0` sind alle 0 %. Die Legende zeigt die **gemessenen** W-Werte — ihre
+`quellen ≤ 0` sind alle 0 %. Die Pillen zeigen die **gemessenen** W-Werte — ihre
 Summe kann daher vom Verbrauch abweichen (z. B. wenn ein Teil der PV-Leistung in
 Wandlungsverlusten oder einem nicht erfassten Verbraucher steckt). Ist
 `pv_power_entity` nicht gesetzt (oder gerade nicht lesbar), gilt unverändert die
@@ -848,15 +864,21 @@ nicht lesbar, zeigt sie „–“.
 **Aufbau — eingeklappt**
 
 - **Kopfzeile** — Name links, darunter gedämpft `… kWh heute · … % autark`.
-  Keine Pille rechts: die Netz-Einspeisung steht jetzt auf der
-  Wechselrichterkarte (Zeile „Export").
+  Rechts oben drei Pillen **Solar / Speicher / Netz** mit dem aktuellen Wert in
+  W und einem farbigen Quadrat (dieselben Farben wie der Mix-Balken). Bei 0 W
+  wird die jeweilige Pille grau.
 - **Leistungszeile** — der Verbrauch groß in neutraler Textfarbe, daneben klein
   gedämpft „Verbrauch“.
 - **Mix-Balken** — ein gestapelter Balken (8 px, abgerundet) in der Reihenfolge
   **Solar** (grün), **Speicher** (blau, wie „Lädt“ bei der Speicherkarte) und
   **Netz** (rot). Die Schiene ist der gedämpfte Theme-Hintergrund.
-- **Legende** — drei Zeilen mit Farbquadrat, Label (`Solar`, `Speicher`, `Netz`),
-  Leistung in W und Anteil in %.
+- **Chart** — darunter ein Perioden-Umschalter **Tag | Woche | Monat | Jahr**
+  (Standard Tag; Woche/Monat/Jahr nur mit den Energie-Entitäten) und eine
+  Meta-Zeile (`W` bzw. `kWh je Tag` / `kWh je Monat`). Der Chart selbst ist eine
+  eingebettete apexcharts-card: gestapelte Flächen für Solar, Speicher und Netz.
+  **Tag** zeigt die Leistung (W, 10-min-Mittel seit Tagesbeginn),
+  **Woche/Monat/Jahr** die Energie (kWh) aus der Langzeitstatistik (Summe je Tag
+  bzw. Monat). Ist apexcharts-card nicht installiert, steht dort ein Hinweis.
 
 **Aufbau — aufgeklappt** (unter dem Chevron, durch eine Haarlinie getrennt)
 
@@ -889,6 +911,9 @@ today_consumption_entity: sensor.inverter_today_load_consumption
 today_import_entity: sensor.inverter_today_energy_import
 today_export_entity: sensor.inverter_today_energy_export
 # autarky_entity: sensor.autarkie   # optional; ersetzt die Berechnung
+# Chart-Quellen sind optional und haben Standardwerte (siehe Tabelle oben):
+# solar_power_entity / storage_power_entity / grid_power_entity (Tag, W)
+# solar_energy_entity / storage_energy_entity / grid_energy_entity (Woche/Monat/Jahr, kWh)
 ```
 
 Ohne jedes Entity-Feld läuft dieselbe Karte im Demo-Modus:

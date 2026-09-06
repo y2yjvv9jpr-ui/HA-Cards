@@ -4,10 +4,12 @@ import { entityUnit, isEntityId, resolveNumber } from './resolve';
 import { chevronStyles } from './chevron';
 import { overlayStyles, OverlayCloser } from './overlay';
 import { tokenStyles } from './tokens';
+import { renderSegmented, segmentedStyles } from './segmented';
 import type {
   DesHouseCardConfig,
   HomeAssistant,
   HouseDemoState,
+  StatsPeriod,
 } from './types';
 
 const DEMO_STATES: ReadonlySet<HouseDemoState> = new Set([
@@ -20,8 +22,63 @@ const DEMO_STATES: ReadonlySet<HouseDemoState> = new Set([
 type Scale = 'power' | 'energy' | 'plain';
 
 /** Grid size in a HA sections view (column_span 3 → 36 columns): a third wide. */
-const GRID_ROWS = 4;
+const GRID_ROWS = 6;
+const GRID_MIN_ROWS = 5;
 const GRID_COLUMNS = 12;
+
+/** Default sources for the mix bar / chart — Daniel's helpers. */
+const DEFAULT_SOLAR_POWER = 'sensor.pv_helper_solar_direkt_leistung';
+const DEFAULT_STORAGE_POWER = 'sensor.pv_helper_speicher_leistung';
+const DEFAULT_GRID_POWER = 'sensor.inverter_external_power';
+const DEFAULT_SOLAR_ENERGY = 'sensor.pv_helper_energie_solar_direkt';
+const DEFAULT_STORAGE_ENERGY = 'sensor.pv_helper_energie_entladen_gesamt';
+const DEFAULT_GRID_ENERGY = 'sensor.pv_helper_energie_import_gesamt';
+
+/** Series colours — same as the mix bar. Solar follows the production token. */
+const COLOR_SOLAR = 'var(--des-production-color)';
+const COLOR_STORAGE = '#378ADD';
+const COLOR_GRID = '#E24B4A';
+
+const PERIOD_ORDER: ReadonlyArray<StatsPeriod> = ['day', 'week', 'month', 'year'];
+const PERIOD_LABEL: Record<StatsPeriod, string> = {
+  day: 'Tag',
+  week: 'Woche',
+  month: 'Monat',
+  year: 'Jahr',
+};
+const PERIOD_META: Record<StatsPeriod, string> = {
+  day: 'W',
+  week: 'kWh je Tag',
+  month: 'kWh je Tag',
+  year: 'kWh je Monat',
+};
+
+/** Chart height in a view that imposes none; flex overrides it where sized. */
+const FALLBACK_CHART_HEIGHT = 180;
+/** Ignore sub-pixel jitter, so measuring can never chase its own writes. */
+const HEIGHT_EPSILON_PX = 2;
+
+/** The embedded card element accepts a `hass` assignment; that is all we need. */
+interface EmbeddedCard extends HTMLElement {
+  hass?: HomeAssistant;
+}
+
+/** The ApexCharts instance the embedded card keeps; only `updateOptions` is used. */
+interface ApexInstance {
+  updateOptions(
+    options: Record<string, unknown>,
+    redrawPaths?: boolean,
+    animate?: boolean,
+  ): unknown;
+}
+
+/** Property names apexcharts-card has used for its ApexCharts instance. */
+const APEX_INSTANCE_KEYS = ['_apexChart', 'apexChart', '_chart'] as const;
+
+/** Minimal shape of Home Assistant's card-helper bundle. */
+interface CardHelpers {
+  createCardElement(config: Record<string, unknown>): EmbeddedCard;
+}
 
 /**
  * The raw numbers the mix is computed from, whatever the source. In entity
@@ -125,28 +182,61 @@ export class DesHouseCard extends LitElement {
     hass: { attribute: false },
     _config: { state: true },
     _expanded: { state: true },
+    _period: { state: true },
   };
 
   declare hass?: HomeAssistant;
   declare _config?: DesHouseCardConfig;
   declare _expanded: boolean;
+  /** The user's period pick, or `null` to follow the default (Tag). */
+  declare _period: StatsPeriod | null;
 
   /** Closes the dropdown on an outside click or Escape while it is open. */
   private _closer = new OverlayCloser(this, () => this._collapse());
 
+  // embedded chart lifecycle (mirrors des-chart-card)
+  private _chartEl?: EmbeddedCard;
+  private _chartPeriod?: StatsPeriod;
+  private _mountToken = 0;
+  private _helpersPromise?: Promise<CardHelpers | null>;
+  private _awaitingApex = false;
+  private _chartHeight?: number;
+  private _resizeObserver?: ResizeObserver;
+  private _observedChart?: HTMLElement;
+
   constructor() {
     super();
     this._expanded = false;
+    this._period = null;
   }
 
   override disconnectedCallback(): void {
     super.disconnectedCallback();
     this._closer.deactivate();
+    this._teardownChart();
+    this._resizeObserver?.disconnect();
+    this._resizeObserver = undefined;
+    this._observedChart = undefined;
   }
 
-  /** Keeps the `expanded` attribute in sync for the stacking rule. */
+  override firstUpdated(): void {
+    // apexcharts-card may register after us; re-render once it does.
+    if (!this._apexAvailable() && !this._awaitingApex) {
+      this._awaitingApex = true;
+      customElements
+        .whenDefined('apexcharts-card')
+        .then(() => this.requestUpdate())
+        .catch(() => undefined);
+    }
+  }
+
+  /** Keeps the `expanded` attribute in sync and drives the embedded chart. */
   protected override updated(): void {
     this.toggleAttribute('expanded', this._expanded);
+    const container = this.renderRoot?.querySelector('#chart') as HTMLElement | null;
+    this._observeChartSize(container);
+    this._applyChartHeight();
+    this._syncChart();
   }
 
   setConfig(config: DesHouseCardConfig): void {
@@ -172,23 +262,17 @@ export class DesHouseCard extends LitElement {
     }
     this._config = config;
     this._expanded = false;
+    this._period = null;
+    this._teardownChart();
   }
 
   getCardSize(): number {
-    // header + power + mix bar + three legend rows ≈ 4; expanded adds the rows.
-    const view = this._config ? this._view() : null;
-    let rows = 4;
-    if (this._expanded && view) {
-      rows += [view.todayConsumption, view.todayImport, view.todayExport].filter(
-        (v) => v !== null,
-      ).length;
-    }
-    return rows;
+    return GRID_ROWS;
   }
 
-  /** HA sections view: a third of the section, fixed height. */
+  /** HA sections view: a third of the section; the chart grows into the rows. */
   getGridOptions(): { columns: number; rows: number; min_rows: number } {
-    return { columns: GRID_COLUMNS, rows: GRID_ROWS, min_rows: GRID_ROWS };
+    return { columns: GRID_COLUMNS, rows: GRID_ROWS, min_rows: GRID_MIN_ROWS };
   }
 
   static getStubConfig(): DesHouseCardConfig {
@@ -216,7 +300,12 @@ export class DesHouseCard extends LitElement {
       present(c.today_consumption_entity) ||
       present(c.today_import_entity) ||
       present(c.today_export_entity) ||
-      present(c.autarky_entity)
+      present(c.autarky_entity) ||
+      present(c.solar_power_entity) ||
+      present(c.storage_power_entity) ||
+      present(c.solar_energy_entity) ||
+      present(c.storage_energy_entity) ||
+      present(c.grid_energy_entity)
     );
   }
 
@@ -337,6 +426,149 @@ export class DesHouseCard extends LitElement {
   }
 
   // =========================================================================
+  // chart period model
+  // =========================================================================
+
+  private _chartEntity(configured: string | undefined, fallback: string): string {
+    return configured ?? fallback;
+  }
+
+  /** Week/Month/Year need the three energy entities; day needs only power. */
+  private _energyPeriodsAvailable(): boolean {
+    const c = this._config;
+    return (
+      present(this._chartEntity(c?.solar_energy_entity, DEFAULT_SOLAR_ENERGY)) &&
+      present(this._chartEntity(c?.storage_energy_entity, DEFAULT_STORAGE_ENERGY)) &&
+      present(this._chartEntity(c?.grid_energy_entity, DEFAULT_GRID_ENERGY))
+    );
+  }
+
+  private _availablePeriods(): StatsPeriod[] {
+    return this._energyPeriodsAvailable() ? [...PERIOD_ORDER] : ['day'];
+  }
+
+  private _effectivePeriod(available: StatsPeriod[]): StatsPeriod {
+    if (this._period && available.includes(this._period)) return this._period;
+    return available.includes('day') ? 'day' : available[0];
+  }
+
+  private _setPeriod(period: StatsPeriod): void {
+    this._period = period;
+  }
+
+  private _apexAvailable(): boolean {
+    return customElements.get('apexcharts-card') !== undefined;
+  }
+
+  /** The full apexcharts-card config for one period, built from the sources. */
+  private _apexCardConfig(period: StatsPeriod): Record<string, unknown> {
+    const c = this._config;
+    const height = this._chartHeight ?? FALLBACK_CHART_HEIGHT;
+
+    const datetimeFormatter: Record<StatsPeriod, Record<string, string>> = {
+      day: { hour: 'HH' },
+      week: { day: 'dd.MM' },
+      month: { day: 'dd.' },
+      year: { month: 'MMM' },
+    };
+
+    const apex_config = {
+      chart: { height, type: 'area', stacked: true },
+      legend: {
+        position: 'bottom',
+        markers: { offsetX: -4 },
+        itemMargin: { horizontal: 10 },
+      },
+      grid: { borderColor: 'var(--divider-color)', strokeDashArray: 3 },
+      stroke: { curve: 'smooth', width: 1 },
+      fill: { opacity: 0.6 },
+      xaxis: {
+        tooltip: { enabled: false },
+        labels: { datetimeFormatter: datetimeFormatter[period] },
+      },
+    };
+
+    if (period === 'day') {
+      return {
+        type: 'custom:apexcharts-card',
+        header: { show: false },
+        graph_span: '24h',
+        span: { start: 'day' },
+        stacked: true,
+        apex_config,
+        all_series_config: {
+          type: 'area',
+          extend_to: false,
+          group_by: { func: 'avg', duration: '10min' },
+          unit: 'W',
+          float_precision: 0,
+          show: { legend_value: false },
+        },
+        series: [
+          {
+            entity: this._chartEntity(c?.solar_power_entity, DEFAULT_SOLAR_POWER),
+            name: 'Solar',
+            color: COLOR_SOLAR,
+          },
+          {
+            entity: this._chartEntity(c?.storage_power_entity, DEFAULT_STORAGE_POWER),
+            name: 'Speicher',
+            color: COLOR_STORAGE,
+            transform: 'return Math.max(0, x);',
+          },
+          {
+            entity: this._chartEntity(c?.grid_power_entity, DEFAULT_GRID_POWER),
+            name: 'Netz',
+            color: COLOR_GRID,
+            transform: 'return Math.max(0, x);',
+          },
+        ],
+      };
+    }
+
+    const spanStart =
+      period === 'week' ? 'isoWeek' : period === 'month' ? 'month' : 'year';
+    const graphSpan =
+      period === 'week' ? '7d' : period === 'month' ? '31d' : '366d';
+    const statsPeriod = period === 'year' ? 'month' : 'day';
+    const floatPrecision = period === 'year' ? 0 : 1;
+
+    return {
+      type: 'custom:apexcharts-card',
+      header: { show: false },
+      graph_span: graphSpan,
+      span: { start: spanStart },
+      stacked: true,
+      apex_config,
+      all_series_config: {
+        type: 'area',
+        extend_to: false,
+        statistics: { type: 'change', period: statsPeriod, align: 'start' },
+        unit: 'kWh',
+        float_precision: floatPrecision,
+        show: { legend_value: false },
+      },
+      series: [
+        {
+          entity: this._chartEntity(c?.solar_energy_entity, DEFAULT_SOLAR_ENERGY),
+          name: 'Solar',
+          color: COLOR_SOLAR,
+        },
+        {
+          entity: this._chartEntity(c?.storage_energy_entity, DEFAULT_STORAGE_ENERGY),
+          name: 'Speicher',
+          color: COLOR_STORAGE,
+        },
+        {
+          entity: this._chartEntity(c?.grid_energy_entity, DEFAULT_GRID_ENERGY),
+          name: 'Netz',
+          color: COLOR_GRID,
+        },
+      ],
+    };
+  }
+
+  // =========================================================================
   // render
   // =========================================================================
 
@@ -366,11 +598,12 @@ export class DesHouseCard extends LitElement {
           <span class="name">${config.name}</span>
           <span class="meta">${this._renderMeta(view)}</span>
         </div>
+        ${this._renderPills(view)}
       </div>
 
       ${this._renderPowerRow(view)}
       ${this._renderMixBar(view)}
-      ${this._renderLegend(view)}
+      ${this._entityMode ? this._renderChartSection() : nothing}
 
       ${view.hasToday
         ? html`<div
@@ -395,6 +628,32 @@ export class DesHouseCard extends LitElement {
   private _renderMeta(view: HouseView): TemplateResult {
     return html`${this._unit(view.todayConsumption, formatFixed, 'kWh')} heute ·
     ${this._unit(view.autarky, formatInt, '%')} autark`;
+  }
+
+  /** Solar / Speicher / Netz as coloured pills with the current W value. */
+  private _renderPills(view: HouseView): TemplateResult {
+    const pill = (
+      cls: string,
+      label: string,
+      watts: number,
+    ): TemplateResult => {
+      const zero = !(watts > 0);
+      return html`
+        <span class="hpill ${zero ? 'zero' : ''}">
+          <span class="swatch ${zero ? 'zero' : cls}"></span>
+          <span class="hpill-label">${label}</span>
+          <span class="hpill-value">${formatInt(watts)} W</span>
+        </span>
+      `;
+    };
+
+    return html`
+      <div class="pills">
+        ${pill('solar', 'Solar', view.solarShare)}
+        ${pill('storage', 'Speicher', view.storageShare)}
+        ${pill('grid', 'Netz', view.gridShare)}
+      </div>
+    `;
   }
 
   private _renderPowerRow(view: HouseView): TemplateResult {
@@ -423,36 +682,23 @@ export class DesHouseCard extends LitElement {
     `;
   }
 
-  private _renderLegend(view: HouseView): TemplateResult {
-    const rows: Array<{
-      cls: string;
-      label: string;
-      power: number;
-      pct: number;
-    }> = [
-      { cls: 'solar', label: 'Solar', power: view.solarShare, pct: view.solarPct },
-      {
-        cls: 'storage',
-        label: 'Speicher',
-        power: view.storageShare,
-        pct: view.storagePct,
-      },
-      { cls: 'grid', label: 'Netz', power: view.gridShare, pct: view.gridPct },
-    ];
+  private _renderChartSection(): TemplateResult {
+    const available = this._availablePeriods();
+    const period = this._effectivePeriod(available);
 
     return html`
-      <div class="legend">
-        ${rows.map(
-          (row) => html`
-            <div class="legend-row">
-              <span class="swatch ${row.cls}"></span>
-              <span class="legend-label">${row.label}</span>
-              <span class="legend-power">${formatInt(row.power)} W</span>
-              <span class="legend-pct">${formatInt(row.pct)} %</span>
-            </div>
-          `,
+      <div class="chart-head">
+        ${renderSegmented(
+          available.map((p) => ({ value: p, label: PERIOD_LABEL[p] })),
+          period,
+          (value) => this._setPeriod(value),
+          'Zeitraum',
         )}
       </div>
+      <div class="chart-meta">${PERIOD_META[period]}</div>
+      ${this._apexAvailable()
+        ? html`<div class="chart" id="chart"></div>`
+        : html`<div class="hint">apexcharts-card nicht installiert</div>`}
     `;
   }
 
@@ -481,6 +727,137 @@ export class DesHouseCard extends LitElement {
       <span class="today-label">${label}</span>
       <span class="today-value ${modifier}">${formatFixed(value)} kWh</span>
     `;
+  }
+
+  // =========================================================================
+  // embedded chart lifecycle (mirrors des-chart-card)
+  // =========================================================================
+
+  private _observeChartSize(container: HTMLElement | null): void {
+    if (typeof ResizeObserver === 'undefined') return;
+    if (this._observedChart === (container ?? undefined)) return;
+
+    this._resizeObserver?.disconnect();
+    this._observedChart = container ?? undefined;
+    if (!container) return;
+
+    this._resizeObserver ??= new ResizeObserver(() => this._applyChartHeight());
+    this._resizeObserver.observe(container);
+  }
+
+  private _applyChartHeight(): void {
+    const container = this.renderRoot?.querySelector('#chart') as HTMLElement | null;
+    if (!container) return;
+
+    const height = container.clientHeight;
+    if (height <= 0) return;
+    if (
+      this._chartHeight !== undefined &&
+      Math.abs(height - this._chartHeight) <= HEIGHT_EPSILON_PX
+    ) {
+      return;
+    }
+
+    this._chartHeight = height;
+    this._resizeApex(height);
+  }
+
+  private _resizeApex(height: number): void {
+    const instance = this._apexInstance();
+    if (!instance) return;
+    try {
+      void instance.updateOptions({ chart: { height } }, false, false);
+    } catch (error) {
+      // eslint-disable-next-line no-console
+      console.warn('des-house-card: Chart-Höhe konnte nicht gesetzt werden', error);
+    }
+  }
+
+  private _apexInstance(): ApexInstance | undefined {
+    const element = this._chartEl as unknown as Record<string, unknown> | undefined;
+    if (!element) return undefined;
+
+    for (const key of APEX_INSTANCE_KEYS) {
+      const candidate = element[key] as ApexInstance | undefined;
+      if (candidate && typeof candidate.updateOptions === 'function') {
+        return candidate;
+      }
+    }
+    return undefined;
+  }
+
+  private _syncChart(): void {
+    if (!this._entityMode) {
+      this._teardownChart();
+      return;
+    }
+    const period = this._effectivePeriod(this._availablePeriods());
+    const container = this.renderRoot?.querySelector('#chart') as HTMLElement | null;
+
+    if (!this._apexAvailable() || !container) {
+      this._teardownChart();
+      return;
+    }
+
+    // Same period: keep the element, just push the latest hass through.
+    if (this._chartEl && this._chartPeriod === period) {
+      if (!this._chartEl.isConnected) container.replaceChildren(this._chartEl);
+      this._chartEl.hass = this.hass;
+      return;
+    }
+
+    void this._mountChart(container, period);
+  }
+
+  private async _mountChart(
+    container: HTMLElement,
+    period: StatsPeriod,
+  ): Promise<void> {
+    const token = ++this._mountToken;
+    this._removeChartEl();
+
+    const helpers = await this._getHelpers();
+    if (!helpers || token !== this._mountToken) return;
+
+    let element: EmbeddedCard;
+    try {
+      element = helpers.createCardElement(this._apexCardConfig(period));
+    } catch (error) {
+      // eslint-disable-next-line no-console
+      console.error('des-house-card: Chart konnte nicht erzeugt werden', error);
+      return;
+    }
+    if (token !== this._mountToken) return;
+
+    element.classList.add('embedded');
+    element.hass = this.hass;
+    container.replaceChildren(element);
+    this._chartEl = element;
+    this._chartPeriod = period;
+  }
+
+  private _getHelpers(): Promise<CardHelpers | null> {
+    if (!this._helpersPromise) {
+      const loader = (window as unknown as {
+        loadCardHelpers?: () => Promise<CardHelpers>;
+      }).loadCardHelpers;
+      this._helpersPromise =
+        typeof loader === 'function' ? loader() : Promise.resolve(null);
+    }
+    return this._helpersPromise;
+  }
+
+  private _removeChartEl(): void {
+    if (this._chartEl) {
+      this._chartEl.remove();
+      this._chartEl = undefined;
+    }
+    this._chartPeriod = undefined;
+  }
+
+  private _teardownChart(): void {
+    this._mountToken++; // cancel any in-flight mount
+    this._removeChartEl();
   }
 
   // =========================================================================
@@ -521,6 +898,7 @@ export class DesHouseCard extends LitElement {
     chevronStyles,
     overlayStyles,
     tokenStyles,
+    segmentedStyles,
     css`
     :host {
       display: block;
@@ -532,12 +910,15 @@ export class DesHouseCard extends LitElement {
       box-sizing: border-box;
       display: flex;
       flex-direction: column;
+      /* Cap the card at the grid height so the chart fits instead of pushing. */
+      overflow: hidden;
       background: var(--ha-card-background, var(--card-background-color, #fff));
       color: var(--primary-text-color);
     }
 
     .card {
-      flex: 1;
+      flex: 1 1 auto;
+      min-height: 0;
       display: flex;
       flex-direction: column;
       padding: 12px 16px;
@@ -550,6 +931,7 @@ export class DesHouseCard extends LitElement {
       align-items: flex-start;
       justify-content: space-between;
       gap: 8px;
+      flex: 0 0 auto;
     }
 
     .head-left {
@@ -580,6 +962,41 @@ export class DesHouseCard extends LitElement {
       opacity: 0.7;
     }
 
+    /* --- source pills (Solar / Speicher / Netz) --- */
+
+    .pills {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+      gap: 6px;
+      flex-shrink: 0;
+    }
+
+    .hpill {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 2px 8px;
+      border-radius: 10px;
+      background: rgba(127, 127, 127, 0.12);
+      font-size: 11px;
+      line-height: 1;
+      white-space: nowrap;
+    }
+
+    .hpill-label {
+      color: var(--secondary-text-color);
+    }
+
+    .hpill-value {
+      color: var(--primary-text-color);
+      font-variant-numeric: tabular-nums;
+    }
+
+    .hpill.zero .hpill-value {
+      color: var(--secondary-text-color);
+    }
+
     /* --- power row --- */
 
     .power-row {
@@ -587,6 +1004,7 @@ export class DesHouseCard extends LitElement {
       align-items: baseline;
       gap: 12px;
       margin-top: 10px;
+      flex: 0 0 auto;
     }
 
     .load {
@@ -618,6 +1036,7 @@ export class DesHouseCard extends LitElement {
       border-radius: 4px;
       overflow: hidden;
       background: var(--divider-color, rgba(127, 127, 127, 0.22));
+      flex: 0 0 auto;
     }
 
     .mix-seg {
@@ -633,54 +1052,70 @@ export class DesHouseCard extends LitElement {
     /* Blue = the storage card's "charging" colour: heating/charging fills a store. */
     .mix-seg.storage,
     .swatch.storage {
-      background: var(--info-color, #2196f3);
+      background: #378add;
     }
 
     .mix-seg.grid,
     .swatch.grid {
-      background: var(--error-color, #d32f2f);
-    }
-
-    /* --- legend --- */
-
-    .legend {
-      margin-top: 10px;
-      display: flex;
-      flex-direction: column;
-      gap: 5px;
-    }
-
-    .legend-row {
-      display: grid;
-      grid-template-columns: 8px 1fr auto auto;
-      align-items: center;
-      gap: 8px;
-      font-size: 12px;
+      background: #e24b4a;
     }
 
     .swatch {
       width: 8px;
       height: 8px;
       border-radius: 2px;
+      flex-shrink: 0;
     }
 
-    .legend-label {
+    .swatch.zero {
+      background: var(--secondary-text-color);
+      opacity: 0.5;
+    }
+
+    /* --- chart section --- */
+
+    .chart-head {
+      display: flex;
+      justify-content: flex-end;
+      margin-top: 12px;
+      flex: 0 0 auto;
+    }
+
+    .chart-meta {
+      margin-top: 4px;
+      font-size: 12px;
       color: var(--secondary-text-color);
-    }
-
-    .legend-power {
-      text-align: right;
-      color: var(--primary-text-color);
-      font-variant-numeric: tabular-nums;
       white-space: nowrap;
+      flex: 0 0 auto;
     }
 
-    .legend-pct {
-      text-align: right;
-      min-width: 38px;
+    /* Takes whatever height is left; the height is a start size flex overrides.
+       overflow:hidden keeps a chart that briefly overshoots from scrolling. */
+    .chart {
+      flex: 1 1 auto;
+      min-height: 0;
+      height: 180px;
+      position: relative;
+      margin-top: 6px;
+      overflow: hidden;
+    }
+
+    /* Strip the embedded apexcharts-card frame so it sits flush inside ours. */
+    .chart .embedded {
+      position: absolute;
+      inset: 0;
+      display: block;
+      margin: 0;
+      --ha-card-background: transparent;
+      --ha-card-border-width: 0;
+      --ha-card-box-shadow: none;
+    }
+
+    .hint {
+      margin-top: 10px;
+      font-size: 12px;
       color: var(--secondary-text-color);
-      font-variant-numeric: tabular-nums;
-      white-space: nowrap;
+      opacity: 0.85;
     }
 
     /* --- expanded "Heute" block --- */
