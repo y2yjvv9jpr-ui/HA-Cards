@@ -1,0 +1,366 @@
+type: sections
+max_columns: 3
+title: Solar Dashboard
+path: solar_dashboard
+sections:
+  - type: grid
+    column_span: 3
+    cards:
+      - type: custom:des-house-card
+        grid_options:
+          columns: 12
+          rows: 4
+        name: Haus
+        load_power_entity: sensor.pv_helper_haus_leistung
+        grid_power_entity: sensor.inverter_external_power
+        pv_power_entity: sensor.inverter_pv_power
+        invert_grid: false
+        grid_min_w: 40
+        storage_power_entities:
+          - sensor.pv_helper_speicher_leistung
+        storage_positive: discharge
+        today_consumption_entity: sensor.pv_helper_energie_verbrauch_tag
+        today_import_entity: sensor.inverter_today_energy_import
+        today_export_entity: sensor.inverter_today_energy_export
+      - type: custom:des-inverter-card
+        grid_options:
+          columns: 12
+          rows: 4
+        name: Wechselrichter
+        model: Deye SUN-12K
+        kwp_total: 15.8
+        kwp_pv1: 7.9
+        kwp_pv2: 7.9
+        invert_grid: false
+        show_dc_temp: true
+        time_entity: datetime.inverter_date_time
+        pv_power_entity: sensor.inverter_pv_power
+        pv1_power_entity: sensor.inverter_pv1_power
+        pv2_power_entity: sensor.inverter_pv2_power
+        pv1_voltage_entity: sensor.inverter_pv1_voltage
+        pv1_current_entity: sensor.inverter_pv1_current
+        pv2_voltage_entity: sensor.inverter_pv2_voltage
+        pv2_current_entity: sensor.inverter_pv2_current
+        inverter_temp_entity: sensor.inverter_temperature
+        dc_temp_entity: sensor.inverter_dc_temperature
+        today_production_entity: sensor.inverter_today_production
+        total_production_entity: sensor.inverter_total_production
+        device_state_entity: sensor.inverter_device_state
+        alarm_entity: sensor.inverter_device_alarm
+        fault_entity: sensor.inverter_device_fault
+        grid_frequency_entity: sensor.inverter_grid_frequency
+        grid_power_entities:
+          - sensor.inverter_external_ct1_power
+          - sensor.inverter_external_ct2_power
+          - sensor.inverter_external_ct3_power
+        inverter_power_entities:
+          - sensor.inverter_output_l1_power
+          - sensor.inverter_output_l2_power
+          - sensor.inverter_output_l3_power
+        grid_voltage_entities:
+          - sensor.inverter_grid_l1_voltage
+          - sensor.inverter_grid_l2_voltage
+          - sensor.inverter_grid_l3_voltage
+      - type: custom:des-stats-card
+        grid_options:
+          columns: 12
+          rows: 4
+        name: Statistik
+        default_period: day
+        periods:
+          day:
+            consumption: sensor.pv_helper_energie_verbrauch_tag
+            production: sensor.inverter_today_production
+            import: sensor.inverter_today_energy_import
+            export: sensor.inverter_today_energy_export
+            charge: sensor.pv_helper_energie_laden_tag
+            discharge: sensor.pv_helper_energie_entladen_tag
+          week:
+            consumption: sensor.pv_helper_energie_verbrauch_woche
+            production: sensor.pv_helper_energie_produktion_woche
+            import: sensor.pv_helper_energie_import_woche
+            export: sensor.pv_helper_energie_export_woche
+            charge: sensor.pv_helper_energie_laden_woche
+            discharge: sensor.pv_helper_energie_entladen_woche
+          month:
+            consumption: sensor.pv_helper_energie_verbrauch_monat
+            production: sensor.pv_helper_energie_produktion_monat
+            import: sensor.pv_helper_energie_import_monat
+            export: sensor.pv_helper_energie_export_monat
+            charge: sensor.pv_helper_energie_laden_monat
+            discharge: sensor.pv_helper_energie_entladen_monat
+          year:
+            consumption: sensor.pv_helper_energie_verbrauch_jahr
+            production: sensor.pv_helper_energie_produktion_jahr
+            import: sensor.pv_helper_energie_import_jahr
+            export: sensor.pv_helper_energie_export_jahr
+            charge: sensor.pv_helper_energie_laden_jahr
+            discharge: sensor.pv_helper_energie_entladen_jahr
+      - type: custom:des-storage-card
+        grid_options:
+          columns: 12
+          rows: 2
+        variant: battery
+        name: Hausakku 1
+        soc: sensor.inverter_battery_1
+        temp_c: sensor.inverter_battery_1_temperature
+        voltage_entity: sensor.inverter_battery_1_voltage
+        current_entity: sensor.inverter_battery_1_current
+        capacity_kwh: 6.55
+        threshold_pct: number.inverter_battery_low_soc
+        charge_target_pct: 100
+        backup: none
+        power_w: sensor.inverter_battery_power
+        invert_power: true
+        power_share: 0.5
+        charge_mode_control:
+          entity: input_select.pv_helper_hausakku_lademodus
+          charge_state: Laden
+          auto_state: Auto
+      - type: custom:des-storage-card
+        grid_options:
+          columns: 12
+          rows: 2
+        variant: battery
+        name: Hausakku 2
+        soc: sensor.inverter_battery_2
+        temp_c: sensor.inverter_battery_2_temperature
+        voltage_entity: sensor.inverter_battery_2_voltage
+        current_entity: sensor.inverter_battery_2_current
+        capacity_kwh: 6.55
+        threshold_pct: number.inverter_battery_low_soc
+        charge_target_pct: 100
+        backup: none
+        controls: false
+        power_w: sensor.inverter_battery_power
+        invert_power: true
+        power_share: 0.5
+      - type: custom:des-storage-card
+        grid_options:
+          columns: 12
+          rows: 2
+        variant: battery
+        name: Zendure AC+
+        soc: sensor.zendure_total_state_of_charge
+        power_w: sensor.zendure_power
+        temp_c: sensor.zendure_battery_1_temperature
+        capacity_kwh: sensor.zendure_total_capacity
+        threshold_pct: input_number.zendure_setting_minimum_allowed_state_of_charge
+        charge_target_pct: input_number.zendure_setting_maximum_allowed_state_of_charge
+        time_remaining_charging: sensor.zendure_indication_remaining_charge_time
+        time_remaining_discharging: sensor.zendure_indication_remaining_discharge_time
+        charge_mode_control:
+          entity: input_select.pv_helper_zendure_lademodus
+          charge_state: Laden
+          auto_state: Auto
+        backup:
+          entity: sensor.zendure_offgrid_mode
+          active_states:
+            - 'On'
+      - type: custom:des-storage-card
+        grid_options:
+          columns: 12
+          rows: 5
+        variant: thermal_group
+        name: Wärmespeicher Aquarien
+        items:
+          - name: 1200 L
+            energy_kwh: >-
+              sensor.arbeitszimmer_aquariumsolarheizer1_aquarium_solarheizer_1_heute
+            power_w: sensor.aquariumsolarheizer1_switch_0_power
+            switch_entity: switch.aquariumsolarheizer1_switch_0
+            mode_entity: input_number.aq_zusatzheizer_mode_1000l
+          - name: 700 L
+            energy_kwh: >-
+              sensor.arbeitszimmer_aquariumsolarheizer2_aquarium_solarheizer_2_heute
+            power_w: sensor.aquariumsolarheizer2_switch_0_power
+            switch_entity: switch.aquariumsolarheizer2_switch_0
+            mode_entity: input_number.aq_zusatzheizer_mode_700l
+          - name: 600 L
+            energy_kwh: >-
+              sensor.arbeitszimmer_aquarienheizer600l_aquarium_solarheizer_600l_heute
+            power_w: sensor.aquarienheizer600l_leistung
+            switch_entity: switch.aquarienheizer600l
+            mode_entity: input_number.aq_zusatzheizer_mode_600l
+      - type: custom:des-chart-card
+        grid_options:
+          columns: 24
+          rows: 5
+        name: Verbrauch nach Quelle
+        default_period: day
+        periods:
+          day:
+            meta: kWh je Stunde
+            chart:
+              graph_span: 24h
+              span:
+                start: day
+              stacked: true
+              apex_config:
+                legend:
+                  position: bottom
+                grid:
+                  borderColor: var(--divider-color)
+                  strokeDashArray: 3
+                xaxis:
+                  tooltip:
+                    enabled: false
+                  labels:
+                    datetimeFormatter:
+                      hour: HH
+                plotOptions:
+                  bar:
+                    columnWidth: 70%
+              all_series_config:
+                type: column
+                statistics:
+                  type: change
+                  period: hour
+                float_precision: 2
+                unit: kWh
+              series:
+                - entity: sensor.pv_helper_energie_solar_direkt
+                  name: Solar
+                  color: '#639922'
+                - entity: sensor.pv_helper_energie_entladen_gesamt
+                  name: Speicher
+                  color: '#378ADD'
+                - entity: sensor.inverter_total_energy_import
+                  name: Netz
+                  color: '#E24B4A'
+                - entity: sensor.inverter_total_energy_export
+                  name: Einspeisung
+                  color: '#8FBF5A'
+                  invert: true
+          week:
+            meta: kWh je Tag
+            chart:
+              graph_span: 7d
+              span:
+                start: isoWeek
+              stacked: true
+              apex_config:
+                legend:
+                  position: bottom
+                grid:
+                  borderColor: var(--divider-color)
+                  strokeDashArray: 3
+                xaxis:
+                  tooltip:
+                    enabled: false
+                  labels:
+                    datetimeFormatter:
+                      day: dd.MM
+                plotOptions:
+                  bar:
+                    columnWidth: 60%
+              all_series_config:
+                type: column
+                statistics:
+                  type: change
+                  period: day
+                float_precision: 1
+                unit: kWh
+              series:
+                - entity: sensor.pv_helper_energie_solar_direkt
+                  name: Solar
+                  color: '#639922'
+                - entity: sensor.pv_helper_energie_entladen_gesamt
+                  name: Speicher
+                  color: '#378ADD'
+                - entity: sensor.inverter_total_energy_import
+                  name: Netz
+                  color: '#E24B4A'
+                - entity: sensor.inverter_total_energy_export
+                  name: Einspeisung
+                  color: '#8FBF5A'
+                  invert: true
+          month:
+            meta: kWh je Tag
+            chart:
+              graph_span: 31d
+              span:
+                start: month
+              stacked: true
+              apex_config:
+                legend:
+                  position: bottom
+                grid:
+                  borderColor: var(--divider-color)
+                  strokeDashArray: 3
+                xaxis:
+                  tooltip:
+                    enabled: false
+                  labels:
+                    datetimeFormatter:
+                      day: dd.
+                plotOptions:
+                  bar:
+                    columnWidth: 70%
+              all_series_config:
+                type: column
+                statistics:
+                  type: change
+                  period: day
+                float_precision: 1
+                unit: kWh
+              series:
+                - entity: sensor.pv_helper_energie_solar_direkt
+                  name: Solar
+                  color: '#639922'
+                - entity: sensor.pv_helper_energie_entladen_gesamt
+                  name: Speicher
+                  color: '#378ADD'
+                - entity: sensor.inverter_total_energy_import
+                  name: Netz
+                  color: '#E24B4A'
+                - entity: sensor.inverter_total_energy_export
+                  name: Einspeisung
+                  color: '#8FBF5A'
+                  invert: true
+          year:
+            meta: kWh je Monat
+            chart:
+              graph_span: 366d
+              span:
+                start: year
+              stacked: true
+              apex_config:
+                legend:
+                  position: bottom
+                grid:
+                  borderColor: var(--divider-color)
+                  strokeDashArray: 3
+                xaxis:
+                  tooltip:
+                    enabled: false
+                  labels:
+                    datetimeFormatter:
+                      month: MMM
+                plotOptions:
+                  bar:
+                    columnWidth: 60%
+              all_series_config:
+                type: column
+                statistics:
+                  type: change
+                  period: month
+                float_precision: 0
+                unit: kWh
+              series:
+                - entity: sensor.pv_helper_energie_solar_direkt
+                  name: Solar
+                  color: '#639922'
+                - entity: sensor.pv_helper_energie_entladen_gesamt
+                  name: Speicher
+                  color: '#378ADD'
+                - entity: sensor.inverter_total_energy_import
+                  name: Netz
+                  color: '#E24B4A'
+                - entity: sensor.inverter_total_energy_export
+                  name: Einspeisung
+                  color: '#8FBF5A'
+                  invert: true
+cards: []
+dense_section_placement: false
+icon: mdi:solar-power-variant
