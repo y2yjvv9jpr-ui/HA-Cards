@@ -667,9 +667,8 @@ jede Darstellung geprüft werden kann:
   sodass Einspeisung positiv erscheint. Gezeigt wird **nur Einspeisung**: bei
   Bezug oder unter 40 W steht der Balken auf 0 und der Wert auf „0 W". Die
   Balkenlänge ist relativ zu `kwp_total`. Die Farbe kommt aus dem Token
-  `--des-export-color` (Standard `#F29B9A`, wie die „Einspeisung"-Reihe im
-  Dashboard-Chart). Keine eigene Konfiguration — die Zeile erscheint, sobald
-  `grid_power_entities` gesetzt ist.
+  `--des-export-color` (siehe unten). Keine eigene Konfiguration — die Zeile
+  erscheint, sobald `grid_power_entities` gesetzt ist.
 
 **Aufbau — aufgeklappt** (unter dem Chevron, durch eine Haarlinie getrennt)
 
@@ -987,7 +986,7 @@ CSS-Custom-Property der Karte überschreibbare Töne:
 | Verbrauch  | neutrales Grau (`--secondary-text-color`)                   |
 | Produktion | Grün (`--success-color`) — wie „positive Leistung“ sonst    |
 | Import     | Rot (`--error-color`)                                       |
-| Export     | Olivgrün (`--stats-export-color`, Fallback `#639922`)       |
+| Export     | Olivgrün (`--des-export-color`, Fallback `#639922`)         |
 | Laden      | Blau (`--info-color`) — die Ladefarbe der Speicherkarte     |
 | Entladen   | helleres Blau (`--stats-discharge-color`, Fallback `#7fb8e8`) |
 
@@ -1226,6 +1225,22 @@ Offen für die Wechselrichterkarte:
   bedienbare Entitäten gibt (z. B. Leistungsbegrenzung, Ein/Aus), käme dort — wie
   bei der Speicherkarte — ein gebundenes Bedienelement mit Service-Call dazu.
 
+## Design-Tokens
+
+Gemeinsame Farbwerte liegen in `src/tokens.ts` und werden als CSS-Custom-
+Properties auf `:host` gesetzt. Da Custom Properties **nicht** über Shadow-DOM-
+Grenzen hinweg vererbt werden, bindet jede Karte, die einen Token braucht, den
+Block über ihr `styles`-Array ein — der Wert steht so an genau einer Stelle.
+
+| Token                 | Wert      | Verwendung                                                 |
+| --------------------- | --------- | ---------------------------------------------------------- |
+| `--des-export-color`  | `#639922` | Export/Einspeisung: Zeile „Export" der Statistikkarte und Balken „Export" der Wechselrichterkarte. |
+
+Die Chart-Karte im Dashboard (`yaml/ui/Solar Dashboard.yaml`, „Verbrauch nach
+Quelle") kann keine CSS-Variablen lesen; ihre Reihe „Einspeisung" trägt denselben
+Hex-Wert `#639922` als Literal. Wird der Token geändert, ist der Chart-Wert von
+Hand nachzuziehen.
+
 ## Projektstruktur
 
 ```
@@ -1242,6 +1257,7 @@ src/
   segmented.ts         Segmentierter Umschalter (Storage-, Statistik-, Chartkarte)
   chevron.ts           Gemeinsamer Chevron-Stil (Storage-, Wechselrichter-, Hauskarte)
   overlay.ts           Dropdown-Panel für den Detailblock (Storage-, Wechselrichter-, Hauskarte)
+  tokens.ts            Gemeinsame Design-Tokens (z. B. --des-export-color)
   format.ts            Zahlenformatierung (de-DE)
 vite.config.ts         Lib-Build → dist/daniels-energy-cards.js
 hacs.json              HACS-Manifest (Typ Dashboard)

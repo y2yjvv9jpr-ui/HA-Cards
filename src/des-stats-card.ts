@@ -2,6 +2,7 @@ import { LitElement, html, css, nothing, type TemplateResult } from 'lit';
 import { formatFixed, formatInt, clamp } from './format';
 import { entityUnit, isEntityId, resolveNumber } from './resolve';
 import { renderSegmented, segmentedStyles } from './segmented';
+import { tokenStyles } from './tokens';
 import type {
   DesStatsCardConfig,
   HomeAssistant,
@@ -296,14 +297,14 @@ export class DesStatsCard extends LitElement {
 
   static override styles = [
     segmentedStyles,
+    tokenStyles,
     css`
       :host {
         display: block;
         height: 100%;
 
-        /* Two hues the theme does not provide: an olive that stays clear of the
-           production green, and a lighter blue for discharge against charge. */
-        --stats-export-color: #639922;
+        /* A lighter blue for discharge against charge; the theme has none.
+           Export uses the shared --des-export-color token (see tokens.ts). */
         --stats-discharge-color: #7fb8e8;
       }
 
@@ -408,7 +409,7 @@ export class DesStatsCard extends LitElement {
       }
 
       .bar-fill.m-export {
-        background: var(--stats-export-color, #639922);
+        background: var(--des-export-color, #639922);
       }
 
       .bar-fill.m-charge {

@@ -4,6 +4,21 @@ Alle nennenswerten Änderungen an diesem Projekt werden hier festgehalten.
 Format grob nach [Keep a Changelog](https://keepachangelog.com/de/1.1.0/),
 Versionierung nach [SemVer](https://semver.org/lang/de/).
 
+## [0.6.1]
+
+### Geändert
+
+- **Export-Farbe vereinheitlicht:** Neuer gemeinsamer Design-Token
+  `--des-export-color` in `src/tokens.ts`, Standardwert `#639922` (das gedämpfte
+  Olivgrün der Export-Zeile der Statistikkarte). Der bisherige Standard `#F29B9A`
+  der Wechselrichterkarte entfällt.
+- **des-stats-card:** nutzt für die Export-Zeile jetzt `--des-export-color` statt
+  des lokalen `--stats-export-color` (Wert unverändert `#639922`).
+- **des-inverter-card:** der Export-Balken bezieht die Farbe aus dem gemeinsamen
+  Token und wird damit ebenfalls olivgrün statt hellrot.
+- **Dashboard-Chart „Verbrauch nach Quelle":** die Reihe „Einspeisung" trägt in
+  allen vier Zeiträumen jetzt `#639922` (Token-Wert) statt `#F29B9A`.
+
 ## [0.6.0]
 
 ### Hinzugefügt
