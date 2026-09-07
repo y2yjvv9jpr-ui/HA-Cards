@@ -148,6 +148,7 @@ sections:
         capacity_kwh: sensor.zendure_total_capacity
         threshold_pct: input_number.zendure_setting_minimum_allowed_state_of_charge
         charge_target_pct: input_number.zendure_setting_maximum_allowed_state_of_charge
+        discharge_limit_entity: input_number.pv_helper_zendure_entladeleistung_maximum
         time_remaining_charging: sensor.zendure_indication_remaining_charge_time
         time_remaining_discharging: sensor.zendure_indication_remaining_discharge_time
         charge_mode_control:
