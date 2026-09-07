@@ -1,4 +1,4 @@
-# todo.md — offene Punkte (Stand 06.09.2026, 19:50)
+# todo.md — offene Punkte (Stand 07.09.2026, 09:00)
 
 Reihenfolge = Vorschlag. Jeder Punkt wird erst abgestimmt, dann freigegeben,
 dann umgesetzt (siehe claude.md).
@@ -82,6 +82,12 @@ dann umgesetzt (siehe claude.md).
       (`startbereit` in `pv_helper_laden.yaml`, docs/logik B6). → in HA einspielen
       (Automationen neu laden).
 - [x] 06.09. Zendure Minimum-SoC auf 15 % gesetzt (Daniel, nach Recherche).
+- [x] 07.09. des-storage-card (v0.8.0): Slider „max. Entladen" (W) im
+      Aufklappbereich, wenn `discharge_limit_entity` gesetzt; schreibt
+      `input_number.pv_helper_zendure_entladeleistung_maximum`. Helfer min
+      100 → 400 (Gerätegrenze), Zendure-Karte im Dashboard ergänzt. → Karten per
+      HACS auf 0.8.0, Package neu einspielen + **HA-Neustart** (Helfer-Range
+      ändert sich), Dashboard-Zeile ergänzen.
 - [ ] Leistungen unter 400 W: Modus **Manual** mit
       `input_number.zendure_manual_power` prüfen (Laden 100–400 W, Entladen 100–400 W).
 - [ ] Gielz-Automation `zendure_zensdk_gielz_global` (10-min-Takt) daraufhin
