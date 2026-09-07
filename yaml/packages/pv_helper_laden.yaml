@@ -79,7 +79,8 @@ input_number:
     icon: mdi:format-vertical-align-bottom
   pv_helper_zendure_entladeleistung_maximum:
     name: PV Zendure Entladeleistung Maximum
-    min: 100
+    # Gerätegrenze: der Zendure entlädt nicht unter 400 W, daher min 400.
+    min: 400
     max: 2400
     step: 50
     initial: 2400
