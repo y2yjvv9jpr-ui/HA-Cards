@@ -128,6 +128,12 @@ export interface DesStorageCardConfig {
   threshold_pct?: NumberValue;
   /** Charge limit (max. SoC), valid in every mode; start value of the slider. */
   charge_target_pct?: NumberValue;
+  /**
+   * Maximum discharge power in W. When set, a third slider "max. Entladen" is
+   * shown; its min/max/step come from the entity's own attributes and it writes
+   * back via `input_number.set_value`, always operable regardless of the mode.
+   */
+  discharge_limit_entity?: string;
   /** Start value of the charge-mode control (display only). */
   charge_mode?: TextValue;
   /** Binds the Laden/Auto control to an entity so it writes back. */

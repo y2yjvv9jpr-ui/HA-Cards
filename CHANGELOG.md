@@ -4,6 +4,18 @@ Alle nennenswerten Änderungen an diesem Projekt werden hier festgehalten.
 Format grob nach [Keep a Changelog](https://keepachangelog.com/de/1.1.0/),
 Versionierung nach [SemVer](https://semver.org/lang/de/).
 
+## [0.8.0]
+
+### Hinzugefügt
+
+- **des-storage-card (Variante battery):** Neue optionale
+  `discharge_limit_entity`. Ist sie gesetzt, erscheint im Aufklappbereich unter
+  „min. SoC" eine dritte Slider-Zeile **„max. Entladen"** mit dem Wert in W
+  (z. B. „2.400 W"). Min/Max/Schritt kommen aus den Attributen der Entität; der
+  Slider schreibt beim Loslassen per `input_number.set_value` und ist **immer
+  bedienbar** (unabhängig von Laden/Auto). Gleiche Optik und Abstände wie die
+  vorhandenen Slider; der Aufklappbereich wächst um eine Zeile.
+
 ## [0.7.7]
 
 ### Geändert

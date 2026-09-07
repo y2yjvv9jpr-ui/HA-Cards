@@ -49,6 +49,11 @@ interface SliderRange {
 
 const THRESHOLD_RANGE: SliderRange = { min: 10, max: 80, step: 5 };
 const TARGET_RANGE: SliderRange = { min: 50, max: 100, step: 5 };
+/** Fallback for the discharge-limit slider (W); the entity's own attrs win. */
+const DISCHARGE_RANGE: SliderRange = { min: 100, max: 2400, step: 50 };
+
+/** Which slider a debounced write / optimistic hold belongs to. */
+type SliderKey = 'threshold' | 'target' | 'discharge';
 
 const MAX_ITEMS = 5;
 
@@ -207,6 +212,7 @@ export class DesStorageCard extends LitElement {
     _config: { state: true },
     _thresholdLocal: { state: true },
     _targetLocal: { state: true },
+    _dischargeLocal: { state: true },
     _chargeModeLocal: { state: true },
     _expanded: { state: true },
     _itemModesLocal: { state: true },
@@ -220,11 +226,12 @@ export class DesStorageCard extends LitElement {
   // touched the control in this session. Phase 3 turns these into writes.
   declare _thresholdLocal: number | null;
   declare _targetLocal: number | null;
+  declare _dischargeLocal: number | null;
   declare _chargeModeLocal: ChargeMode | null;
   declare _itemModesLocal: Array<ItemMode | null>;
 
   /** Pending debounced slider writes, keyed by which slider they belong to. */
-  private _writeTimers = new Map<'threshold' | 'target', number>();
+  private _writeTimers = new Map<SliderKey, number>();
 
   /** Deadlines after which an unconfirmed optimistic value is dropped. */
   private _settleTimers = new Map<string, number>();
@@ -246,6 +253,7 @@ export class DesStorageCard extends LitElement {
     this._expanded = false;
     this._thresholdLocal = null;
     this._targetLocal = null;
+    this._dischargeLocal = null;
     this._chargeModeLocal = null;
     this._itemModesLocal = [];
   }
@@ -297,6 +305,7 @@ export class DesStorageCard extends LitElement {
     this._expanded = false;
     this._thresholdLocal = null;
     this._targetLocal = null;
+    this._dischargeLocal = null;
     this._chargeModeLocal = null;
   }
 
@@ -368,6 +377,18 @@ export class DesStorageCard extends LitElement {
       ) {
         this._targetLocal = null;
         this._clearSettle('target');
+      }
+
+      if (
+        this._dischargeLocal !== null &&
+        this._entityMatches(
+          config.discharge_limit_entity,
+          this._dischargeLocal,
+          this._rangeFor(config.discharge_limit_entity, DISCHARGE_RANGE),
+        )
+      ) {
+        this._dischargeLocal = null;
+        this._clearSettle('discharge');
       }
 
       const control = config.charge_mode_control;
@@ -709,6 +730,17 @@ export class DesStorageCard extends LitElement {
       : null;
   }
 
+  private _dischargeLimit(config: DesStorageCardConfig): number | null {
+    if (this._dischargeLocal !== null) return this._dischargeLocal;
+    const resolved = resolveNumber(config.discharge_limit_entity, this.hass);
+    return resolved.kind === 'value'
+      ? snap(
+          resolved.value,
+          this._rangeFor(config.discharge_limit_entity, DISCHARGE_RANGE),
+        )
+      : null;
+  }
+
   /**
    * `null` means "cannot say" - the control is bound to an entity the card
    * cannot read right now, so no segment is highlighted. Showing a confident
@@ -867,6 +899,12 @@ export class DesStorageCard extends LitElement {
     const targetRange = this._rangeFor(config.charge_target_pct, TARGET_RANGE);
     const thresholdRange = this._rangeFor(config.threshold_pct, THRESHOLD_RANGE);
 
+    const showDischarge =
+      typeof config.discharge_limit_entity === 'string' &&
+      config.discharge_limit_entity.trim().length > 0;
+    const discharge = showDischarge ? this._dischargeLimit(config) : null;
+    const dischargeRange = this._rangeFor(config.discharge_limit_entity, DISCHARGE_RANGE);
+
     return html`
       <div class="controls">
         <div class="ctl-rows">
@@ -905,6 +943,28 @@ export class DesStorageCard extends LitElement {
               ? this._dash()
               : `${formatForStep(threshold, thresholdRange.step)} %`}
           </span>
+
+          ${showDischarge
+            ? html`
+                <span class="ctl-label">max. Entladen</span>
+                <input
+                  class="slider"
+                  type="range"
+                  min=${dischargeRange.min}
+                  max=${dischargeRange.max}
+                  step=${dischargeRange.step}
+                  .value=${String(discharge ?? dischargeRange.min)}
+                  aria-label="Maximale Entladeleistung"
+                  @input=${this._onDischargeInput}
+                  @change=${this._onDischargeChange}
+                />
+                <span class="ctl-value">
+                  ${discharge === null
+                    ? this._dash()
+                    : `${formatForStep(discharge, dischargeRange.step)} W`}
+                </span>
+              `
+            : nothing}
         </div>
         ${renderSegmented(
           CHARGE_MODES,
@@ -1218,6 +1278,10 @@ export class DesStorageCard extends LitElement {
     this._thresholdLocal = Number((ev.target as HTMLInputElement).value);
   }
 
+  private _onDischargeInput(ev: Event): void {
+    this._dischargeLocal = Number((ev.target as HTMLInputElement).value);
+  }
+
   private _onTargetChange(ev: Event): void {
     const value = Number((ev.target as HTMLInputElement).value);
     this._targetLocal = value;
@@ -1230,8 +1294,21 @@ export class DesStorageCard extends LitElement {
     this._scheduleNumberWrite('threshold', this._config?.threshold_pct, value);
   }
 
+  private _onDischargeChange(ev: Event): void {
+    const value = Number((ev.target as HTMLInputElement).value);
+    this._dischargeLocal = value;
+    this._scheduleNumberWrite('discharge', this._config?.discharge_limit_entity, value);
+  }
+
+  /** Drops the optimistic local value of one slider. */
+  private _clearSliderLocal(which: SliderKey): void {
+    if (which === 'threshold') this._thresholdLocal = null;
+    else if (which === 'target') this._targetLocal = null;
+    else this._dischargeLocal = null;
+  }
+
   private _scheduleNumberWrite(
-    which: 'threshold' | 'target',
+    which: SliderKey,
     slot: NumberValue | undefined,
     value: number,
   ): void {
@@ -1246,14 +1323,10 @@ export class DesStorageCard extends LitElement {
       which,
       window.setTimeout(() => {
         this._writeTimers.delete(which);
-        this._holdOptimistic(which, () => {
-          if (which === 'threshold') this._thresholdLocal = null;
-          else this._targetLocal = null;
-        });
+        this._holdOptimistic(which, () => this._clearSliderLocal(which));
         void this._write(writeNumber(this.hass, entityId, value), () => {
           this._clearSettle(which);
-          if (which === 'threshold') this._thresholdLocal = null;
-          else this._targetLocal = null;
+          this._clearSliderLocal(which);
         });
       }, WRITE_DEBOUNCE_MS),
     );

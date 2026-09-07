@@ -141,6 +141,7 @@ eine Entity-ID.
 | `temp_c`                     | number \| Entity \| `null`   | Akkutemperatur als farbige Pille. Bei `null` entfällt sie.                         |
 | `threshold_pct`              | number \| Entity             | Minimaler Ladestand; Slider 10–80/5 oder aus der Entität, siehe unten.             |
 | `charge_target_pct`          | number \| Entity             | Ladegrenze (max. SoC), in allen Modi gültig; Slider 50–100/5 oder aus der Entität.  |
+| `discharge_limit_entity`     | Entity (`input_number`)      | Max. Entladeleistung in W. Gesetzt → dritte Slider-Zeile „max. Entladen" (Min/Max/Schritt aus den Entitäts-Attributen), immer bedienbar. Ohne Angabe entfällt die Zeile. |
 | `charge_mode`                | `auto` \| `charge` \| Entity | Anzeige des Lademodus, wenn kein `charge_mode_control` gesetzt ist.                |
 | `charge_mode_control`        | Objekt                       | Bindet **Laden \| Auto** an eine Entität, siehe unten. Ohne dieses Feld bleibt der Umschalter lokal. |
 | `time_remaining`             | string \| Entity             | Restzeit. Hat Vorrang vor den beiden folgenden.                                   |
@@ -268,15 +269,20 @@ statt als selbstbewusstes „Laden“ durchzugehen.
   Basislinie. Rechts die Leistung farbig, darunter gedämpft
   `time_remaining · time_at` (entfällt, wenn beide `null` sind), ganz rechts das
   Chevron.
-- **Bedienbereich** (aufgeklappt) — links untereinander zwei beschriftete
-  Slider-Zeilen auf einem gemeinsamen Raster, damit Labels, Regler und Werte
-  fluchten; rechts daneben, über beide Zeilen zentriert, der Umschalter
-  **Laden | Auto**:
+- **Bedienbereich** (aufgeklappt) — links untereinander zwei (mit
+  `discharge_limit_entity` drei) beschriftete Slider-Zeilen auf einem gemeinsamen
+  Raster, damit Labels, Regler und Werte fluchten; rechts daneben, über die
+  Zeilen zentriert, der Umschalter **Laden | Auto**:
 
-  | Zeile | Label        | Slider              | Bereich          |
-  | ----- | ------------ | ------------------- | ---------------- |
-  | 1     | „Ladegrenze“ | `charge_target_pct` | 50–100, Schritt 5 |
-  | 2     | „min. SoC“   | `threshold_pct`     | 10–80, Schritt 5  |
+  | Zeile | Label          | Slider / Entität           | Bereich / Einheit         |
+  | ----- | -------------- | -------------------------- | ------------------------- |
+  | 1     | „Ladegrenze“   | `charge_target_pct`        | 50–100 %, Schritt 5       |
+  | 2     | „min. SoC“     | `threshold_pct`            | 10–80 %, Schritt 5        |
+  | 3     | „max. Entladen“ | `discharge_limit_entity`  | W, Bereich aus der Entität |
+
+  Zeile 3 erscheint nur, wenn `discharge_limit_entity` gesetzt ist; sie ist
+  **immer bedienbar** (unabhängig von Laden/Auto) und schreibt beim Loslassen per
+  `input_number.set_value`. Der Wert steht in W (z. B. „2.400 W").
 
   **Slider-Grenzen** — hängt der Slider an einer `number`- oder
   `input_number`-Entität, übernimmt er deren `min`, `max` und `step` aus den
