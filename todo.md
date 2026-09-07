@@ -1,4 +1,4 @@
-# todo.md — offene Punkte (Stand 07.09.2026, 09:00)
+# todo.md — offene Punkte (Stand 07.09.2026, 09:30)
 
 Reihenfolge = Vorschlag. Jeder Punkt wird erst abgestimmt, dann freigegeben,
 dann umgesetzt (siehe claude.md).
@@ -175,8 +175,12 @@ dann umgesetzt (siehe claude.md).
       Summen-Helfer (`sensor.pv_helper_speicher_gespeichert_kwh` =
       Hausakkus+Zendure, hinten Gesamt, vorne Hausakkus). Entscheidung offen.
       Hinweis: ApexCharts wird kaum noch weiterentwickelt.
-- [ ] des-storage-card: geschätzte Restzeit der Hausakkus im Betrieb prüfen
-      (Glättung, „< 10 min"/„> 48 h").
+- [x] 07.09. des-storage-card (v0.8.1): Restzeit verschwand bei −290 W/75 %
+      wiederholt für ~1 min — Ursache: Mittel-Reset bei jedem Richtungs-Pendeln
+      des geteilten Akku-Sensors startete das 60-s-Warmup neu. Fix: Reset erst
+      nach 30 s stabiler neuer Richtung, bis dahin letzter Wert; Debug-Attribut
+      `data-eta-state`. → per HACS auf 0.8.1. Im Betrieb gegenchecken (bleibt die
+      Zeit jetzt beim Pendeln stehen?).
 - [ ] des-inverter-card: Uhr-Pille läuft; Zeitzonen-Unterschied Browser/HA nur
       unterwegs relevant.
 - [ ] Karten-Konfiguration: Zendure-Karte und Hausakku-1-Karte zeigen auf die
