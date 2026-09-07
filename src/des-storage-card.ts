@@ -81,6 +81,34 @@ const POWER_AVERAGE_TAU_S = 300;
 /** The mean needs this much history before an estimate is worth showing. */
 const POWER_AVERAGE_MIN_AGE_MS = 60_000;
 
+/**
+ * A single sample in the opposite direction does not reset the mean. The new
+ * direction must persist this long before the mean (and the warm-up window)
+ * restart - otherwise the second-by-second charge/discharge/idle flutter of a
+ * shared battery sensor would keep wiping the estimate. Until then the last
+ * mean, and with it the last estimate, stays put.
+ */
+const DIRECTION_FLIP_HOLD_MS = 30_000;
+
+/** Why the remaining-time estimate is (not) shown; mirrored to `data-eta-state`. */
+type EtaState =
+  | 'ok'
+  | 'flip'
+  | 'device'
+  | 'no-power'
+  | 'idle'
+  | 'no-data'
+  | 'warmup'
+  | 'no-soc'
+  | 'no-limit'
+  | 'below-min'
+  | 'out-of-range';
+
+interface EtaResult {
+  text: string | null;
+  state: EtaState;
+}
+
 /** Estimates are rounded to this, and suppressed outside these bounds. */
 const ESTIMATE_STEP_MIN = 5;
 const ESTIMATE_MIN_MINUTES = 10;
@@ -243,10 +271,13 @@ export class DesStorageCard extends LitElement {
   // Deliberately not reactive: it only ever changes while handling a `hass`
   // update, which already triggers the render that reads it.
   private _powerAverage: number | null = null;
-  /** 1 = charging, -1 = discharging. A flip restarts the mean. */
+  /** 1 = charging, -1 = discharging. A *sustained* flip restarts the mean. */
   private _averageDirection = 0;
   private _averageStartedAt = 0;
   private _averageUpdatedAt = 0;
+  /** A not-yet-committed opposite direction, and since when it has held. */
+  private _pendingDirection = 0;
+  private _pendingSince = 0;
 
   constructor() {
     super();
@@ -602,31 +633,65 @@ export class DesStorageCard extends LitElement {
    * Feeds the display power into the exponential mean.
    *
    * Idle samples are skipped rather than averaged in: a battery resting at a
-   * few watts would drag the mean towards zero and inflate the estimate. A
-   * change of direction starts a fresh mean, because the old one describes
-   * the opposite process.
+   * few watts would drag the mean towards zero and inflate the estimate.
+   *
+   * A change of direction does **not** immediately reset the mean. The old
+   * mean, and with it the last estimate, is kept while the opposite direction
+   * is only tentative; the reset happens only once the new direction has held
+   * for `DIRECTION_FLIP_HOLD_MS`. That keeps a shared sensor's second-by-second
+   * flutter from restarting the warm-up window and wiping the estimate.
    */
   private _updatePowerAverage(config: DesStorageCardConfig): void {
     const power = this._power(config);
     if (power.kind !== 'value') return;
 
     const threshold = this._idleThreshold(config);
-    const direction = power.value >= threshold ? 1 : power.value <= -threshold ? -1 : 0;
-    if (direction === 0) return;
+    const direction =
+      power.value >= threshold ? 1 : power.value <= -threshold ? -1 : 0;
 
-    const now = Date.now();
-    if (direction !== this._averageDirection || this._powerAverage === null) {
-      this._averageDirection = direction;
-      this._powerAverage = power.value;
-      this._averageStartedAt = now;
-      this._averageUpdatedAt = now;
+    // An idle sample is neither the old nor a new direction: keep the mean and
+    // cancel any tentative flip (the new direction did not hold).
+    if (direction === 0) {
+      this._pendingDirection = 0;
       return;
     }
 
-    const seconds = Math.max(0, (now - this._averageUpdatedAt) / 1000);
+    const now = Date.now();
+
+    // First real sample after a reset (or a fresh card): seed the mean.
+    if (this._powerAverage === null || this._averageDirection === 0) {
+      this._commitAverage(direction, power.value, now);
+      return;
+    }
+
+    // Same direction: normal exponential update, cancel any tentative flip.
+    if (direction === this._averageDirection) {
+      this._pendingDirection = 0;
+      const seconds = Math.max(0, (now - this._averageUpdatedAt) / 1000);
+      this._averageUpdatedAt = now;
+      const weight = 1 - Math.exp(-seconds / POWER_AVERAGE_TAU_S);
+      this._powerAverage += weight * (power.value - this._powerAverage);
+      return;
+    }
+
+    // Opposite direction: hold the old mean until the flip has persisted.
+    if (this._pendingDirection !== direction) {
+      this._pendingDirection = direction;
+      this._pendingSince = now;
+    }
+    if (now - this._pendingSince >= DIRECTION_FLIP_HOLD_MS) {
+      this._commitAverage(direction, power.value, now);
+    }
+    // else: leave the mean untouched — the last estimate stays visible.
+  }
+
+  /** Starts a fresh mean in `direction`, resetting the warm-up window. */
+  private _commitAverage(direction: number, value: number, now: number): void {
+    this._averageDirection = direction;
+    this._powerAverage = value;
+    this._averageStartedAt = now;
     this._averageUpdatedAt = now;
-    const weight = 1 - Math.exp(-seconds / POWER_AVERAGE_TAU_S);
-    this._powerAverage += weight * (power.value - this._powerAverage);
+    this._pendingDirection = 0;
   }
 
   /**
@@ -640,60 +705,71 @@ export class DesStorageCard extends LitElement {
   private _timeRemaining(
     config: DesStorageCardConfig,
     power: Resolved<number>,
-  ): string | null {
+  ): EtaResult {
     // "Bereit" means there is no process to put a time on.
-    if (
-      power.kind !== 'value' ||
-      Math.abs(power.value) < this._idleThreshold(config)
-    ) {
-      return null;
+    if (power.kind !== 'value') return { text: null, state: 'no-power' };
+    if (Math.abs(power.value) < this._idleThreshold(config)) {
+      return { text: null, state: 'idle' };
     }
-    const charging = power.value > 0;
 
+    // A configured entity wins over the estimate; its direction follows the
+    // momentary power, since the device reports for the process running now.
+    const charging = power.value > 0;
     let source: TextValue | undefined = config.time_remaining;
     if (source === undefined) {
       source = charging
         ? config.time_remaining_charging
         : config.time_remaining_discharging;
     }
-    if (source === undefined) return this._estimateTimeRemaining(config, charging);
+    if (source !== undefined) {
+      const resolved = resolveText(source, this.hass);
+      if (resolved.kind !== 'value') return { text: null, state: 'device' };
+      return NO_TIME_STATES.has(resolved.value.trim().toLowerCase())
+        ? { text: null, state: 'device' }
+        : { text: resolved.value, state: 'device' };
+    }
 
-    const resolved = resolveText(source, this.hass);
-    if (resolved.kind !== 'value') return null;
-    return NO_TIME_STATES.has(resolved.value.trim().toLowerCase())
-      ? null
-      : resolved.value;
+    return this._estimateResult(config);
   }
 
   /**
    * Discharging: how long until the minimum state of charge.
    * Charging:    how long until the charge target.
    *
-   * Uses the smoothed power, and stays silent until that mean has enough
-   * history to mean anything.
+   * Uses the smoothed power and the mean's own (committed) direction - not the
+   * momentary sign, so a tentative flip keeps showing the last estimate. Stays
+   * silent until the mean has enough history to mean anything.
    */
-  private _estimateTimeRemaining(
-    config: DesStorageCardConfig,
-    charging: boolean,
-  ): string | null {
-    if (this._powerAverage === null) return null;
-    if (Date.now() - this._averageStartedAt < POWER_AVERAGE_MIN_AGE_MS) return null;
+  private _estimateResult(config: DesStorageCardConfig): EtaResult {
+    if (this._powerAverage === null) return { text: null, state: 'no-data' };
+    if (Date.now() - this._averageStartedAt < POWER_AVERAGE_MIN_AGE_MS) {
+      return { text: null, state: 'warmup' };
+    }
 
     const average = Math.abs(this._powerAverage);
-    if (average < this._idleThreshold(config)) return null;
+    if (average < this._idleThreshold(config)) return { text: null, state: 'idle' };
 
     const soc = resolveNumber(config.soc, this.hass);
     const capacity = resolveNumber(config.capacity_kwh, this.hass);
-    if (soc.kind !== 'value' || capacity.kind !== 'value') return null;
+    if (soc.kind !== 'value' || capacity.kind !== 'value') {
+      return { text: null, state: 'no-soc' };
+    }
 
+    const charging = this._averageDirection > 0;
     const limit = charging ? this._chargeTarget(config) : this._threshold(config);
-    if (limit === null) return null;
+    if (limit === null) return { text: null, state: 'no-limit' };
 
     const deltaPercent = charging ? limit - soc.value : soc.value - limit;
-    if (deltaPercent <= 0) return null;
+    if (deltaPercent <= 0) return { text: null, state: 'below-min' };
 
     // kWh divided by kW gives hours.
-    return formatEstimate(((deltaPercent / 100) * capacity.value) / (average / 1000));
+    const text = formatEstimate(
+      ((deltaPercent / 100) * capacity.value) / (average / 1000),
+    );
+    if (text === null) return { text: null, state: 'out-of-range' };
+
+    // A pending (not yet committed) flip means we are showing the last mean.
+    return { text, state: this._pendingDirection !== 0 ? 'flip' : 'ok' };
   }
 
   private _backup(config: DesStorageCardConfig): BackupState {
@@ -820,11 +896,11 @@ export class DesStorageCard extends LitElement {
     const energy = this._energy(config, soc, capacity);
     const status = this._status(config, power);
     const backup = this._backup(config);
-    const remaining = this._timeRemaining(config, power);
+    const eta = this._timeRemaining(config, power);
     const at = resolveText(config.time_at, this.hass);
-    const times = [remaining, at.kind === 'value' ? at.value : null].filter(
-      (part): part is string => part !== null,
-    );
+    const timesText = [eta.text, at.kind === 'value' ? at.value : null]
+      .filter((part): part is string => part !== null)
+      .join(' · ');
 
     const showControls = config.controls !== false;
 
@@ -863,9 +939,11 @@ export class DesStorageCard extends LitElement {
                   ? this._formatPower(power.value)
                   : this._dash()}
               </div>`}
-          ${times.length === 0
-            ? nothing
-            : html`<div class="muted">${times.join(' · ')}</div>`}
+          <!-- Always in the DOM so a missing estimate is inspectable via
+               data-eta-state; hidden (no layout) while there is nothing to show. -->
+          <div class="muted" data-eta-state=${eta.state} ?hidden=${timesText.length === 0}>
+            ${timesText}
+          </div>
         </div>
       </div>
 

@@ -4,6 +4,27 @@ Alle nennenswerten Änderungen an diesem Projekt werden hier festgehalten.
 Format grob nach [Keep a Changelog](https://keepachangelog.com/de/1.1.0/),
 Versionierung nach [SemVer](https://semver.org/lang/de/).
 
+## [0.8.1]
+
+### Behoben
+
+- **des-storage-card (Variante battery):** Die geschätzte Restzeit verschwand
+  bei aktiver Entladung immer wieder für ~1 Minute und kam von selbst zurück.
+  Ursache: der geglättete Leistungsmittelwert wurde bei **jedem** kurzen
+  Richtungswechsel zurückgesetzt (sekundenweises Pendeln eines geteilten
+  Akku-Sensors), was das 60-s-„Warmup"-Fenster neu startete. Jetzt setzt ein
+  Richtungswechsel das Mittel erst zurück, wenn die neue Richtung **30 s stabil**
+  anliegt; bis dahin bleibt das alte Mittel und damit die letzte Schätzung
+  stehen. Ein Momentan-idle-Sample setzt nichts mehr zurück.
+
+### Hinzugefügt
+
+- **des-storage-card:** Debug-Attribut `data-eta-state` am Restzeit-Element
+  (`ok`, `flip`, `device`, `idle`, `warmup`, `no-data`, `no-soc`, `no-limit`,
+  `below-min`, `out-of-range`, `no-power`) — im Browser-Inspektor lässt sich so
+  zuordnen, warum die Schätzung gerade (nicht) erscheint. Das Element bleibt
+  auch ohne sichtbaren Wert im DOM (dann `hidden`).
+
 ## [0.8.0]
 
 ### Hinzugefügt

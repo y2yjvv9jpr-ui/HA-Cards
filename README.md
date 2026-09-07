@@ -215,14 +215,25 @@ Verwendet wird die Anzeigeleistung der Karte, also inklusive `invert_power` und
 `power_share`. Allerdings **nicht** der Momentanwert, sondern ein exponentielles
 gleitendes Mittel mit rund 5 Minuten Zeitkonstante: eine vorbeiziehende Wolke
 würde die Momentanleistung halbieren und die Restzeit entsprechend springen
-lassen. Bei einem Wechsel Laden ↔ Entladen beginnt das Mittel neu, denn es
-beschreibt dann einen anderen Vorgang; Werte innerhalb der Totzone fließen gar
+lassen. Bei einem Wechsel Laden ↔ Entladen beginnt das Mittel neu — aber
+**erst, wenn die neue Richtung 30 Sekunden stabil anliegt**. Bis dahin bleibt
+das alte Mittel und damit die letzte Schätzung stehen; so setzt das
+sekundenweise Pendeln eines geteilten Akku-Sensors (mehrere Karten mit
+`power_share`) das Fenster nicht ständig zurück, das die Schätzung sonst immer
+wieder für ~1 min verschwinden ließ. Werte innerhalb der Totzone fließen gar
 nicht ein, weil sie das Mittel gegen null ziehen würden.
 
 Angezeigt wird erst, wenn das Mittel mindestens 60 Sekunden Daten hat. Das
 Ergebnis wird auf volle 5 Minuten gerundet; unter 10 Minuten steht
 „< 10 min“, über 48 Stunden „> 48 h“. Im Zustand „Bereit“ — also unterhalb
 `idle_threshold_w` — entfällt die Restzeit ganz.
+
+**Debug** — das Restzeit-Element trägt ein Attribut `data-eta-state`, das im
+Browser-Inspektor zeigt, warum die Schätzung gerade (nicht) erscheint: `ok`,
+`flip` (Richtungswechsel läuft, letzter Wert steht), `device` (aus konfigurierter
+Entität), `idle`, `warmup` (< 60 s Daten), `no-data`, `no-soc`, `no-limit`,
+`below-min` (SoC am Limit), `out-of-range`, `no-power`. Das Element bleibt auch
+ohne sichtbaren Wert im DOM (dann `hidden`).
 
 **`charge_mode_control`** — macht aus dem Umschalter **Laden | Auto** ein
 schreibendes Bedienelement:
