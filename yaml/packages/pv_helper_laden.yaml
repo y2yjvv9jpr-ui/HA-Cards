@@ -56,11 +56,11 @@
 input_select:
   pv_helper_zendure_lademodus:
     name: PV Zendure Lademodus
+    # Kein initial: der gewählte Modus bleibt über HA-Neustarts erhalten.
     options:
       - Laden
       - Auto
       - Aus
-    initial: Auto
     icon: mdi:battery-charging-high
 
 input_number:
@@ -69,7 +69,6 @@ input_number:
     min: 400
     max: 2400
     step: 50
-    initial: 2400
     unit_of_measurement: W
     mode: box
     icon: mdi:format-vertical-align-top
@@ -78,17 +77,17 @@ input_number:
     min: 50
     max: 800
     step: 10
-    initial: 400
     unit_of_measurement: W
     mode: box
     icon: mdi:format-vertical-align-bottom
   pv_helper_zendure_entladeleistung_maximum:
     name: PV Zendure Entladeleistung Maximum
     # Gerätegrenze: der Zendure entlädt nicht unter 400 W, daher min 400.
+    # Kein initial: der zuletzt auf der Karte gewählte Wert bleibt über Neustarts
+    # erhalten (mit initial würde HA ihn bei jedem Start zurücksetzen).
     min: 400
     max: 2400
     step: 50
-    initial: 2400
     unit_of_measurement: W
     mode: box
     icon: mdi:format-vertical-align-top
