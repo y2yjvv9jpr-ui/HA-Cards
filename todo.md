@@ -62,8 +62,16 @@ dann umgesetzt (siehe claude.md).
       Helfer-Package `haus_helper_licht_bett.yaml` (`input_select` je Zeile,
       `input_number` je Modus für Helligkeit/Weißton/Farbton/Sättigung) und die
       **Bettkarte verdrahten** (Entity-Binding statt Demo).
-- [ ] Als nächstes auf der Haus-Seite: **Haus-Konfigurationskarte**
-      (Konzept vor Umsetzung abstimmen).
+- [x] 10.09. **des-settings-card** (v0.14.0): Haus-Betriebsmodi als An/Aus-Zeilen
+      (`input_boolean.helperluftungsmodus` Lüftung/blau, `input_boolean.urlaub`
+      Urlaub/amber), Pillen für aktive Modi, Metazeile „Automatik"/„n
+      Abweichungen". writeSwitch. Im Dashboard (columns 12, rows 2).
+      → **per HACS auf 0.14.0**, Dashboard einspielen, Entity-IDs prüfen.
+- [x] 10.09. Damit sind alle **fünf Haus-Karten** gebaut (Rollläden, Wohnzimmer,
+      Bett, Luftentfeuchter, Einstellungen).
+- [ ] Offen Haus-Seite: **Bettlicht-Steuerung reparieren** + Verdrahtung (s. o.);
+      **Lampe-außerhalb-geschaltet-Automation**; **Wirkung der Betriebsmodi**
+      (Lüftungs-/Urlaubsmodus) dokumentieren, sobald Daniel sie beschrieben hat.
 
 ## 0a. 10.09. — im Repo, in HA einzuspielen
 

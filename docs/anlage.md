@@ -192,6 +192,20 @@ defekt**. Offen sind die Entitäten/Helfer und ein Package
 `haus_helper_licht_bett.yaml` (`input_select` je Zeile, `input_number` je Modus
 für Helligkeit/Weißton/Farbton/Sättigung) — siehe `todo.md`.
 
+## Haus-Betriebsmodi
+
+Auf der Dashboard-Seite „Haus" (`des-settings-card`). Zwei `input_boolean`
+steuern die Rollladen-Automatik:
+
+| Modus | Entität | Wirkung |
+| --- | --- | --- |
+| Lüftungsmodus | `input_boolean.helperluftungsmodus` | greift in die Rollladen-Automatik ein (genaue Wirkung noch von Daniel zu beschreiben) |
+| Urlaubsmodus | `input_boolean.urlaub` | greift in die Rollladen-Automatik ein (genaue Wirkung noch von Daniel zu beschreiben) |
+
+„Automatik" (alle Modi aus) = Normalbetrieb; jeder eingeschaltete Modus ist eine
+**Abweichung** und erscheint als Pille auf der Karte. Die genaue Wirkung der
+beiden Modi trägt Daniel nach.
+
 ## Eigene Helfer (Packages)
 
 | Package | Enthält |
