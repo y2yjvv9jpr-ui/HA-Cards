@@ -1,7 +1,15 @@
-# todo.md — offene Punkte (Stand 10.09.2026, spät)
+# todo.md — offene Punkte (Stand 11.09.2026)
 
 Reihenfolge = Vorschlag. Jeder Punkt wird erst abgestimmt, dann freigegeben,
 dann umgesetzt (siehe claude.md).
+
+## Karten-Konvention
+
+- [x] 11.09. An/Aus-Reihenfolge vereinheitlicht: gemeinsame `ON_OFF_OPTIONS`
+      (Aus links, An rechts – wie ein Schalter) in `segmented.ts`; umgestellt in
+      des-cover-card (v0.17.1), des-light-card (v0.17.2), des-garage-card
+      (v0.17.3), des-dehumidifier-card (v0.17.4). Dreier-Controls (Bett,
+      Storage) unverändert. → **per HACS auf 0.17.4**.
 
 ## Haus-Seite (neue Dashboardseite)
 
