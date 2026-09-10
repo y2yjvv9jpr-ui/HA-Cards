@@ -10,7 +10,7 @@ sections:
       - type: custom:des-cover-card
         grid_options:
           columns: 12
-          rows: 4
+          rows: 3
         name: Rollläden
         group_entity: cover.rollladen
         scenes:
