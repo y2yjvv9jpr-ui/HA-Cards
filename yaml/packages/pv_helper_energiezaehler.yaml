@@ -2,7 +2,11 @@
 # Zweck:  Tages-/Wochen-/Monats-/Jahreszähler (Utility Meter).
 #         Laden/Entladen/Verbrauch umfassen ALLE Speicher: Deye-Gesamtzähler
 #         + Zendure (aus Leistung integriert, kWh, monoton).
-#         Verbrauch = Deye + Zendure-Entladen − Zendure-Laden.
+#         Verbrauch (seit 10.09.2026): Integral der Hausleistung
+#         sensor.pv_helper_haus_leistung (AC-Ausgang + Netz + Zendure-Abgabe
+#         − Zendure-Aufnahme). Der Deye-Verbrauchszähler zählt Netzladen der
+#         Hausakkus als Hausverbrauch mit (10.09.: 17,4 statt 12,2 kWh) und
+#         wird nicht mehr verwendet.
 #         Produktion/Import/Export = Deye-Gesamtzähler, ebenfalls über eine
 #         geschützte _gesamt-Summe geführt (06.09.2026).
 # Sprungschutz (06.09.2026): Die Deye-Gesamtzähler liefern bei Stick-Aussetzern
@@ -15,10 +19,18 @@
 # Nutzer: des-stats-card, des-house-card, des-chart-card (Dashboard "Solar").
 # Reset:  Tag 00:00, Woche Mo 00:00, Monat 1., Jahr 1.1. – HA-Zeit.
 # Kalibrierung: utility_meter.calibrate bzw. script.pv_helper_energiezaehler_kalibrieren
-# Stand:  2026-09-06
+# Stand:  2026-09-10
 
-# ---------- Zendure-Energie aus Leistung integrieren ----------
+# ---------- Energie aus Leistung integrieren ----------
 sensor:
+  - platform: integration
+    name: PV Helper Energie Verbrauch Integral
+    unique_id: pv_helper_energie_verbrauch_integral
+    source: sensor.pv_helper_haus_leistung
+    method: left
+    unit_prefix: k
+    unit_time: h
+    round: 3
   - platform: integration
     name: PV Helper Energie Zendure Laden Gesamt
     unique_id: pv_helper_energie_zendure_laden_gesamt
@@ -70,16 +82,13 @@ template:
         unit_of_measurement: kWh
         device_class: energy
         state_class: total_increasing
-        # Deye-Verbrauch + Zendure-Abgabe (fehlt beim Deye) − Zendure-Aufnahme
-        # (zählt beim Deye fälschlich als Last).
+        # Integral der Hausleistung (AC-seitig, inkl. Zendure), mit Sprungschutz.
         state: >-
-          {% set neu = states('sensor.inverter_total_load_consumption') | float(0)
-                       + states('sensor.pv_helper_energie_zendure_entladen_gesamt') | float(0)
-                       - states('sensor.pv_helper_energie_zendure_laden_gesamt') | float(0) %}
+          {% set neu = states('sensor.pv_helper_energie_verbrauch_integral') | float(0) %}
           {% set alt = this.state | float(none) %}
           {% if alt is none or (neu - alt) | abs <= 5 %}{{ neu | round(2) }}{% else %}{{ alt }}{% endif %}
         availability: >-
-          {{ has_value('sensor.inverter_total_load_consumption') }}
+          {{ has_value('sensor.pv_helper_energie_verbrauch_integral') }}
 
       - name: PV Helper Energie Produktion Gesamt
         unique_id: pv_helper_energie_produktion_gesamt
