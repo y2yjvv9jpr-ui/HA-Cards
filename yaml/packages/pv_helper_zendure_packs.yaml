@@ -1,0 +1,43 @@
+# pv_helper_zendure_packs.yaml
+# Zweck:  Kapazität je angestecktem Zendure-Pack in kWh, aus dem lokalen
+#         Rohdatensatz (packData[].packType), gleiche Abfrage wie das Gielz-
+#         Paket (IP aus input_text.zendure_setting_ip_address), alle 60 s.
+#         Typ-Zuordnung wie in zendure_gielz1986_global.yaml (Total Capacity).
+#         Reihenfolge der Packs wie input_text.zendure_setting_battery_order
+#         (leer = Gerätereihenfolge), passend zu den Gielz-Sensoren battery_1/2.
+# Nutzer: des-storage-card, Zendure-Karte, packs[].capacity_kwh.
+# SoH je Pack liefert das Gerät lokal nicht (nur in der App).
+# Stand:  2026-09-10
+rest:
+  - resource_template: "http://{{ states('input_text.zendure_setting_ip_address') }}/properties/report"
+    scan_interval: 60
+    sensor:
+      - name: PV Helper Zendure Pack 1 Kapazitaet
+        unique_id: pv_helper_zendure_pack_1_kapazitaet
+        unit_of_measurement: kWh
+        device_class: energy_storage
+        icon: mdi:battery
+        value_template: >-
+          {% set mapping = {5: 2.88, 70: 1.92, 300: 1.92, 250: 0.96, 350: 2.88, 500: 2.40} %}
+          {% set packdata = value_json.get('packData', []) %}
+          {% set order = states('input_text.zendure_setting_battery_order') %}
+          {% if not packdata %}unknown
+          {% else %}
+            {% set idx = 0 if order in ['unknown', 'unavailable', ''] else (order.split(';')[0] | int(1)) - 1 %}
+            {% if idx < packdata | length %}{{ mapping.get(packdata[idx].packType | int, 0) }}{% else %}unknown{% endif %}
+          {% endif %}
+
+      - name: PV Helper Zendure Pack 2 Kapazitaet
+        unique_id: pv_helper_zendure_pack_2_kapazitaet
+        unit_of_measurement: kWh
+        device_class: energy_storage
+        icon: mdi:battery
+        value_template: >-
+          {% set mapping = {5: 2.88, 70: 1.92, 300: 1.92, 250: 0.96, 350: 2.88, 500: 2.40} %}
+          {% set packdata = value_json.get('packData', []) %}
+          {% set order = states('input_text.zendure_setting_battery_order') %}
+          {% if packdata | length < 2 %}unknown
+          {% else %}
+            {% set idx = 1 if order in ['unknown', 'unavailable', ''] else (order.split(';')[1] | int(2)) - 1 %}
+            {% if idx < packdata | length %}{{ mapping.get(packdata[idx].packType | int, 0) }}{% else %}unknown{% endif %}
+          {% endif %}
