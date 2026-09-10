@@ -7,6 +7,13 @@ const NUMBER_DOMAINS = new Set(['number', 'input_number']);
 const SWITCH_DOMAINS = new Set(['switch', 'input_boolean']);
 /** Domains whose option is picked with `select_option`. */
 const SELECT_DOMAINS = new Set(['select', 'input_select']);
+/**
+ * Domains switched on/off as a power toggle. Like `SWITCH_DOMAINS` plus `fan`:
+ * a `fan` entity is turned on/off with the very same `turn_on`/`turn_off`
+ * services, so the dehumidifier's power line can bind to `fan.…`,
+ * `switch.…` or `input_boolean.…` alike.
+ */
+const POWER_DOMAINS = new Set(['fan', 'switch', 'input_boolean']);
 
 /** States that count as "on" when a switch-like entity carries a state name. */
 const ON_STATES = new Set(['on', 'true', '1', 'yes', 'an', 'ein']);
@@ -32,6 +39,23 @@ export function isWritableNumber(target: unknown): boolean {
 /** True when this slot can be switched - i.e. it is a switch-like entity. */
 export function isWritableSwitch(target: unknown): boolean {
   return isWritable(target, SWITCH_DOMAINS);
+}
+
+/**
+ * True when this slot can be toggled as a power switch - a `fan`, `switch` or
+ * `input_boolean`. Used by the dehumidifier card's "Gerät An|Aus" control.
+ */
+export function isWritablePower(target: unknown): boolean {
+  return isWritable(target, POWER_DOMAINS);
+}
+
+/** True when this slot is a `humidifier` entity we can set the humidity of. */
+export function isWritableHumidity(target: unknown): boolean {
+  return (
+    typeof target === 'string' &&
+    isEntityId(target) &&
+    domainOf(target) === 'humidifier'
+  );
 }
 
 /** True when the charge-mode control names an entity this card can drive. */
@@ -86,6 +110,41 @@ export function writeSwitch(
     );
   }
   return call(hass, domain, on ? 'turn_on' : 'turn_off', { entity_id: entityId });
+}
+
+/**
+ * Power toggle across `fan` / `switch` / `input_boolean`: all three take the
+ * same `turn_on` / `turn_off` service, only the domain differs.
+ */
+export function writePower(
+  hass: HomeAssistant | undefined,
+  entityId: string,
+  on: boolean,
+): Promise<unknown> {
+  const domain = domainOf(entityId);
+  if (!POWER_DOMAINS.has(domain)) {
+    return Promise.reject(
+      new Error(`des-cards: ${entityId} kann nicht als Ein/Aus geschaltet werden`),
+    );
+  }
+  return call(hass, domain, on ? 'turn_on' : 'turn_off', { entity_id: entityId });
+}
+
+/** `humidifier.set_humidity` - sets the target humidity in percent. */
+export function writeHumidity(
+  hass: HomeAssistant | undefined,
+  entityId: string,
+  humidity: number,
+): Promise<unknown> {
+  if (domainOf(entityId) !== 'humidifier') {
+    return Promise.reject(
+      new Error(`des-cards: ${entityId} ist keine humidifier-Entität`),
+    );
+  }
+  return call(hass, 'humidifier', 'set_humidity', {
+    entity_id: entityId,
+    humidity,
+  });
 }
 
 /** `select.select_option` / `input_select.select_option`. */
