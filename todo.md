@@ -1,10 +1,28 @@
-# todo.md — offene Punkte (Stand 10.09.2026, 13:50)
+# todo.md — offene Punkte (Stand 10.09.2026, 16:20)
 
 Reihenfolge = Vorschlag. Jeder Punkt wird erst abgestimmt, dann freigegeben,
 dann umgesetzt (siehe claude.md).
 
 ## 0a. 10.09. — im Repo, in HA einzuspielen
 
+- [x] 10.09. Zendure-Zusatzakku (AB3000X, Gesamt 5,3 kWh): `pv_helper_speicher.yaml`
+      liefert `pv_helper_hausakku_energie` (SoC × 13,1) und `pv_helper_zendure_energie`
+      (SoC × `zendure_total_capacity`); Chart „Speicher-Füllstand" liest diese
+      (Achse 0–18,5 kWh). → Package einspielen (Template neu laden), Dashboard-YAML.
+- [x] 10.09. `pv_helper_laden.yaml`: Lademodus mit dritter Option **Aus** (Standby,
+      Automationen inaktiv — zum An-/Abstecken von Packs); Template-Schalter
+      `switch.pv_helper_zendure_notstromsteckdose` (gridOffMode 0/2 per
+      rest_command.zendure_setting). → einspielen, **Neustart** (neue Option/Schalter).
+- [x] 10.09. des-storage-card (v0.9.0): Dreier-Segmented-Control Laden|Auto|Aus
+      (`off_state`, nur select) als eigene Zeile über den Slidern;
+      `backup.switch_entity` (Notstromsteckdose ein/aus im Aufklappbereich);
+      `packs:` (je Pack SoC/Temperatur/Zellbalance). Notstrom-Badge aus Entität
+      **umgedreht**: Treffer in `active_states` = grün „Notstrom bereit", kein
+      Treffer = rot „Notstrom aus" (feste Formen `active`/`ready` unverändert).
+      → per HACS auf 0.9.0 aktualisieren; Dashboard-YAML liegt schon passend im Repo.
+- [ ] docs/logik.md B7 (Karten-Schalter Zendure) und docs/anlage.md
+      (Notstromsteckdose-Schalter, Lademodus **Aus**) nachziehen — Geräteregeln
+      stehen bisher nur im Package-Kopf von `pv_helper_laden.yaml`.
 - [x] 10.09. `pv_helper_energiezaehler.yaml`: Verbrauch = Integral der Hausleistung
       (`pv_helper_energie_verbrauch_integral` aus `pv_helper_haus_leistung`) statt
       Deye-Verbrauchszähler (zählte Netzladen als Hausverbrauch: 17,4 statt 12,2 kWh).
