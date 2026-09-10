@@ -4,6 +4,16 @@ Alle nennenswerten Änderungen an diesem Projekt werden hier festgehalten.
 Format grob nach [Keep a Changelog](https://keepachangelog.com/de/1.1.0/),
 Versionierung nach [SemVer](https://semver.org/lang/de/).
 
+## [0.9.3]
+
+### Geändert
+
+- **des-storage-card (Variante battery):** Die Pack-Tabelle hat statt der einen
+  „kWh"-Spalte jetzt zwei: **Kapazität** (Wert aus `packs[].capacity_kwh`, z. B.
+  „2,9 kWh") und **Rest** (`soc × capacity`, z. B. „0,5 kWh"). Spaltenreihenfolge:
+  **Akku · Kapazität · Rest · SoC · °C · Zellen**. Ohne `capacity_kwh` zeigen
+  beide Spalten „–".
+
 ## [0.9.2]
 
 ### Geändert

@@ -3,7 +3,7 @@
  * Copyright 2019 Google LLC
  * SPDX-License-Identifier: BSD-3-Clause
  */
-const re = globalThis, Pe = re.ShadowRoot && (re.ShadyCSS === void 0 || re.ShadyCSS.nativeShadow) && "adoptedStyleSheets" in Document.prototype && "replace" in CSSStyleSheet.prototype, Me = Symbol(), Ue = /* @__PURE__ */ new WeakMap();
+const re = globalThis, Pe = re.ShadowRoot && (re.ShadyCSS === void 0 || re.ShadyCSS.nativeShadow) && "adoptedStyleSheets" in Document.prototype && "replace" in CSSStyleSheet.prototype, Me = Symbol(), We = /* @__PURE__ */ new WeakMap();
 let _t = class {
   constructor(e, t, r) {
     if (this._$cssResult$ = !0, r !== Me) throw Error("CSSResult is not constructable. Use `unsafeCSS` or `css` instead.");
@@ -14,7 +14,7 @@ let _t = class {
     const t = this.t;
     if (Pe && e === void 0) {
       const r = t !== void 0 && t.length === 1;
-      r && (e = Ue.get(t)), e === void 0 && ((this.o = e = new CSSStyleSheet()).replaceSync(this.cssText), r && Ue.set(t, e));
+      r && (e = We.get(t)), e === void 0 && ((this.o = e = new CSSStyleSheet()).replaceSync(this.cssText), r && We.set(t, e));
     }
     return e;
   }
@@ -35,7 +35,7 @@ const Ct = (i) => new _t(typeof i == "string" ? i : i + "", void 0, Me), S = (i,
     const r = document.createElement("style"), s = re.litNonce;
     s !== void 0 && r.setAttribute("nonce", s), r.textContent = t.cssText, i.appendChild(r);
   }
-}, We = Pe ? (i) => i : (i) => i instanceof CSSStyleSheet ? ((e) => {
+}, Ue = Pe ? (i) => i : (i) => i instanceof CSSStyleSheet ? ((e) => {
   let t = "";
   for (const r of e.cssRules) t += r.cssText;
   return Ct(t);
@@ -45,7 +45,7 @@ const Ct = (i) => new _t(typeof i == "string" ? i : i + "", void 0, Me), S = (i,
  * Copyright 2017 Google LLC
  * SPDX-License-Identifier: BSD-3-Clause
  */
-const { is: Pt, defineProperty: Mt, getOwnPropertyDescriptor: Lt, getOwnPropertyNames: Ot, getOwnPropertySymbols: Rt, getPrototypeOf: Dt } = Object, de = globalThis, Be = de.trustedTypes, Nt = Be ? Be.emptyScript : "", zt = de.reactiveElementPolyfillSupport, W = (i, e) => i, be = { toAttribute(i, e) {
+const { is: Pt, defineProperty: Mt, getOwnPropertyDescriptor: Lt, getOwnPropertyNames: Ot, getOwnPropertySymbols: Rt, getPrototypeOf: Dt } = Object, de = globalThis, Be = de.trustedTypes, Nt = Be ? Be.emptyScript : "", zt = de.reactiveElementPolyfillSupport, U = (i, e) => i, be = { toAttribute(i, e) {
   switch (e) {
     case Boolean:
       i = i ? Nt : null;
@@ -103,13 +103,13 @@ let z = class extends HTMLElement {
     return this.elementProperties.get(e) ?? Ge;
   }
   static _$Ei() {
-    if (this.hasOwnProperty(W("elementProperties"))) return;
+    if (this.hasOwnProperty(U("elementProperties"))) return;
     const e = Dt(this);
     e.finalize(), e.l !== void 0 && (this.l = [...e.l]), this.elementProperties = new Map(e.elementProperties);
   }
   static finalize() {
-    if (this.hasOwnProperty(W("finalized"))) return;
-    if (this.finalized = !0, this._$Ei(), this.hasOwnProperty(W("properties"))) {
+    if (this.hasOwnProperty(U("finalized"))) return;
+    if (this.finalized = !0, this._$Ei(), this.hasOwnProperty(U("properties"))) {
       const t = this.properties, r = [...Ot(t), ...Rt(t)];
       for (const s of r) this.createProperty(s, t[s]);
     }
@@ -129,8 +129,8 @@ let z = class extends HTMLElement {
     const t = [];
     if (Array.isArray(e)) {
       const r = new Set(e.flat(1 / 0).reverse());
-      for (const s of r) t.unshift(We(s));
-    } else e !== void 0 && t.push(We(e));
+      for (const s of r) t.unshift(Ue(s));
+    } else e !== void 0 && t.push(Ue(e));
     return t;
   }
   static _$Eu(e, t) {
@@ -256,7 +256,7 @@ let z = class extends HTMLElement {
   firstUpdated(e) {
   }
 };
-z.elementStyles = [], z.shadowRootOptions = { mode: "open" }, z[W("elementProperties")] = /* @__PURE__ */ new Map(), z[W("finalized")] = /* @__PURE__ */ new Map(), zt?.({ ReactiveElement: z }), (de.reactiveElementVersions ??= []).push("2.1.2");
+z.elementStyles = [], z.shadowRootOptions = { mode: "open" }, z[U("elementProperties")] = /* @__PURE__ */ new Map(), z[U("finalized")] = /* @__PURE__ */ new Map(), zt?.({ ReactiveElement: z }), (de.reactiveElementVersions ??= []).push("2.1.2");
 /**
  * @license
  * Copyright 2017 Google LLC
@@ -269,7 +269,7 @@ function wt(i, e) {
   if (!Oe(i) || !i.hasOwnProperty("raw")) throw Error("invalid template strings array");
   return Ve !== void 0 ? Ve.createHTML(e) : e;
 }
-const Ut = (i, e) => {
+const Wt = (i, e) => {
   const t = i.length - 1, r = [];
   let s, a = e === 2 ? "<svg>" : e === 3 ? "<math>" : "", n = F;
   for (let c = 0; c < t; c++) {
@@ -286,7 +286,7 @@ class j {
     let s;
     this.parts = [];
     let a = 0, n = 0;
-    const c = e.length - 1, o = this.parts, [u, p] = Ut(e, t);
+    const c = e.length - 1, o = this.parts, [u, p] = Wt(e, t);
     if (this.el = j.createElement(u, r), L.currentNode = this.el.content, t === 2 || t === 3) {
       const h = this.el.content.firstChild;
       h.replaceWith(...h.childNodes);
@@ -324,7 +324,7 @@ function H(i, e, t = i, r) {
   const a = G(e) ? void 0 : e._$litDirective$;
   return s?.constructor !== a && (s?._$AO?.(!1), a === void 0 ? s = void 0 : (s = new a(i), s._$AT(i, t, r)), r !== void 0 ? (t._$Co ??= [])[r] = s : t._$Cl = s), s !== void 0 && (e = H(i, s._$AS(i, e.values), s, r)), e;
 }
-class Wt {
+class Ut {
   constructor(e, t) {
     this._$AV = [], this._$AN = void 0, this._$AD = e, this._$AM = t;
   }
@@ -386,7 +386,7 @@ class Y {
     const { values: t, _$litType$: r } = e, s = typeof r == "number" ? this._$AC(e) : (r.el === void 0 && (r.el = j.createElement(wt(r.h, r.h[0]), this.options)), r);
     if (this._$AH?._$AD === s) this._$AH.p(t);
     else {
-      const a = new Wt(s, this), n = a.u(this.options);
+      const a = new Ut(s, this), n = a.u(this.options);
       a.p(t), this.T(n), this._$AH = a;
     }
   }
@@ -552,7 +552,7 @@ const Jt = /* @__PURE__ */ new Set(["unavailable", "unknown", "none", "null", ""
 function D(i) {
   return typeof i == "string" && Qt.test(i);
 }
-const xe = { kind: "unset" }, U = { kind: "unavailable" };
+const xe = { kind: "unset" }, W = { kind: "unavailable" };
 function bt(i, e) {
   const t = e?.states?.[i];
   if (!t || typeof t.state != "string") return null;
@@ -577,15 +577,15 @@ function De(i, e) {
 function g(i, e) {
   if (i == null || typeof i == "boolean") return xe;
   if (typeof i == "number")
-    return Number.isFinite(i) ? { kind: "value", value: i } : U;
+    return Number.isFinite(i) ? { kind: "value", value: i } : W;
   if (D(i)) {
     const r = bt(i, e);
-    if (r === null) return U;
+    if (r === null) return W;
     const s = Number.parseFloat(r);
-    return Number.isFinite(s) ? { kind: "value", value: s } : U;
+    return Number.isFinite(s) ? { kind: "value", value: s } : W;
   }
   const t = Number.parseFloat(i);
-  return Number.isFinite(t) ? { kind: "value", value: t } : U;
+  return Number.isFinite(t) ? { kind: "value", value: t } : W;
 }
 function x(i, e) {
   if (i == null) return xe;
@@ -593,7 +593,7 @@ function x(i, e) {
   if (typeof i == "number") return { kind: "value", value: String(i) };
   if (D(i)) {
     const r = bt(i, e);
-    return r === null ? U : { kind: "value", value: r };
+    return r === null ? W : { kind: "value", value: r };
   }
   const t = i.trim();
   return t.length > 0 ? { kind: "value", value: t } : xe;
@@ -1464,7 +1464,8 @@ const ae = class ae extends E {
               <thead>
                 <tr>
                   <th class="pack-col-name">Akku</th>
-                  <th>kWh</th>
+                  <th>Kapazität</th>
+                  <th>Rest</th>
                   <th>SoC</th>
                   <th>°C</th>
                   <th>Zellen</th>
@@ -1478,17 +1479,22 @@ const ae = class ae extends E {
     `;
   }
   /**
-   * One pack table row: name, stored energy, soc, temperature (traffic-light
-   * coloured) and cell balance. Units live in the header, so the cells stay
-   * bare numbers; a value the card cannot read shows a muted dash. (No SoH: the
-   * Zendure does not expose a per-pack state of health locally.)
+   * One pack table row: name, capacity, remaining energy, soc, temperature
+   * (traffic-light coloured) and cell balance. The temperature unit lives in
+   * the header; the two kWh columns carry their unit, like soc's "%". A value
+   * the card cannot read shows a muted dash - and without `capacity_kwh` both
+   * the capacity and the remaining-energy cell are dashes. (No SoH: the Zendure
+   * does not expose a per-pack state of health locally.)
    */
   _renderPack(e) {
     const t = g(e.soc, this.hass), r = g(e.capacity_kwh, this.hass), s = g(e.temp_c, this.hass), a = x(e.balance, this.hass), n = t.kind === "value" && r.kind === "value" ? t.value * r.value / 100 : null, c = s.kind === "value" ? St(s.value) : "neutral";
     return l`
       <tr>
         <td class="pack-col-name">${e.name}</td>
-        <td>${n !== null ? w(n) : this._dash()}</td>
+        <td>
+          ${r.kind === "value" ? `${w(r.value)} kWh` : this._dash()}
+        </td>
+        <td>${n !== null ? `${w(n)} kWh` : this._dash()}</td>
         <td>${t.kind === "value" ? `${f(t.value)} %` : this._dash()}</td>
         <td class="pack-temp ${c}">
           ${s.kind === "value" ? w(s.value) : this._dash()}
@@ -2412,10 +2418,10 @@ function Fr(i) {
   const t = e.includes("T") ? e : e.replace(" ", "T"), r = new Date(t);
   return Number.isNaN(r.getTime()) ? null : r;
 }
-function Ur(i) {
+function Wr(i) {
   return `${T(i.getDate())}.${T(i.getMonth() + 1)}.${i.getFullYear()} ${T(i.getHours())}:${T(i.getMinutes())}`;
 }
-function Wr() {
+function Ur() {
   const i = /* @__PURE__ */ new Date();
   return `${i.getFullYear()}-${T(i.getMonth() + 1)}-${T(i.getDate())} ${T(i.getHours())}:${T(i.getMinutes())}:00`;
 }
@@ -2476,7 +2482,7 @@ const ne = class ne extends E {
       <div class="clock-row">
         <span class="foot-label">Wechselrichter-Uhr</span>
         <span class="clock-value">
-          ${t ? l`${Ur(e.at)}
+          ${t ? l`${Wr(e.at)}
                 <span class="clock-delta">
                   (Δ ${X(e.minutes)} min)
                 </span>` : l`<span class="unavail">–</span>`}
@@ -2497,7 +2503,7 @@ const ne = class ne extends E {
     !_(e) || typeof this.hass?.callService != "function" || Promise.resolve(
       this.hass.callService("datetime", "set_value", {
         entity_id: e,
-        datetime: Wr()
+        datetime: Ur()
       })
     ).then(() => {
       this._timeSetDone = !0, this._feedbackTimer !== void 0 && window.clearTimeout(this._feedbackTimer), this._feedbackTimer = window.setTimeout(() => {

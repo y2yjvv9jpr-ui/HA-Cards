@@ -1131,7 +1131,8 @@ export class DesStorageCard extends LitElement {
               <thead>
                 <tr>
                   <th class="pack-col-name">Akku</th>
-                  <th>kWh</th>
+                  <th>Kapazität</th>
+                  <th>Rest</th>
                   <th>SoC</th>
                   <th>°C</th>
                   <th>Zellen</th>
@@ -1147,10 +1148,12 @@ export class DesStorageCard extends LitElement {
   }
 
   /**
-   * One pack table row: name, stored energy, soc, temperature (traffic-light
-   * coloured) and cell balance. Units live in the header, so the cells stay
-   * bare numbers; a value the card cannot read shows a muted dash. (No SoH: the
-   * Zendure does not expose a per-pack state of health locally.)
+   * One pack table row: name, capacity, remaining energy, soc, temperature
+   * (traffic-light coloured) and cell balance. The temperature unit lives in
+   * the header; the two kWh columns carry their unit, like soc's "%". A value
+   * the card cannot read shows a muted dash - and without `capacity_kwh` both
+   * the capacity and the remaining-energy cell are dashes. (No SoH: the Zendure
+   * does not expose a per-pack state of health locally.)
    */
   private _renderPack(pack: BatteryPackConfig): TemplateResult {
     const soc = resolveNumber(pack.soc, this.hass);
@@ -1158,7 +1161,7 @@ export class DesStorageCard extends LitElement {
     const temp = resolveNumber(pack.temp_c, this.hass);
     const balance = resolveText(pack.balance, this.hass);
 
-    // Stored energy needs both a state of charge and a capacity to divide it.
+    // Remaining energy needs both a state of charge and a capacity to divide it.
     const energyKwh =
       soc.kind === 'value' && capacity.kind === 'value'
         ? (soc.value * capacity.value) / 100
@@ -1169,7 +1172,12 @@ export class DesStorageCard extends LitElement {
     return html`
       <tr>
         <td class="pack-col-name">${pack.name}</td>
-        <td>${energyKwh !== null ? formatFixed(energyKwh) : this._dash()}</td>
+        <td>
+          ${capacity.kind === 'value'
+            ? `${formatFixed(capacity.value)} kWh`
+            : this._dash()}
+        </td>
+        <td>${energyKwh !== null ? `${formatFixed(energyKwh)} kWh` : this._dash()}</td>
         <td>${soc.kind === 'value' ? `${formatInt(soc.value)} %` : this._dash()}</td>
         <td class="pack-temp ${tempLevel}">
           ${temp.kind === 'value' ? formatFixed(temp.value) : this._dash()}

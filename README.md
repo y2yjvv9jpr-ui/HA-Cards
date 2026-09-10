@@ -295,19 +295,20 @@ meldet beim Laden einen Konfigurationsfehler.
 
 **`packs`** — eine Liste, die im aufgeklappten Bedienbereich (unter der
 Notstromsteckdose) als kompakte **Tabelle** erscheint, eine Zeile je Eintrag,
-mit den Spalten **Akku · kWh · SoC · °C · Zellen**:
+mit den Spalten **Akku · Kapazität · Rest · SoC · °C · Zellen**:
 
-| Feld           | Typ              | Beschreibung                                                        |
-| -------------- | ---------------- | ------------------------------------------------------------------- |
-| `name`         | string           | **Pflicht.** Spalte „Akku“.                                         |
-| `capacity_kwh` | number \| Entity | Kapazität; ergibt mit `soc` die kWh-Spalte (`soc × capacity / 100`). |
-| `soc`          | number \| Entity | Ladestand in %.                                                     |
-| `temp_c`       | number \| Entity | Zelltemperatur in °C, mit der Temperatur-Ampel gefärbt.             |
-| `balance`      | string \| Entity | Zellbalance-Text, Spalte „Zellen“.                                  |
+| Feld           | Typ              | Beschreibung                                                                 |
+| -------------- | ---------------- | --------------------------------------------------------------------------- |
+| `name`         | string           | **Pflicht.** Spalte „Akku“.                                                  |
+| `capacity_kwh` | number \| Entity | Kapazität in kWh — Spalte „Kapazität“; mit `soc` zusätzlich die Spalte „Rest“ (`soc × capacity / 100`). |
+| `soc`          | number \| Entity | Ladestand in %.                                                             |
+| `temp_c`       | number \| Entity | Zelltemperatur in °C, mit der Temperatur-Ampel gefärbt.                     |
+| `balance`      | string \| Entity | Zellbalance-Text, Spalte „Zellen“.                                          |
 
-Die Einheiten stehen in der Kopfzeile (gedämpft); die Werte sind rechtsbündig.
-Die kWh-Spalte bleibt leer („–“), wenn `soc` **oder** `capacity_kwh` fehlt;
-jeder andere fehlende oder nicht lesbare Wert zeigt ebenfalls „–“.
+Die Kopfzeile ist gedämpft, die Werte rechtsbündig. „Kapazität“ und „Rest“
+tragen ihre Einheit im Wert („2,9 kWh“ / „0,5 kWh“), die Temperatur-Einheit
+steht in der Kopfzeile. Ohne `capacity_kwh` zeigen **Kapazität und Rest** „–“;
+„Rest“ zusätzlich, wenn `soc` fehlt. Jeder andere nicht lesbare Wert zeigt „–“.
 
 **Aufbau**
 
