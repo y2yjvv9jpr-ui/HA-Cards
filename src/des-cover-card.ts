@@ -3,7 +3,7 @@ import { chevronStyles } from './chevron';
 import { overlayStyles, OverlayCloser } from './overlay';
 import { tokenStyles } from './tokens';
 import { iconButtonStyles, renderIconButtons } from './icon-buttons';
-import { renderSegmented, segmentedStyles } from './segmented';
+import { renderSegmented, segmentedStyles, ON_OFF_OPTIONS } from './segmented';
 import { formatInt, clamp } from './format';
 import { entityState, entityNumberAttribute, isEntityId } from './resolve';
 import {
@@ -434,11 +434,8 @@ export class DesCoverCard extends LitElement {
             return html`
               <div class="mode">
                 <span class="mode-name">${mode.name}</span>
-                ${renderSegmented<'on' | 'off'>(
-                  [
-                    { value: 'on', label: 'An' },
-                    { value: 'off', label: 'Aus' },
-                  ],
+                ${renderSegmented(
+                  ON_OFF_OPTIONS,
                   on === null ? null : on ? 'on' : 'off',
                   (value) => this._setMode(mode.entity, value === 'on'),
                   mode.name,
