@@ -67,13 +67,16 @@ dann umgesetzt (siehe claude.md).
       Urlaub/amber), Pillen für aktive Modi, Metazeile „Automatik"/„n
       Abweichungen". writeSwitch. Im Dashboard (columns 12, rows 2).
       → **per HACS auf 0.14.0**, Dashboard einspielen, Entity-IDs prüfen.
-- [x] 10.09. Damit sind alle **fünf Haus-Karten** gebaut (Rollläden, Wohnzimmer,
-      Bett, Luftentfeuchter, Einstellungen).
+- [x] 10.09. Damit sind alle Haus-Karten gebaut (Rollläden, Wohnzimmer,
+      Bett, Luftentfeuchter).
+- [x] 10.09. **des-cover-card** (v0.16.0): Automatik-Zeile (`modes`) mit Pillen
+      (Lüftung/blau, Urlaub/amber) unter den Szenen-Kacheln; **des-settings-card
+      entfernt**, Funktion in der Rollladenkarte. Dashboard: Settings-Karte raus,
+      Rollladenkarte um `modes` ergänzt und auf `rows: 4` erhöht.
+      → **per HACS auf 0.16.0**, Haus-Dashboard neu einspielen, Entity-IDs prüfen.
 - [ ] Offen Haus-Seite: **Bettlicht-Steuerung reparieren** + Verdrahtung (s. o.);
       **Lampe-außerhalb-geschaltet-Automation**; **Wirkung der Betriebsmodi**
       (Lüftungs-/Urlaubsmodus) dokumentieren, sobald Daniel sie beschrieben hat.
-- [x] 10.09. Haus-Dashboard: `des-settings-card` war bei `rows: 2` unten
-      abgeschnitten → auf `rows: 3` korrigiert. → Dashboard neu einspielen.
 
 ## Garage-Seite
 

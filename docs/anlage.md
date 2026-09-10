@@ -194,17 +194,17 @@ für Helligkeit/Weißton/Farbton/Sättigung) — siehe `todo.md`.
 
 ## Haus-Betriebsmodi
 
-Auf der Dashboard-Seite „Haus" (`des-settings-card`). Zwei `input_boolean`
-steuern die Rollladen-Automatik:
+Auf der Dashboard-Seite „Haus" — als **Automatik-Zeile der Rollladenkarte**
+(`des-cover-card`, `modes`; die frühere eigene `des-settings-card` ist entfallen).
+Zwei `input_boolean` steuern die Rollladen-Automatik:
 
 | Modus | Entität | Wirkung |
 | --- | --- | --- |
 | Lüftungsmodus | `input_boolean.helperluftungsmodus` | greift in die Rollladen-Automatik ein (genaue Wirkung noch von Daniel zu beschreiben) |
 | Urlaubsmodus | `input_boolean.urlaub` | greift in die Rollladen-Automatik ein (genaue Wirkung noch von Daniel zu beschreiben) |
 
-„Automatik" (alle Modi aus) = Normalbetrieb; jeder eingeschaltete Modus ist eine
-**Abweichung** und erscheint als Pille auf der Karte. Die genaue Wirkung der
-beiden Modi trägt Daniel nach.
+Jeder eingeschaltete Modus erscheint als Pille im Kopf der Rollladenkarte. Die
+genaue Wirkung der beiden Modi trägt Daniel nach.
 
 ## Garage
 
