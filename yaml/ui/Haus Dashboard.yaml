@@ -211,4 +211,9 @@ sections:
             power_entity: sensor.garage_steckdose_tuer_power
             energy_entity: sensor.garage_steckdose_tuer_energy
             name: Tür
+        settings:
+          - entity: input_boolean.helper_moweron
+            name: Mähroboter Laden aktiv
+            pill: Mäher lädt
+            color: blue
 cards: []
