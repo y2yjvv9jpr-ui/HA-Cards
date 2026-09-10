@@ -19,11 +19,16 @@ dann umgesetzt (siehe claude.md).
       akzeptiert `Abbrechen`), Anzeige aus `hass.formatEntityState`; graue
       Schloss-Pille bei aktiver Kindersicherung (vor Max-Trocknen).
       → **per HACS auf 0.12.2**.
+- [x] 10.09. **des-dehumidifier-card** (v0.12.3): toter Chevron behoben —
+      `overflow: hidden` auf `ha-card` (aus 0.12.2) schnitt das Aufklapp-Dropdown
+      weg (overlay.ts braucht `overflow: visible`); entfernt. x-Achse: Plot 8 px
+      rechts der y-Labels, erste Uhrzeit linksbündig, „jetzt" rechtsbündig, Ticks
+      auf vollen 6-h-Stunden (00/06/12/18). → **per HACS auf 0.12.3**.
 - [ ] Verlauf im Live-Betrieb gegenchecken: liefert
       `history/history_during_period` die Feuchte sauber, sitzt die Zielmarke,
-      passen die Achsen? Countdown-Pille/Segmented gegen die echten Select-Optionen
-      prüfen (Beschriftung „1 h“/„2 h“, Off erkannt). Schloss-Pille bei aktiver
-      Kindersicherung sichtbar?
+      passen die Achsen (Uhrzeiten ohne Kollision, Chevron öffnet)? Countdown-
+      Pille/Segmented gegen die echten Select-Optionen prüfen (Beschriftung
+      „1 h“/„2 h“, Off erkannt). Schloss-Pille bei aktiver Kindersicherung sichtbar?
 - [x] 10.09. **des-cover-card** (v0.12.0): Rollladenkarte — Gruppenzeile „Haus"
       (`cover.rollladen`), fünf Szenen-Kacheln (Tag/Nacht/Vormittag/Nachmittag/
       Aquarien) und aufgeklappt die Einzelrollläden nach Etage (Positionsbalken,
