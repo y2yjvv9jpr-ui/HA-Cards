@@ -17,8 +17,20 @@ dann umgesetzt (siehe claude.md).
       `history/history_during_period` die Feuchte sauber, sitzt die Zielmarke,
       passen die Achsen? Countdown-Pille/Segmented gegen die echten Select-Optionen
       prüfen (Beschriftung „1 h“/„2 h“).
-- [ ] Als nächstes auf der Haus-Seite: **Lichtkarte** und **Rollladenkarte**
-      (Konzept vor Umsetzung abstimmen).
+- [x] 10.09. **des-cover-card** (v0.12.0): Rollladenkarte — Gruppenzeile „Haus"
+      (`cover.rollladen`), fünf Szenen-Kacheln (Tag/Nacht/Vormittag/Nachmittag/
+      Aquarien) und aufgeklappt die Einzelrollläden nach Etage (Positionsbalken,
+      Prozent, ▲ ■ ▼; Stopp blau bei opening/closing). service.ts um `writeCover`,
+      `writeCoverPosition`, `isWritableCover` und `callAction` erweitert. Karte
+      links neben der Entfeuchterkarte im Dashboard. → **per HACS auf 0.12.0**,
+      Dashboard-Datei `yaml/ui/Haus Dashboard.yaml` in HA einspielen,
+      **Entity-IDs prüfen** (Cover, Skripte, input_boolean, Aquarien-Automation).
+- [ ] Rollladenkarte live gegenchecken: liefern alle Cover `current_position`
+      (voller Balken = offen)? Fahren ▲ ■ ▼ richtig, wird Stopp bei Fahrt blau?
+      Szenen-Kacheln lösen die richtigen Skripte/Booleans/die Aquarien-Automation
+      aus; nicht existente Ziele werden gedimmt.
+- [ ] Als nächstes auf der Haus-Seite: **Lichtkarte(n)** und eine
+      **Haus-Konfigurationskarte** (Konzept vor Umsetzung abstimmen).
 
 ## 0a. 10.09. — im Repo, in HA einzuspielen
 

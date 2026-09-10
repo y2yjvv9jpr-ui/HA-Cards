@@ -124,6 +124,54 @@ die Tuya-Integration; Präfix aller Entitäten:
   (`select`). Deshalb zeigt die Karte den Countdown als gewählte Option, nicht als
   ablaufende Zeit.
 
+## Rollläden
+
+Stehen auf der Dashboard-Seite „Haus" (`des-cover-card`). Positionen sind die
+rohe HA-Position (`current_position`, 100 = ganz offen, 0 = zu). Steuerung über
+`cover.open_cover`/`close_cover`/`stop_cover` und `cover.set_cover_position`.
+
+- **Gruppe:** `cover.rollladen` (Gruppenzeile „Haus").
+
+**Erdgeschoss**
+
+| Raum | Entität |
+| --- | --- |
+| Flur | `cover.jalousie_eg_flur_jalousie_eg_flur` |
+| Arbeitszimmer vorne | `cover.jalousie_eg_arbeitszimmer_vorn_2` |
+| Arbeitszimmer Seite | `cover.jalousie_eg_arbeitszimmer_seite` |
+| Couch klein | `cover.jalousie_eg_couch_klein` |
+| Couch groß | `cover.jalousie_eg_couch_gross_2` |
+| Esszimmer | `cover.shelly2pmg4_48f6eed04f08_jalousie_eg_esszimmer` |
+| Küche | `cover.shellyswitch25_e8db84aa7195` |
+| Technikraum | `cover.jalousie_eg_technikraum_jalousie_eg_technikraum` |
+| Gäste-WC | `cover.jalousie_eg_wc_jalousie_eg_wc` |
+
+**Obergeschoss**
+
+| Raum | Entität |
+| --- | --- |
+| Bad | `cover.jalousie_og_bad` |
+| Ankleide | `cover.jalousie_og_ankleide` |
+| Schlafzimmer | `cover.jalousie_og_schlafzimmer_2` |
+| Kinderzimmer Marie | `cover.jalousie_og_marie_jalousie_og_marie` |
+| Anekas Zimmer | `cover.jalousie_og_aneka_jalousie_og_aneka` |
+
+**Szenen-Kacheln** (die Karte ruft den jeweiligen Dienst auf):
+
+| Kachel | Aktion |
+| --- | --- |
+| Tag | `script.turn_on` → `script.guten_morgen` |
+| Nacht | `script.turn_on` → `script.gute_nacht` |
+| Vormittag | `input_boolean.turn_on` → `input_boolean.helperrssunvormittag` |
+| Nachmittag | `input_boolean.turn_on` → `input_boolean.helperrssunnachmittag` |
+| Aquarien | `automation.trigger` → `automation.aquarium_arbeitszimmer_sonnenschutz` (mit `skip_condition: true`) |
+
+- **Aquarien-Sonnenschutz:** die Automation `automation.aquarium_arbeitszimmer_sonnenschutz`
+  fährt im Tageslauf um **09:00** die Rollläden **Arbeitszimmer vorne + Seite auf
+  40 %** (Sonnenschutz fürs Aquarium). Die Kachel „Aquarien" löst sie außerhalb der
+  Zeit per `automation.trigger` mit `skip_condition: true` aus (Bedingungen
+  übersprungen), sodass sie sofort läuft.
+
 ## Eigene Helfer (Packages)
 
 | Package | Enthält |
