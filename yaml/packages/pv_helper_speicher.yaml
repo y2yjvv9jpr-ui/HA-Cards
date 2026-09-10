@@ -1,10 +1,13 @@
 # pv_helper_speicher.yaml
-# Zweck:  Alle Speicher (Deye-Hausakkus + Zendure) als eine Leistungsreihe.
+# Zweck:  Alle Speicher (Deye-Hausakkus + Zendure) als eine Leistungsreihe,
+#         plus gespeicherte Energie je Speicher in kWh für den Füllstand-Chart.
 # Vorzeichen: positiv = Speicher liefert ins Haus (Entladen), negativ = Speicher lädt.
 #             Deye meldet negativ = Laden (passt), Zendure aus to_home - from_home.
-# Nutzer: ApexCharts-Verlauf (Dashboard "Solar").
-# Stand:  2026-09-05
-
+# Energie (10.09.2026): SoC × Kapazität. Hausakkus fest 13,1 kWh (2 × 6,55),
+#             Zendure aus sensor.zendure_total_capacity (passt sich an Zusatz-
+#             Packs an — 10.09.: 5,3 kWh mit AB3000X).
+# Nutzer: Hauskarte (Speicherleistung), Chart „Speicher-Füllstand".
+# Stand:  2026-09-10
 template:
   - sensor:
       - name: PV Helper Speicher Leistung
@@ -19,3 +22,25 @@ template:
           {{ (deye + zen_aus - zen_ein) | round(0) }}
         availability: >-
           {{ has_value('sensor.inverter_battery_power') }}
+
+      - name: PV Helper Hausakku Energie
+        unique_id: pv_helper_hausakku_energie
+        unit_of_measurement: kWh
+        device_class: energy_storage
+        state_class: measurement
+        icon: mdi:battery
+        state: >-
+          {{ (states('sensor.inverter_battery') | float(0) * 13.1 / 100) | round(2) }}
+        availability: "{{ has_value('sensor.inverter_battery') }}"
+
+      - name: PV Helper Zendure Energie
+        unique_id: pv_helper_zendure_energie
+        unit_of_measurement: kWh
+        device_class: energy_storage
+        state_class: measurement
+        icon: mdi:battery
+        state: >-
+          {{ (states('sensor.zendure_total_state_of_charge') | float(0)
+              * states('sensor.zendure_total_capacity') | float(0) / 100) | round(2) }}
+        availability: >-
+          {{ has_value('sensor.zendure_total_state_of_charge') and has_value('sensor.zendure_total_capacity') }}
