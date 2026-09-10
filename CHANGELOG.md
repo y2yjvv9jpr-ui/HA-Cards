@@ -4,6 +4,24 @@ Alle nennenswerten Änderungen an diesem Projekt werden hier festgehalten.
 Format grob nach [Keep a Changelog](https://keepachangelog.com/de/1.1.0/),
 Versionierung nach [SemVer](https://semver.org/lang/de/).
 
+## [0.12.3]
+
+### Behoben
+
+- **des-dehumidifier-card:** Der **Chevron öffnete den Aufklappbereich nicht
+  mehr.** Ursache: das in 0.12.2 gegen den Höhen-Überlauf gesetzte
+  `overflow: hidden` auf `ha-card` überschrieb das `overflow: visible`, das
+  `overlay.ts` braucht, damit das Dropdown (`top: 100%`) **unter** der Karte
+  hängen kann — das Panel wurde weggeschnitten (der Klick selbst lief). Das
+  `overflow: hidden` ist entfernt; die Karte läuft ohnehin nicht über, weil der
+  Chart über `min-height: 0` nachgibt.
+- **des-dehumidifier-card (x-Achse):** Die erste Uhrzeit stieß an die
+  y-Achsen-Beschriftung. Jetzt beginnt der Plot 8 px rechts der y-Labels, die
+  erste Zeitbeschriftung ist linksbündig (`text-anchor: start`), „jetzt"
+  rechtsbündig, die mittleren zentriert. Die Ticks liegen auf **vollen
+  6-h-Stunden** (00:00/06:00/12:00/18:00 ab der nächsten Marke nach Start) statt
+  vom Startzeitpunkt aus gezählt.
+
 ## [0.12.2]
 
 ### Geändert

@@ -742,29 +742,41 @@ export class DesDehumidifierCard extends LitElement {
     const tSpan = now - start || 1;
     const xOf = (t: number): number => left + plotW * clamp((t - start) / tSpan, 0, 1);
 
-    // y grid + labels on round 10s.
+    // y grid + labels on round 10s. Labels end 8 px left of the plot, so the
+    // plot (and its first x-tick) never touches the y-axis numbers.
     const yTicks: TemplateResult[] = [];
     for (let v = lo; v <= hi + 0.001; v += Y_TICK) {
       const y = yOf(v);
       yTicks.push(svg`
         <line class="grid" x1=${left} y1=${y} x2=${left + plotW} y2=${y}></line>
-        <text class="axis-label" x=${left - 5} y=${y + 3} text-anchor="end">${formatInt(v)}</text>
+        <text class="axis-label" x=${left - 8} y=${y + 3} text-anchor="end">${formatInt(v)}</text>
       `);
     }
 
-    // x time ticks every 6 h, plus "jetzt" at the right edge.
+    // x time ticks on full-hour 6 h marks (00:00, 06:00, 12:00, 18:00) from the
+    // next such mark after `start`, plus "jetzt" at the right edge. The first
+    // label is left-aligned so it cannot spill into the y-axis, the last
+    // ("jetzt") right-aligned at the plot end, the rest centred.
     const xTicks: TemplateResult[] = [];
-    const steps = Math.max(1, Math.floor(this._historyHours() / X_TICK_HOURS));
-    for (let j = steps; j >= 1; j--) {
-      const t = now - j * X_TICK_HOURS * 3600 * 1000;
-      if (t < start - 1) continue;
-      const x = xOf(t);
+    const baselineY = top + plotH + 13;
+    const hourMs = 3600 * 1000;
+    const stepMs = X_TICK_HOURS * hourMs;
+    const mark = new Date(start);
+    mark.setMinutes(0, 0, 0);
+    while (mark.getTime() < start || mark.getHours() % X_TICK_HOURS !== 0) {
+      mark.setTime(mark.getTime() + hourMs);
+    }
+    let firstTick = true;
+    // Stop short of "jetzt" so the last mark never collides with it.
+    for (let t = mark.getTime(); t < now - 40 * hourMs / 60; t += stepMs) {
+      const anchor = firstTick ? 'start' : 'middle';
+      firstTick = false;
       xTicks.push(svg`
-        <text class="axis-label" x=${x} y=${top + plotH + 13} text-anchor="middle">${hhmm(new Date(t))}</text>
+        <text class="axis-label" x=${xOf(t)} y=${baselineY} text-anchor=${anchor}>${hhmm(new Date(t))}</text>
       `);
     }
     xTicks.push(svg`
-      <text class="axis-label" x=${left + plotW} y=${top + plotH + 13} text-anchor="end">jetzt</text>
+      <text class="axis-label" x=${left + plotW} y=${baselineY} text-anchor="end">jetzt</text>
     `);
 
     const points = this._history.filter((p) => p.t >= start - tSpan * 0.02);
@@ -1053,9 +1065,10 @@ export class DesDehumidifierCard extends LitElement {
         box-sizing: border-box;
         display: flex;
         flex-direction: column;
-        /* Caps the card at the grid height: the chart yields so the chevron
-           keeps its normal bottom spacing instead of being pushed to the edge. */
-        overflow: hidden;
+        /* No overflow:hidden here - overlay.ts needs ha-card to keep
+           overflow:visible so the expanded dropdown (top:100%) can hang below
+           the card. The chart yields via its own min-height:0 + overflow:hidden,
+           so the card never overflows in the first place. */
         background: var(--ha-card-background, var(--card-background-color, #fff));
         color: var(--primary-text-color);
       }
