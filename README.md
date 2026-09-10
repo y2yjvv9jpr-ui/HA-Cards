@@ -1514,6 +1514,48 @@ name: Bett
 
 ---
 
+## Einstellungskarte (`des-settings-card`)
+
+Haus-Betriebsmodi als An/Aus-Zeilen: jede Zeile schaltet ein `input_boolean`
+(oder `switch`), das die Automationen steuert. Kein Chevron, keine Slider. Ohne
+`items` läuft die Karte im Demo-Modus (Lüftung an, Urlaub aus).
+
+- **Kopfzeile:** Name, Metazeile „Automatik" wenn alles aus, sonst
+  „&lt;n&gt; Abweichung(en)". Rechts je aktivem Modus eine Pille mit `pill`-Text
+  in `color` (blau/amber/grau wie die übrigen Karten).
+- **Je Zeile:** Name links, rechts Segmented **An | Aus** (`switch.turn_on`/
+  `turn_off`). Nicht lesbare Entitäten dimmen das Segmented.
+
+| Option  | Typ                     | Beschreibung                                     |
+| ------- | ----------------------- | ------------------------------------------------ |
+| `name`  | string                  | Kopfzeile. Standard `Haus`.                      |
+| `items` | Liste                   | Die Modus-Zeilen (siehe unten).                  |
+
+Je `items`-Eintrag:
+
+| Feld     | Typ                       | Beschreibung                                        |
+| -------- | ------------------------- | --------------------------------------------------- |
+| `entity` | Entity                    | **Pflicht.** `input_boolean` oder `switch`.         |
+| `name`   | string                    | **Pflicht.** Zeilenname.                            |
+| `pill`   | string                    | Pillentext im Kopf, wenn der Modus an ist.          |
+| `color`  | `blue` \| `amber` \| `gray` | Pillenfarbe. Standard `blue`.                     |
+
+```yaml
+type: custom:des-settings-card
+name: Haus
+items:
+  - entity: input_boolean.helperluftungsmodus
+    name: Lüftungsmodus
+    pill: Lüftung
+    color: blue
+  - entity: input_boolean.urlaub
+    name: Urlaubsmodus
+    pill: Urlaub
+    color: amber
+```
+
+---
+
 ## Schreibverhalten
 
 Grundregel: **jedes Bedienelement schreibt in die Entität, an die es gebunden
@@ -1538,6 +1580,7 @@ lokal — es bewegt sich, löst aber keinen Service-Call aus.
 | **Szenen-Kachel**      | `scenes[].action`     | beliebiger Dienst `domain.service` (Ziel/Data aus der Aktion) |
 | **Licht An \| Aus**    | `items[].entity`      | `light.turn_on`/`turn_off` bzw. `switch`/`input_boolean`; „An" nutzt `on_action`, falls gesetzt |
 | **Helligkeit**         | `items[].entity` (`kind: dim`) | `light.turn_on` mit `brightness_pct` (300 ms Debounce) |
+| **Betriebsmodus An \| Aus** | `items[].entity` (Einstellungskarte) | `switch.turn_on` / `turn_off` (`input_boolean`/`switch`) |
 
 Nur die Domains `number`, `input_number`, `switch`, `input_boolean`, `select`,
 `input_select`, `fan`, `humidifier`, `cover` und `light` werden von den

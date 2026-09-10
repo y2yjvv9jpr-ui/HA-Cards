@@ -7,8 +7,9 @@ import { DesDehumidifierCard } from './des-dehumidifier-card';
 import { DesCoverCard } from './des-cover-card';
 import { DesLightCard } from './des-light-card';
 import { DesBedLightCard } from './des-bed-light-card';
+import { DesSettingsCard } from './des-settings-card';
 
-const VERSION = '0.13.0';
+const VERSION = '0.14.0';
 
 interface CardRegistration {
   type: string;
@@ -81,6 +82,13 @@ const CARDS: ReadonlyArray<CardRegistration> = [
     description:
       'Bettlicht (Seiten/Kopfenden): Modi und Szenen-Editor. Vorerst nur Oberfläche mit Demo-Werten.',
   },
+  {
+    type: 'des-settings-card',
+    element: DesSettingsCard,
+    name: 'Daniels Einstellungskarte',
+    description:
+      'Haus-Betriebsmodi als input_boolean (An/Aus je Zeile, Pillen für aktive Modi).',
+  },
 ];
 
 window.customCards = window.customCards ?? [];
@@ -117,4 +125,5 @@ export {
   DesCoverCard,
   DesLightCard,
   DesBedLightCard,
+  DesSettingsCard,
 };

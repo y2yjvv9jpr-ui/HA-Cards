@@ -4,6 +4,17 @@ Alle nennenswerten Änderungen an diesem Projekt werden hier festgehalten.
 Format grob nach [Keep a Changelog](https://keepachangelog.com/de/1.1.0/),
 Versionierung nach [SemVer](https://semver.org/lang/de/).
 
+## [0.14.0]
+
+### Neu
+
+- **des-settings-card** — Haus-Betriebsmodi als An/Aus-Zeilen. Jede Zeile
+  schaltet ein `input_boolean`/`switch` über `switch.turn_on`/`turn_off`; jeder
+  aktive Modus zeigt eine Pille (`pill`-Text in `color` blau/amber/grau) im Kopf,
+  die Metazeile meldet „Automatik" bzw. „&lt;n&gt; Abweichung(en)". Kein Chevron,
+  keine Slider. Ohne `items` Demo-Modus (Lüftung an, Urlaub aus). Registriert als
+  **„Daniels Einstellungskarte"**.
+
 ## [0.13.0]
 
 ### Neu

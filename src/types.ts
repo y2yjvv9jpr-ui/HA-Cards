@@ -677,6 +677,36 @@ export interface DesBedLightCardConfig {
   name?: string;
 }
 
+// ===========================================================================
+// des-settings-card
+// ===========================================================================
+
+/** Pill colour for a settings mode: blue (like "Laden"), amber ("Entladen"), grey ("Aus"). */
+export type SettingsPillColor = 'blue' | 'amber' | 'gray';
+
+/** One house operating mode, backed by an `input_boolean` (or switch). */
+export interface SettingsItemConfig {
+  /** `input_boolean` or `switch` driving the automations. */
+  entity: string;
+  name: string;
+  /** Pill text shown while the mode is on. */
+  pill?: string;
+  /** Pill colour. Default `blue`. */
+  color?: SettingsPillColor;
+}
+
+/**
+ * House operating modes as on/off rows. With no `items` the card shows a demo
+ * (Lüftung on, Urlaub off). Each row's segmented writes its entity via
+ * `switch.turn_on`/`turn_off`; every `on` mode adds a pill in the header.
+ */
+export interface DesSettingsCardConfig {
+  type: string;
+  /** Header title. Default "Haus". */
+  name?: string;
+  items?: SettingsItemConfig[];
+}
+
 /** Minimal shape of the Home Assistant object handed to a card. */
 export interface HomeAssistant {
   states: Record<
