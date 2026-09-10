@@ -1556,6 +1556,55 @@ items:
 
 ---
 
+## Garagenkarte (`des-garage-card`)
+
+Übersicht der Garagengeräte. **Eingeklappt** reiner Status (nichts klickbar außer
+dem Chevron), **aufgeklappt** eine Tabelle mit Leistung, Verbrauch je Zeitraum und
+An/Aus je Gerät. Ohne `light`/`devices` läuft die Karte im Demo-Modus.
+
+- **Kopfzeile:** Name, Metazeile „&lt;n&gt; Geräte an · &lt;Summe&gt; W" (Summe
+  aller `power_entity` inkl. Licht). Rechts eine amberfarbene Pille „Licht an",
+  wenn `light.entity` an ist.
+- **Status-Raster** (2 Spalten): je Gerät eine Kachel mit Statuspunkt (grün =
+  Schalter an **und** Leistung ≥ `on_threshold_w`; grau gefüllt = Schalter an,
+  aber unter der Schwelle; leerer Kreis = aus/unlesbar), Name und aktueller
+  Leistung („18 W", aus → „–"). Nicht klickbar.
+- **Aufgeklappt:** oben rechts ein Zeitraum-Umschalter Tag/Woche/Monat/Jahr
+  (lokaler Zustand). Tabelle: Gerät, Leistung, Verbrauch (kWh, 2 Nachkommastellen),
+  An | Aus. Erste Zeile Licht (`light.turn_on`/`turn_off`), dann die Geräte
+  (`switch.turn_on`/`turn_off`), letzte Zeile „Gesamt".
+
+**Verbrauch ohne Helfer:** aus der Langzeitstatistik per
+`recorder/statistics_during_period` (`types: ['change']`, `period` = `hour`/`day`/
+`month` je Zeitraum), Summe der `change`-Werte seit Periodenbeginn (Tag = 00:00,
+Woche = Montag, Monat = Monatserster, Jahr = 1. Januar). Wird beim Aufklappen und
+bei Zeitraumwechsel geladen, je Zeitraum gecacht und alle 15 min erneuert. Liefert
+ein Sensor keine Statistik, steht „–" (Tooltip „keine Statistik"); die Werte sind
+stündlich (Tooltip „Stand der letzten vollen Stunde").
+
+| Option           | Typ    | Beschreibung                                                        |
+| ---------------- | ------ | ------------------------------------------------------------------ |
+| `name`           | string | Kopfzeile. Standard `Garage`.                                      |
+| `light`          | Objekt | `entity` (`light`), `name`, optional `power_entity`/`energy_entity`. |
+| `devices`        | Liste  | Je Gerät `entity` (`switch`), `name`, optional `power_entity`/`energy_entity`. |
+| `on_threshold_w` | Zahl   | Ab dieser Leistung gilt ein Gerät als aktiv (grüner Punkt). Standard `2`. |
+
+```yaml
+type: custom:des-garage-card
+name: Garage
+light:
+  entity: light.garage_licht
+  power_entity: sensor.garage_licht_power
+  energy_entity: sensor.garage_licht_energy
+  name: Licht
+devices:
+  - { entity: switch.garage_steckdose_werkbank, power_entity: sensor.garage_steckdose_werkbank_power, energy_entity: sensor.garage_steckdose_werkbank_energy, name: Werkbank }
+  - { entity: switch.garage_kompressor, power_entity: sensor.garage_kompressor_power, energy_entity: sensor.garage_kompressor_energy, name: Kompressor }
+on_threshold_w: 2
+```
+
+---
+
 ## Schreibverhalten
 
 Grundregel: **jedes Bedienelement schreibt in die Entität, an die es gebunden
@@ -1581,6 +1630,7 @@ lokal — es bewegt sich, löst aber keinen Service-Call aus.
 | **Licht An \| Aus**    | `items[].entity`      | `light.turn_on`/`turn_off` bzw. `switch`/`input_boolean`; „An" nutzt `on_action`, falls gesetzt |
 | **Helligkeit**         | `items[].entity` (`kind: dim`) | `light.turn_on` mit `brightness_pct` (300 ms Debounce) |
 | **Betriebsmodus An \| Aus** | `items[].entity` (Einstellungskarte) | `switch.turn_on` / `turn_off` (`input_boolean`/`switch`) |
+| **Garage An \| Aus**   | `light`/`devices[].entity` | `light.turn_on`/`turn_off` (Licht) bzw. `switch.turn_on`/`turn_off` |
 
 Nur die Domains `number`, `input_number`, `switch`, `input_boolean`, `select`,
 `input_select`, `fan`, `humidifier`, `cover` und `light` werden von den

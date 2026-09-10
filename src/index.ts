@@ -8,8 +8,9 @@ import { DesCoverCard } from './des-cover-card';
 import { DesLightCard } from './des-light-card';
 import { DesBedLightCard } from './des-bed-light-card';
 import { DesSettingsCard } from './des-settings-card';
+import { DesGarageCard } from './des-garage-card';
 
-const VERSION = '0.14.0';
+const VERSION = '0.15.0';
 
 interface CardRegistration {
   type: string;
@@ -89,6 +90,13 @@ const CARDS: ReadonlyArray<CardRegistration> = [
     description:
       'Haus-Betriebsmodi als input_boolean (An/Aus je Zeile, Pillen für aktive Modi).',
   },
+  {
+    type: 'des-garage-card',
+    element: DesGarageCard,
+    name: 'Daniels Garagenkarte',
+    description:
+      'Garage: Status-Kacheln je Gerät, aufgeklappt Tabelle mit Leistung, Verbrauch je Zeitraum und An/Aus.',
+  },
 ];
 
 window.customCards = window.customCards ?? [];
@@ -126,4 +134,5 @@ export {
   DesLightCard,
   DesBedLightCard,
   DesSettingsCard,
+  DesGarageCard,
 };

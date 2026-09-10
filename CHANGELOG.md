@@ -4,6 +4,21 @@ Alle nennenswerten Änderungen an diesem Projekt werden hier festgehalten.
 Format grob nach [Keep a Changelog](https://keepachangelog.com/de/1.1.0/),
 Versionierung nach [SemVer](https://semver.org/lang/de/).
 
+## [0.15.0]
+
+### Neu
+
+- **des-garage-card** — Garagenübersicht. Eingeklappt reiner Status (Metazeile
+  „&lt;n&gt; Geräte an · &lt;Summe&gt; W", amber-Pille „Licht an", 2-Spalten-Raster
+  mit Statuspunkt je Gerät — grün aktiv, grau an-aber-unter-Schwelle, leer aus —
+  und aktueller Leistung). Aufgeklappt eine Tabelle mit Leistung, Verbrauch je
+  Zeitraum (Tag/Woche/Monat/Jahr) und An/Aus je Gerät; Licht über `light.turn_on`/
+  `turn_off`, Geräte über `switch.turn_on`/`turn_off`. Verbrauch ohne Helfer aus
+  der Langzeitstatistik (`recorder/statistics_during_period`, Summe der
+  `change`-Werte seit Periodenbeginn), je Zeitraum gecacht und alle 15 min
+  erneuert; fehlende Statistik zeigt „–". Ohne Entities Demo-Modus. Registriert
+  als **„Daniels Garagenkarte"**.
+
 ## [0.14.0]
 
 ### Neu

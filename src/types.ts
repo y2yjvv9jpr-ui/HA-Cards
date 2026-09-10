@@ -707,6 +707,38 @@ export interface DesSettingsCardConfig {
   items?: SettingsItemConfig[];
 }
 
+// ===========================================================================
+// des-garage-card
+// ===========================================================================
+
+/** One switchable device (or the light) with optional power/energy sensors. */
+export interface GarageDeviceConfig {
+  /** `switch`/`input_boolean` (device) or `light` (the light row). */
+  entity: string;
+  name: string;
+  /** Instantaneous power sensor (W). */
+  power_entity?: string;
+  /** Energy sensor (kWh) with long-term statistics, for the consumption column. */
+  energy_entity?: string;
+}
+
+/**
+ * Garage overview: collapsed a pure status grid, expanded a table with power,
+ * per-period consumption (from long-term statistics) and on/off per device.
+ * With no `light`/`devices` the card shows a demo.
+ */
+export interface DesGarageCardConfig {
+  type: string;
+  /** Header title. Default "Garage". */
+  name?: string;
+  /** The light row (driven with `light.turn_on`/`turn_off`). */
+  light?: GarageDeviceConfig;
+  /** Switchable devices, in display order. */
+  devices?: GarageDeviceConfig[];
+  /** Power (W) at/above which a device counts as active (green dot). Default 2. */
+  on_threshold_w?: number;
+}
+
 /** Minimal shape of the Home Assistant object handed to a card. */
 export interface HomeAssistant {
   states: Record<
