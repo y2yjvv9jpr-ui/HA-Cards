@@ -228,6 +228,8 @@ Energiesensor.
   `energy`-Sensoren direkt (`recorder/statistics_during_period`, Summe der
   `change`-Werte je Zeitraum). Die Werte sind stündlich (Statistik-Takt); keine
   Utility-Meter/Template-Helfer nötig.
+- **Einstellungen (aufgeklappt):** `input_boolean.helper_moweron` steuert das
+  Laden des Mähroboters („Mähroboter Laden aktiv"; Pille „Mäher lädt", blau).
 
 ## Eigene Helfer (Packages)
 

@@ -94,6 +94,10 @@ dann umgesetzt (siehe claude.md).
       Garage-Seite entfällt. `yaml/ui/Garage Dashboard.yaml` gelöscht, Karte
       unverändert hinter der Bett-Karte im Haus-Dashboard.
       → **Haus-Dashboard neu einspielen**, **Garage-Seite in HA löschen**.
+- [x] 11.09. **des-garage-card** (v0.17.0): `settings`-Block (aufgeklappt) —
+      `input_boolean.helper_moweron` „Mähroboter Laden aktiv" mit Pille „Mäher
+      lädt" (blau). → **per HACS auf 0.17.0**, Haus-Dashboard neu einspielen,
+      Entity-ID `input_boolean.helper_moweron` prüfen.
 
 ## 0a. 10.09. — im Repo, in HA einzuspielen
 
