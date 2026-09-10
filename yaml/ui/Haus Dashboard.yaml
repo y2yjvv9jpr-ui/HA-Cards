@@ -79,35 +79,6 @@ sections:
                 name: Kinderzimmer Marie
               - entity: cover.jalousie_og_aneka_jalousie_og_aneka
                 name: Anekas Zimmer
-      - type: custom:des-dehumidifier-card
-        grid_options:
-          columns: 12
-          rows: 5
-        name: Luftentfeuchter
-        location: Arbeitszimmer
-        humidity_entity: sensor.arete_r_two_25l_dehumidifier_air_purifier_luftfeuchtigkeit
-        humidifier_entity: humidifier.arete_r_two_25l_dehumidifier_air_purifier
-        power_entity: fan.arete_r_two_25l_dehumidifier_air_purifier
-        countdown_entity: select.arete_r_two_25l_dehumidifier_air_purifier_countdown
-        countdown_off_option: Abbrechen
-        child_lock_entity: switch.arete_r_two_25l_dehumidifier_air_purifier_kindersicherung
-        history_hours: 24
-        target_min: 30
-        target_max: 80
-        target_step: 5
-        faults:
-          - entity: binary_sensor.arete_r_two_25l_dehumidifier_air_purifier_tank_voll
-            name: Tank voll
-            severity: error
-          - entity: binary_sensor.arete_r_two_25l_dehumidifier_air_purifier_nass
-            name: Nass
-            severity: error
-          - entity: binary_sensor.arete_r_two_25l_dehumidifier_air_purifier_temperaturfehler
-            name: Temperaturfehler
-            severity: error
-          - entity: binary_sensor.arete_r_two_25l_dehumidifier_air_purifier_abtauen
-            name: Abtauen
-            severity: warning
       - type: custom:des-light-card
         grid_options:
           columns: 12
@@ -131,8 +102,70 @@ sections:
             name: Couch
             icon: mdi:ceiling-light
             kind: switch
+      - type: custom:weather-forecast-card
+        show_current: true
+        show_forecast: true
+        default_forecast: daily
+        forecast_types: both
+        tap_action:
+          action: more-info
+        entity: weather.braunschwg
+        show_condition_effects:
+          - moon
+          - sun
+          - cloud
+          - rain
+          - snow
+          - lightning
+        show_moon_phase: true
+        forecast:
+          mode: chart
+          show_sun_times: true
+          use_color_thresholds: true
+          scroll_to_selected: true
+          default_chart_attribute: temperature_and_precipitation
+          extra_attribute: wind_bearing
+          hourly_group_size: 1
+        forecast_action:
+          tap_action:
+            action: toggle-forecast
+          hold_action:
+            action: select-forecast-attribute
+        current:
+          secondary_info_attribute: humidity
+      - type: custom:des-dehumidifier-card
+        grid_options:
+          columns: 12
+          rows: 5
+        name: Luftentfeuchter
+        location: Arbeitszimmer
+        humidity_entity: sensor.arete_r_two_25l_dehumidifier_air_purifier_luftfeuchtigkeit
+        humidifier_entity: humidifier.arete_r_two_25l_dehumidifier_air_purifier
+        power_entity: fan.arete_r_two_25l_dehumidifier_air_purifier
+        countdown_entity: select.arete_r_two_25l_dehumidifier_air_purifier_countdown
+        countdown_off_option: Abbrechen
+        child_lock_entity: switch.arete_r_two_25l_dehumidifier_air_purifier_kindersicherung
+        history_hours: 24
+        target_min: 30
+        target_max: 80
+        target_step: 5
+        faults:
+          - entity: binary_sensor.arete_r_two_25l_dehumidifier_air_purifier_tank_voll
+            name: Tank voll
+            severity: error
+          - entity: binary_sensor.arete_r_two_25l_dehumidifier_air_purifier_nass
+            name: Nass
+            severity: error
+          - entity: >-
+              binary_sensor.arete_r_two_25l_dehumidifier_air_purifier_temperaturfehler
+            name: Temperaturfehler
+            severity: error
+          - entity: binary_sensor.arete_r_two_25l_dehumidifier_air_purifier_abtauen
+            name: Abtauen
+            severity: warning
       - type: custom:des-bed-light-card
         grid_options:
           columns: 12
           rows: 3
         name: Bett
+cards: []
