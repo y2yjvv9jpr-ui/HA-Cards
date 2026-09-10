@@ -407,24 +407,35 @@ sections:
         default_period: day
         periods:
           day:
-            meta: gespeicherte Energie in kWh
+            meta: gespeicherte Energie in kWh — links gesamt, rechts je Speicher
             chart:
               graph_span: 24h
               span:
                 start: day
-              stacked: true
+              yaxis:
+                - id: gesamt
+                  min: 0
+                  max: 18.5
+                  decimals: 0
+                  apex_config:
+                    tickAmount: 5
+                    title:
+                      text: gesamt kWh
+                - id: einzeln
+                  opposite: true
+                  min: 0
+                  max: 13.1
+                  decimals: 0
+                  apex_config:
+                    tickAmount: 5
+                    title:
+                      text: je Speicher kWh
               apex_config:
-                chart:
-                  stacked: true
                 legend:
                   position: bottom
                 grid:
                   borderColor: var(--divider-color)
                   strokeDashArray: 3
-                yaxis:
-                  min: 0
-                  max: 18.5
-                  tickAmount: 5
                 xaxis:
                   tooltip:
                     enabled: false
@@ -433,11 +444,9 @@ sections:
                       hour: HH
                 stroke:
                   curve: smooth
-                  width: 1
                 fill:
-                  opacity: 0.6
+                  opacity: 0.35
               all_series_config:
-                type: area
                 unit: kWh
                 float_precision: 1
                 extend_to: false
@@ -445,31 +454,54 @@ sections:
                   func: avg
                   duration: 10min
               series:
+                - entity: sensor.pv_helper_speicher_energie
+                  name: Gesamt
+                  type: line
+                  stroke_width: 2
+                  color: var(--primary-text-color)
+                  yaxis_id: gesamt
                 - entity: sensor.pv_helper_hausakku_energie
                   name: Hausakkus
+                  type: area
+                  stroke_width: 1
                   color: '#378ADD'
+                  yaxis_id: einzeln
                 - entity: sensor.pv_helper_zendure_energie
                   name: Zendure
+                  type: area
+                  stroke_width: 1
                   color: '#8FC7F0'
+                  yaxis_id: einzeln
           week:
             meta: gespeicherte Energie in kWh, Wochenverlauf
             chart:
               graph_span: 7d
               span:
                 start: isoWeek
-              stacked: true
+              yaxis:
+                - id: gesamt
+                  min: 0
+                  max: 18.5
+                  decimals: 0
+                  apex_config:
+                    tickAmount: 5
+                    title:
+                      text: gesamt kWh
+                - id: einzeln
+                  opposite: true
+                  min: 0
+                  max: 13.1
+                  decimals: 0
+                  apex_config:
+                    tickAmount: 5
+                    title:
+                      text: je Speicher kWh
               apex_config:
-                chart:
-                  stacked: true
                 legend:
                   position: bottom
                 grid:
                   borderColor: var(--divider-color)
                   strokeDashArray: 3
-                yaxis:
-                  min: 0
-                  max: 18.5
-                  tickAmount: 5
                 xaxis:
                   tooltip:
                     enabled: false
@@ -478,11 +510,9 @@ sections:
                       day: dd.MM
                 stroke:
                   curve: smooth
-                  width: 1
                 fill:
-                  opacity: 0.6
+                  opacity: 0.35
               all_series_config:
-                type: area
                 unit: kWh
                 float_precision: 1
                 extend_to: false
@@ -490,12 +520,24 @@ sections:
                   func: avg
                   duration: 1h
               series:
+                - entity: sensor.pv_helper_speicher_energie
+                  name: Gesamt
+                  type: line
+                  stroke_width: 2
+                  color: var(--primary-text-color)
+                  yaxis_id: gesamt
                 - entity: sensor.pv_helper_hausakku_energie
                   name: Hausakkus
+                  type: area
+                  stroke_width: 1
                   color: '#378ADD'
+                  yaxis_id: einzeln
                 - entity: sensor.pv_helper_zendure_energie
                   name: Zendure
+                  type: area
+                  stroke_width: 1
                   color: '#8FC7F0'
+                  yaxis_id: einzeln
 cards: []
 dense_section_placement: false
 icon: mdi:solar-power-variant
