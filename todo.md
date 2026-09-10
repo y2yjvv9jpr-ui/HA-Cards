@@ -1,7 +1,19 @@
-# todo.md — offene Punkte (Stand 07.09.2026, 09:30)
+# todo.md — offene Punkte (Stand 10.09.2026, 13:50)
 
 Reihenfolge = Vorschlag. Jeder Punkt wird erst abgestimmt, dann freigegeben,
 dann umgesetzt (siehe claude.md).
+
+## 0a. 10.09. — im Repo, in HA einzuspielen
+
+- [x] 10.09. `pv_helper_energiezaehler.yaml`: Verbrauch = Integral der Hausleistung
+      (`pv_helper_energie_verbrauch_integral` aus `pv_helper_haus_leistung`) statt
+      Deye-Verbrauchszähler (zählte Netzladen als Hausverbrauch: 17,4 statt 12,2 kWh).
+      → Datei einspielen, **Neustart** (neuer Integration-Sensor), dann Kalibrierskript
+      einmal ausführen (setzt Tag/Woche/Monat/Jahr-Verbrauch aus der Bilanz).
+- [x] 10.09. Kalibrierskript: Verbrauch Woche/Monat/Jahr/Tag = Produktion + Import −
+      Export + Entladen − Laden derselben Periode (keine Referenzwerte mehr nötig).
+      → Skript in HA (YAML-Modus) ersetzen.
+- [x] 10.09. docs/logik.md E4/E8 nachgezogen.
 
 ## 0. Gesamtlogik verständlich machen
 
