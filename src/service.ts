@@ -111,8 +111,12 @@ export function writeSelect(
  */
 function targetState(
   control: ChargeModeControlConfig,
-  mode: 'charge' | 'auto',
+  mode: 'charge' | 'auto' | 'off',
 ): string | undefined {
+  // "off" only ever exists for selects (off_state); it is validated to require
+  // one, so there is no switch fallback here.
+  if (mode === 'off') return control.off_state;
+
   const explicit = mode === 'charge' ? control.charge_state : control.auto_state;
   if (explicit !== undefined) return explicit;
   return isWritable(control.entity, SWITCH_DOMAINS)
@@ -139,6 +143,19 @@ export function isChargeState(
 }
 
 /**
+ * Does the entity's current state mean "off" (standby)? Only ever true when an
+ * `off_state` is configured and matches; otherwise the state is charge or auto.
+ */
+export function isOffState(
+  control: ChargeModeControlConfig,
+  state: string,
+): boolean {
+  const off = control.off_state;
+  if (off === undefined) return false;
+  return off.trim().toLowerCase() === state.trim().toLowerCase();
+}
+
+/**
  * Checks a `charge_mode_control` block at config time.
  *
  * Returns the error message to throw, or `null` when the block is usable.
@@ -150,13 +167,20 @@ export function validateChargeModeControl(control: unknown): string | null {
     return '"charge_mode_control" muss ein Objekt mit "entity" sein';
   }
 
-  const { entity, charge_state, auto_state } = control as ChargeModeControlConfig;
+  const { entity, charge_state, auto_state, off_state } =
+    control as ChargeModeControlConfig;
 
   if (typeof entity !== 'string' || entity.length === 0) {
     return '"charge_mode_control" braucht "entity"';
   }
   if (!isWritableChargeMode(control)) {
     return `"charge_mode_control.entity" muss select, input_select, switch oder input_boolean sein (ist: ${entity})`;
+  }
+
+  // A three-part control needs a select: a switch is binary and cannot carry a
+  // third "off" option.
+  if (off_state !== undefined && !SELECT_DOMAINS.has(domainOf(entity))) {
+    return `"charge_mode_control.off_state" gibt es nur für select/input_select (ist: ${entity})`;
   }
 
   // Switch-like entities are binary, so on/off are sensible defaults. A select
@@ -179,7 +203,7 @@ export function validateChargeModeControl(control: unknown): string | null {
 export function writeChargeMode(
   hass: HomeAssistant | undefined,
   control: ChargeModeControlConfig,
-  mode: 'charge' | 'auto',
+  mode: 'charge' | 'auto' | 'off',
 ): Promise<unknown> {
   const entity = control.entity;
   const domain = domainOf(entity);
@@ -187,11 +211,15 @@ export function writeChargeMode(
 
   if (SELECT_DOMAINS.has(domain)) {
     if (target === undefined) {
+      const field =
+        mode === 'charge'
+          ? 'charge_state'
+          : mode === 'auto'
+            ? 'auto_state'
+            : 'off_state';
       return Promise.reject(
         new Error(
-          `des-storage-card: charge_mode_control braucht ${
-            mode === 'charge' ? 'charge_state' : 'auto_state'
-          } für ${entity}`,
+          `des-storage-card: charge_mode_control braucht ${field} für ${entity}`,
         ),
       );
     }

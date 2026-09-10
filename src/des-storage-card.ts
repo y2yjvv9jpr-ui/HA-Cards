@@ -9,6 +9,7 @@ import {
 } from './resolve';
 import {
   isChargeState,
+  isOffState,
   isWritableChargeMode,
   isWritableNumber,
   isWritableSwitch,
@@ -22,6 +23,7 @@ import { chevronStyles } from './chevron';
 import { overlayStyles, OverlayCloser } from './overlay';
 import type {
   BackupState,
+  BatteryPackConfig,
   ChargeMode,
   NumberValue,
   DesStorageCardConfig,
@@ -146,6 +148,13 @@ const CHARGE_MODES: ReadonlyArray<{ value: ChargeMode; label: string }> = [
   { value: 'auto', label: 'Auto' },
 ];
 
+/** Laden | Auto | Aus - only when `charge_mode_control.off_state` is set. */
+const CHARGE_MODES_WITH_OFF: ReadonlyArray<{ value: ChargeMode; label: string }> = [
+  { value: 'charge', label: 'Laden' },
+  { value: 'auto', label: 'Auto' },
+  { value: 'off', label: 'Aus' },
+];
+
 const ITEM_MODES: ReadonlyArray<{ value: ItemMode; label: string }> = [
   { value: 'on', label: 'An' },
   { value: 'auto', label: 'Auto' },
@@ -221,15 +230,21 @@ function formatEstimate(hours: number): string | null {
 }
 
 /**
- * Traffic-light pill modifier for the battery temperature. Same thresholds as
- * when the value lived in the meta line.
+ * Traffic-light level for the battery temperature, shared by the header pill
+ * and the per-pack rows.
  *
  *   < 4 °C  red · 4-8 °C  yellow · 8-40 °C  neutral · 40-50 °C  yellow · > 50 °C  red
  */
+function temperatureLevel(temp: number): 'neutral' | 'warn' | 'alert' {
+  if (temp < 4 || temp > 50) return 'alert';
+  if (temp < 8 || temp > 40) return 'warn';
+  return 'neutral';
+}
+
+/** Pill modifier for the header temperature pill. */
 function temperatureBadge(temp: number): string {
-  if (temp < 4 || temp > 50) return 'badge-alert';
-  if (temp < 8 || temp > 40) return 'badge-warn';
-  return 'badge-neutral';
+  const level = temperatureLevel(temp);
+  return level === 'neutral' ? 'badge-neutral' : `badge-${level}`;
 }
 
 export class DesStorageCard extends LitElement {
@@ -242,6 +257,7 @@ export class DesStorageCard extends LitElement {
     _targetLocal: { state: true },
     _dischargeLocal: { state: true },
     _chargeModeLocal: { state: true },
+    _backupSwitchLocal: { state: true },
     _expanded: { state: true },
     _itemModesLocal: { state: true },
   };
@@ -256,6 +272,8 @@ export class DesStorageCard extends LitElement {
   declare _targetLocal: number | null;
   declare _dischargeLocal: number | null;
   declare _chargeModeLocal: ChargeMode | null;
+  /** Optimistic state of the emergency-outlet switch; `null` follows the entity. */
+  declare _backupSwitchLocal: boolean | null;
   declare _itemModesLocal: Array<ItemMode | null>;
 
   /** Pending debounced slider writes, keyed by which slider they belong to. */
@@ -286,6 +304,7 @@ export class DesStorageCard extends LitElement {
     this._targetLocal = null;
     this._dischargeLocal = null;
     this._chargeModeLocal = null;
+    this._backupSwitchLocal = null;
     this._itemModesLocal = [];
   }
 
@@ -338,6 +357,7 @@ export class DesStorageCard extends LitElement {
     this._targetLocal = null;
     this._dischargeLocal = null;
     this._chargeModeLocal = null;
+    this._backupSwitchLocal = null;
   }
 
   override disconnectedCallback(): void {
@@ -424,12 +444,26 @@ export class DesStorageCard extends LitElement {
 
       const control = config.charge_mode_control;
       if (this._chargeModeLocal !== null && control?.entity) {
-        const state = resolveText(control.entity, this.hass);
+        const actual = this._chargeModeFromEntity(control);
+        if (actual !== null && actual === this._chargeModeLocal) {
+          this._chargeModeLocal = null;
+          this._clearSettle('chargeMode');
+        }
+      }
+
+      const backup = config.backup;
+      if (
+        this._backupSwitchLocal !== null &&
+        backup &&
+        typeof backup !== 'string' &&
+        backup.switch_entity
+      ) {
+        const state = resolveText(backup.switch_entity, this.hass);
         if (state.kind === 'value') {
-          const actual = isChargeState(control, state.value) ? 'charge' : 'auto';
-          if (actual === this._chargeModeLocal) {
-            this._chargeModeLocal = null;
-            this._clearSettle('chargeMode');
+          const on = state.value.trim().toLowerCase() === 'on';
+          if (on === this._backupSwitchLocal) {
+            this._backupSwitchLocal = null;
+            this._clearSettle('backupSwitch');
           }
         }
       }
@@ -777,17 +811,21 @@ export class DesStorageCard extends LitElement {
     if (!backup || backup === 'none') return 'none';
 
     if (typeof backup === 'string') {
-      return backup === 'active' || backup === 'ready' ? backup : 'none';
+      return backup === 'active' || backup === 'ready' || backup === 'off'
+        ? backup
+        : 'none';
     }
 
     const state = resolveText(backup.entity, this.hass);
-    // An unavailable entity must not be reported as "Notstrom bereit".
+    // An unavailable entity must not be reported either way.
     if (state.kind !== 'value') return 'none';
 
+    // active_states describe the emergency outlet being on/ready: a match is
+    // green "Notstrom bereit", anything else red "Notstrom aus".
     const active = (backup.active_states ?? []).some(
       (candidate) => candidate.trim().toLowerCase() === state.value.toLowerCase(),
     );
-    return active ? 'active' : 'ready';
+    return active ? 'ready' : 'off';
   }
 
   private _threshold(config: DesStorageCardConfig): number | null {
@@ -830,9 +868,7 @@ export class DesStorageCard extends LitElement {
     if (control?.entity) {
       // A configured control owns the state; never fall back to charge_mode,
       // which would report a stale static value as if it were live.
-      const state = resolveText(control.entity, this.hass);
-      if (state.kind !== 'value') return null;
-      return isChargeState(control, state.value) ? 'charge' : 'auto';
+      return this._chargeModeFromEntity(control);
     }
 
     const resolved = resolveText(config.charge_mode, this.hass);
@@ -840,6 +876,20 @@ export class DesStorageCard extends LitElement {
       resolved.value.trim().toLowerCase() === 'charge'
       ? 'charge'
       : 'auto';
+  }
+
+  /**
+   * The mode the control's entity currently reports, ignoring any local
+   * override. `off` only when an `off_state` matches; `null` when the entity
+   * cannot be read (so no segment is highlighted).
+   */
+  private _chargeModeFromEntity(
+    control: NonNullable<DesStorageCardConfig['charge_mode_control']>,
+  ): ChargeMode | null {
+    const state = resolveText(control.entity, this.hass);
+    if (state.kind !== 'value') return null;
+    if (isOffState(control, state.value)) return 'off';
+    return isChargeState(control, state.value) ? 'charge' : 'auto';
   }
 
   /**
@@ -968,7 +1018,9 @@ export class DesStorageCard extends LitElement {
 
   /**
    * Two labelled slider rows on one grid, so labels, tracks and values line
-   * up. The charge-mode control sits to their right, centred over both rows.
+   * up. The charge-mode control sits to their right, centred over both rows -
+   * or, with a three-part (Laden|Auto|Aus) control, on its own row above them.
+   * Optional per-pack rows and an emergency-outlet switch follow underneath.
    */
   private _renderBatteryControls(config: DesStorageCardConfig): TemplateResult {
     const mode = this._chargeMode(config);
@@ -983,10 +1035,26 @@ export class DesStorageCard extends LitElement {
     const discharge = showDischarge ? this._dischargeLimit(config) : null;
     const dischargeRange = this._rangeFor(config.discharge_limit_entity, DISCHARGE_RANGE);
 
+    const offState = config.charge_mode_control?.off_state;
+    const hasOff = typeof offState === 'string' && offState.trim().length > 0;
+    const segmented = renderSegmented(
+      hasOff ? CHARGE_MODES_WITH_OFF : CHARGE_MODES,
+      mode,
+      (value) => this._setChargeMode(value),
+      'Lademodus',
+    );
+
+    const packs = config.packs ?? [];
+    const backup = config.backup;
+    const switchEntity =
+      backup && typeof backup !== 'string' ? backup.switch_entity : undefined;
+
     return html`
       <div class="controls">
-        <div class="ctl-rows">
-          <span class="ctl-label">Ladegrenze</span>
+        ${hasOff ? html`<div class="mode-row">${segmented}</div>` : nothing}
+        <div class="ctl-main">
+          <div class="ctl-rows">
+            <span class="ctl-label">Ladegrenze</span>
           <input
             class="slider"
             type="range"
@@ -1043,13 +1111,73 @@ export class DesStorageCard extends LitElement {
                 </span>
               `
             : nothing}
+          </div>
+          ${hasOff ? nothing : segmented}
         </div>
-        ${renderSegmented(
-          CHARGE_MODES,
-          mode,
-          (value) => this._setChargeMode(value),
-          'Lademodus',
-        )}
+        ${packs.length > 0
+          ? html`<div class="packs">
+              ${packs.map((pack) => this._renderPack(pack))}
+            </div>`
+          : nothing}
+        ${switchEntity
+          ? this._renderBackupSwitchRow(config, switchEntity)
+          : nothing}
+      </div>
+    `;
+  }
+
+  /**
+   * One compact pack row: name, soc, temperature (traffic-light coloured) and
+   * cell balance. A value the card cannot read shows a muted dash.
+   */
+  private _renderPack(pack: BatteryPackConfig): TemplateResult {
+    const soc = resolveNumber(pack.soc, this.hass);
+    const temp = resolveNumber(pack.temp_c, this.hass);
+    const balance = resolveText(pack.balance, this.hass);
+
+    const tempLevel = temp.kind === 'value' ? temperatureLevel(temp.value) : 'neutral';
+
+    return html`
+      <div class="pack">
+        <span class="pack-name">${pack.name}</span>
+        <span class="pack-sep">·</span>
+        <span class="pack-val">
+          ${soc.kind === 'value' ? `${formatInt(soc.value)} %` : this._dash()}
+        </span>
+        <span class="pack-sep">·</span>
+        <span class="pack-val pack-temp ${tempLevel}">
+          ${temp.kind === 'value' ? `${formatFixed(temp.value)} °C` : this._dash()}
+        </span>
+        <span class="pack-sep">·</span>
+        <span class="pack-val">
+          Zellen: ${balance.kind === 'value' ? balance.value : this._dash()}
+        </span>
+      </div>
+    `;
+  }
+
+  /** "Notstromsteckdose" row with a switch, under the sliders / pack rows. */
+  private _renderBackupSwitchRow(
+    config: DesStorageCardConfig,
+    switchEntity: string,
+  ): TemplateResult {
+    const on = this._backupSwitchOn(config);
+    const readable = on !== null;
+
+    return html`
+      <div class="switch-row">
+        <span class="ctl-label ${readable ? '' : 'disabled'}">Notstromsteckdose</span>
+        <ha-switch
+          .checked=${on === true}
+          .disabled=${!readable}
+          aria-label="Notstromsteckdose"
+          title=${readable ? nothing : 'Zustand nicht lesbar'}
+          @change=${(ev: Event) =>
+            this._setBackupSwitch(
+              switchEntity,
+              (ev.target as HTMLInputElement).checked,
+            )}
+        ></ha-switch>
       </div>
     `;
   }
@@ -1285,9 +1413,13 @@ export class DesStorageCard extends LitElement {
   }
 
   private _renderBackupBadge(backup: BackupState): TemplateResult {
-    return backup === 'active'
-      ? this._renderBadge('NOTSTROM AKTIV', 'backup-active')
-      : this._renderBadge('Notstrom bereit', 'backup-ready');
+    if (backup === 'active') {
+      return this._renderBadge('NOTSTROM AKTIV', 'backup-active');
+    }
+    if (backup === 'off') {
+      return this._renderBadge('Notstrom aus', 'backup-off');
+    }
+    return this._renderBadge('Notstrom bereit', 'backup-ready');
   }
 
   /**
@@ -1344,6 +1476,29 @@ export class DesStorageCard extends LitElement {
     void this._write(writeChargeMode(this.hass, control, mode), () => {
       this._clearSettle('chargeMode');
       this._chargeModeLocal = null;
+    });
+  }
+
+  /** On/off of the emergency outlet; `null` when it cannot be read. */
+  private _backupSwitchOn(config: DesStorageCardConfig): boolean | null {
+    if (this._backupSwitchLocal !== null) return this._backupSwitchLocal;
+    const backup = config.backup;
+    if (!backup || typeof backup === 'string' || !backup.switch_entity) return null;
+    const state = resolveText(backup.switch_entity, this.hass);
+    if (state.kind !== 'value') return null;
+    return state.value.trim().toLowerCase() === 'on';
+  }
+
+  private _setBackupSwitch(entityId: string, on: boolean): void {
+    this._backupSwitchLocal = on;
+    if (!isWritableSwitch(entityId)) return;
+
+    this._holdOptimistic('backupSwitch', () => {
+      this._backupSwitchLocal = null;
+    });
+    void this._write(writeSwitch(this.hass, entityId, on), () => {
+      this._clearSettle('backupSwitch');
+      this._backupSwitchLocal = null;
     });
   }
 
@@ -1594,6 +1749,13 @@ export class DesStorageCard extends LitElement {
       color: var(--success-color, #2e7d32);
     }
 
+    /* Emergency outlet off - red, but not the loud all-caps "aktiv" alarm. */
+    .backup-off {
+      background: rgba(211, 47, 47, 0.16);
+      background: color-mix(in srgb, var(--error-color, #d32f2f) 16%, transparent);
+      color: var(--error-color, #d32f2f);
+    }
+
     .badge-alert {
       background: rgba(211, 47, 47, 0.16);
       background: color-mix(in srgb, var(--error-color, #d32f2f) 16%, transparent);
@@ -1688,10 +1850,25 @@ export class DesStorageCard extends LitElement {
 
     /* --- battery controls (collapsed by default) --- */
 
+    /* A column: optional mode row, the sliders (+ inline mode control), the
+       pack rows, and the emergency-outlet switch. */
     .controls {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    /* Sliders and - without a three-part control - the mode toggle beside them. */
+    .ctl-main {
       display: flex;
       align-items: center;
       gap: 14px;
+    }
+
+    /* Three-part control (Laden|Auto|Aus) on its own row, right-aligned. */
+    .mode-row {
+      display: flex;
+      justify-content: flex-end;
     }
 
     /* Both slider rows share one grid so labels, tracks and values line up. */
@@ -1776,6 +1953,59 @@ export class DesStorageCard extends LitElement {
       outline: 2px solid var(--primary-color, #03a9f4);
       outline-offset: 2px;
       border-radius: 3px;
+    }
+
+    /* --- battery pack rows --- */
+
+    .packs {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      padding-top: 10px;
+      border-top: 1px solid var(--divider-color, rgba(127, 127, 127, 0.18));
+    }
+
+    .pack {
+      display: flex;
+      align-items: baseline;
+      flex-wrap: wrap;
+      gap: 4px 5px;
+      font-size: 12px;
+      color: var(--secondary-text-color);
+      line-height: 1.3;
+    }
+
+    .pack-name {
+      color: var(--primary-text-color);
+      font-weight: 500;
+    }
+
+    .pack-sep {
+      opacity: 0.5;
+    }
+
+    /* Same traffic light as the header temperature pill, applied to the text. */
+    .pack-temp.warn {
+      color: var(--warning-color, #ff9800);
+    }
+
+    .pack-temp.alert {
+      color: var(--error-color, #d32f2f);
+    }
+
+    /* --- emergency-outlet switch row --- */
+
+    .switch-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding-top: 10px;
+      border-top: 1px solid var(--divider-color, rgba(127, 127, 127, 0.18));
+    }
+
+    .switch-row ha-switch {
+      flex-shrink: 0;
     }
 
     /* --- thermal group item rows --- */

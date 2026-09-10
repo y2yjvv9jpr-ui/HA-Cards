@@ -4,6 +4,37 @@ Alle nennenswerten Änderungen an diesem Projekt werden hier festgehalten.
 Format grob nach [Keep a Changelog](https://keepachangelog.com/de/1.1.0/),
 Versionierung nach [SemVer](https://semver.org/lang/de/).
 
+## [0.9.0]
+
+### Hinzugefügt
+
+- **des-storage-card (Variante battery):** `charge_mode_control.off_state` —
+  ist es gesetzt (nur für `select`/`input_select`), wird der Umschalter
+  dreiteilig **Laden | Auto | Aus** und wandert aus der Slider-Zeile in eine
+  eigene Zeile **oberhalb** der Slider (volle Breite, rechtsbündig). Ohne
+  `off_state` bleibt das zweiteilige Layout neben den Slidern unverändert. „Aus"
+  schreibt die konfigurierte Option per `select_option`.
+- **des-storage-card:** `backup.switch_entity` — im aufgeklappten Bedienbereich
+  eine Zeile „Notstromsteckdose" mit Schalter, der eine `switch`-/
+  `input_boolean`-Entität per `turn_on`/`turn_off` schaltet (optimistisch, mit
+  Rückfall auf den Entitätszustand).
+- **des-storage-card:** `packs` — optionale Liste je Akkupack
+  (`name`, `soc`, `temp_c`, `balance`). Im Bedienbereich je Pack eine kompakte
+  Zeile „Akku 1 · 72 % · 34 °C · Zellen: Excellent"; die Temperatur trägt die
+  bestehende Ampelfarbe, fehlende Werte zeigen „–". Die Zeilen stehen zwischen
+  den Slidern und der Notstromsteckdose.
+
+### Geändert
+
+- **des-storage-card:** Das **Notstrom-Badge** aus einer Entität
+  (`backup.entity` + `active_states`) ist jetzt: Treffer in `active_states` →
+  grün „Notstrom bereit" (Steckdose an/bereit), **kein** Treffer → rot
+  „Notstrom aus". Bisher meldete ein Treffer rot „NOTSTROM AKTIV" und kein
+  Treffer grün „Notstrom bereit". `active_states` beschreibt damit den
+  **eingeschalteten** Zustand der Notstromsteckdose statt eines Netzausfalls.
+  Die festen Formen `backup: active` (rot „NOTSTROM AKTIV") und `backup: ready`
+  (grün „Notstrom bereit") sind unverändert.
+
 ## [0.8.1]
 
 ### Behoben

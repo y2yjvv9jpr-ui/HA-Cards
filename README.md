@@ -143,13 +143,14 @@ eine Entity-ID.
 | `charge_target_pct`          | number \| Entity             | Ladegrenze (max. SoC), in allen Modi gültig; Slider 50–100/5 oder aus der Entität.  |
 | `discharge_limit_entity`     | Entity (`input_number`)      | Max. Entladeleistung in W. Gesetzt → dritte Slider-Zeile „max. Entladen" (Min/Max/Schritt aus den Entitäts-Attributen), immer bedienbar. Ohne Angabe entfällt die Zeile. |
 | `charge_mode`                | `auto` \| `charge` \| Entity | Anzeige des Lademodus, wenn kein `charge_mode_control` gesetzt ist.                |
-| `charge_mode_control`        | Objekt                       | Bindet **Laden \| Auto** an eine Entität, siehe unten. Ohne dieses Feld bleibt der Umschalter lokal. |
+| `charge_mode_control`        | Objekt                       | Bindet **Laden \| Auto** (mit `off_state` **Laden \| Auto \| Aus**) an eine Entität, siehe unten. Ohne dieses Feld bleibt der Umschalter lokal. |
 | `time_remaining`             | string \| Entity             | Restzeit. Hat Vorrang vor den beiden folgenden.                                   |
 | `time_remaining_charging`    | string \| Entity             | Restzeit beim Laden. Ohne Angabe schätzt die Karte, siehe unten.                  |
 | `time_remaining_discharging` | string \| Entity             | Restzeit beim Entladen. Ohne Angabe schätzt die Karte.                            |
 | `time_at`                    | string \| Entity             | Zeitpunkt, z. B. `"um 00:12"`.                                                    |
 | `backup`                     | Status \| Objekt             | Notstrom-Badge, siehe unten. Standard `none` (ausgeblendet).                       |
 | `controls`                   | boolean                      | `false` blendet Bedienzeile **und** Chevron aus — reine Anzeigekarte. Standard `true`. |
+| `packs`                      | Liste unten                  | **Optional.** Kompakte Zeilen je Akkupack im Bedienbereich, siehe unten.           |
 
 Gültige `status`-Werte: `charging`, `discharging`, `idle`, `standby` (= `idle`),
 `heating`, `off`.
@@ -167,13 +168,28 @@ Gültige `status`-Werte: `charging`, `discharging`, `idle`, `standby` (= `idle`)
 ```yaml
 backup:
   entity: sensor.zendure_offgrid_mode
-  active_states: ["On"]      # Vergleich ohne Beachtung der Gross-/Kleinschreibung
+  active_states: [Normal, Eco]   # Vergleich ohne Beachtung der Gross-/Kleinschreibung
+  switch_entity: switch.pv_helper_zendure_notstromsteckdose  # optional
 ```
 
-Solange der State **nicht** in `active_states` steht, zeigt die Karte grün
-„Notstrom bereit“, sonst rot „NOTSTROM AKTIV“. Ist die Entität nicht verfügbar,
-entfällt das Badge — eine nicht lesbare Notstromquelle wird bewusst nicht als
-„bereit“ gemeldet.
+`active_states` beschreibt den **eingeschalteten** Zustand der Notstromsteckdose:
+Steht der State **in** `active_states`, zeigt die Karte grün „Notstrom bereit“,
+sonst rot „Notstrom aus“. Ist die Entität nicht verfügbar, entfällt das Badge —
+eine nicht lesbare Notstromquelle wird bewusst weder als „bereit“ noch als „aus“
+gemeldet.
+
+> **Hinweis (ab 0.9.0):** Früher meldete ein Treffer in `active_states` rot
+> „NOTSTROM AKTIV“ und kein Treffer grün „Notstrom bereit“. Die Bedeutung ist
+> jetzt umgekehrt (Treffer = an/bereit). Die **festen** Formen `backup: active`
+> (rot „NOTSTROM AKTIV“) und `backup: ready` (grün „Notstrom bereit“) sind
+> unverändert.
+
+**`switch_entity`** — ist es gesetzt, erscheint im aufgeklappten Bedienbereich
+unter den Slidern (und den Pack-Zeilen) eine Zeile **„Notstromsteckdose“** mit
+einem Schalter. Er schaltet eine `switch`- oder `input_boolean`-Entität per
+`turn_on`/`turn_off` (optimistisch; bestätigt die Entität nicht binnen ~8 s,
+fällt der Schalter auf ihren echten Zustand zurück). Lässt sich die Entität
+nicht lesen, ist der Schalter abgeblendet.
 
 **Leistungsquelle** — ist `power_w` gesetzt, wird es verwendet; `voltage_entity`
 × `current_entity` greift nur, wenn `power_w` fehlt. Eine Summen-Entität ist der
@@ -243,6 +259,7 @@ charge_mode_control:
   entity: input_select.zendure_operation_mode
   charge_state: ZENDURE_CHARGE_OPTION   # Option, die erzwungenes Laden bedeutet
   auto_state: ZENDURE_AUTO_OPTION       # Option für den Normalbetrieb
+  off_state: ZENDURE_OFF_OPTION         # optional, nur select: dritte Stellung "Aus"
 ```
 
 Der Service richtet sich nach der Domain der Entität:
@@ -267,6 +284,28 @@ Lässt sich die Entität gerade nicht lesen, ist **kein** Segment aktiv und der
 Umschalter wird abgeblendet — eine falsche Entity-ID fällt so sofort auf,
 statt als selbstbewusstes „Laden“ durchzugehen.
 
+**`off_state`** (nur `select`/`input_select`) — ist die Option gesetzt, wird der
+Umschalter **dreiteilig „Laden | Auto | Aus“** und rückt aus der Slider-Zeile in
+eine **eigene Zeile oberhalb** der Slider (volle Breite, rechtsbündig). „Aus“
+schreibt die genannte Option per `select_option`; der State wird als „Aus“
+erkannt, sobald er `off_state` entspricht (Groß-/Kleinschreibung egal). Ohne
+`off_state` bleibt der zweiteilige Umschalter rechts neben den Slidern. Für
+`switch`/`input_boolean` ist `off_state` nicht erlaubt (nur zwei Zustände) und
+meldet beim Laden einen Konfigurationsfehler.
+
+**`packs`** — eine Liste, die im aufgeklappten Bedienbereich (zwischen Slidern
+und Notstromsteckdose) je Eintrag eine kompakte Zeile zeigt:
+
+| Feld      | Typ              | Beschreibung                                            |
+| --------- | ---------------- | ------------------------------------------------------- |
+| `name`    | string           | **Pflicht.** Zeilenbeschriftung (z. B. „Akku 1“).       |
+| `soc`     | number \| Entity | Ladestand in %.                                         |
+| `temp_c`  | number \| Entity | Zelltemperatur in °C, mit der Temperatur-Ampel gefärbt. |
+| `balance` | string \| Entity | Zellbalance-Text, hinter „Zellen:“ ausgegeben.          |
+
+Die Zeile liest sich z. B. „Akku 1 · 72 % · 34 °C · Zellen: Excellent“. Fehlende
+oder nicht lesbare Werte zeigen „–“.
+
 **Aufbau**
 
 - **Kopfzeile** — Name links, rechts eine Reihe Pillen, von links nach rechts:
@@ -283,7 +322,11 @@ statt als selbstbewusstes „Laden“ durchzugehen.
 - **Bedienbereich** (aufgeklappt) — links untereinander zwei (mit
   `discharge_limit_entity` drei) beschriftete Slider-Zeilen auf einem gemeinsamen
   Raster, damit Labels, Regler und Werte fluchten; rechts daneben, über die
-  Zeilen zentriert, der Umschalter **Laden | Auto**:
+  Zeilen zentriert, der Umschalter **Laden | Auto**. Mit `off_state` wird er
+  dreiteilig (**Laden | Auto | Aus**) und sitzt stattdessen in einer eigenen
+  Zeile oberhalb der Slider (rechtsbündig). Darunter folgen — sofern
+  konfiguriert — die **Pack-Zeilen** (`packs`) und ganz unten die Zeile
+  **Notstromsteckdose** (`backup.switch_entity`).
 
   | Zeile | Label          | Slider / Entität           | Bereich / Einheit         |
   | ----- | -------------- | -------------------------- | ------------------------- |
@@ -314,10 +357,11 @@ statt als selbstbewusstes „Laden“ durchzugehen.
 **Lademodus** — der Umschalter zeigt den *aktuellen* Modus als aktives Segment
 (gleiche Optik wie bei `thermal_group`):
 
-| `charge_mode` | Aktives Segment | Bedeutung                                  |
-| ------------- | --------------- | ------------------------------------------ |
-| `auto`        | „Auto“          | Normalbetrieb                              |
-| `charge`      | „Laden“         | Laden erzwungen, ggf. aus dem Netz         |
+| Zustand    | Aktives Segment | Bedeutung                                  |
+| ---------- | --------------- | ------------------------------------------ |
+| `auto`     | „Auto“          | Normalbetrieb                              |
+| `charge`   | „Laden“         | Laden erzwungen, ggf. aus dem Netz         |
+| `off_state`| „Aus“           | Standby (nur bei gesetztem `off_state`)    |
 
 **Temperatur-Ampel** — die °C-Pille färbt sich nach Wert:
 
@@ -530,7 +574,7 @@ cards:
     backup: none
     controls: false
 
-  # ---------- Zendure AC+ ----------
+  # ---------- Zendure AC+ (Konfiguration wie im Solar Dashboard) ----------
   - type: custom:des-storage-card
     variant: battery
     name: Zendure AC+
@@ -540,19 +584,34 @@ cards:
     capacity_kwh: sensor.zendure_total_capacity
     threshold_pct: input_number.zendure_setting_minimum_allowed_state_of_charge
     charge_target_pct: input_number.zendure_setting_maximum_allowed_state_of_charge
+    discharge_limit_entity: input_number.pv_helper_zendure_entladeleistung_maximum
     time_remaining_charging: sensor.zendure_indication_remaining_charge_time
     time_remaining_discharging: sensor.zendure_indication_remaining_discharge_time
-    # ZENDURE_CHARGE_OPTION / ZENDURE_AUTO_OPTION sind Platzhalter: hier die
-    # Options-Strings eintragen, die input_select.zendure_operation_mode
-    # tatsaechlich anbietet (Entwicklerwerkzeuge -> Zustaende).
+    # Dreiteiliger Umschalter Laden | Auto | Aus (off_state); die Options-Strings
+    # muessen exakt denen von input_select.pv_helper_zendure_lademodus entsprechen.
     charge_mode_control:
-      entity: input_select.zendure_operation_mode
-      charge_state: ZENDURE_CHARGE_OPTION
-      auto_state: ZENDURE_AUTO_OPTION
+      entity: input_select.pv_helper_zendure_lademodus
+      charge_state: Laden
+      auto_state: Auto
+      off_state: Aus
+    # Notstromsteckdose: active_states = Steckdose an (gruen "Notstrom bereit"),
+    # sonst rot "Notstrom aus"; switch_entity schaltet sie im Bedienbereich.
     backup:
       entity: sensor.zendure_offgrid_mode
       active_states:
-        - "On"
+        - Normal
+        - Eco
+      switch_entity: switch.pv_helper_zendure_notstromsteckdose
+    # Kompakte Pack-Zeilen (SoC, Temperatur, Zellbalance).
+    packs:
+      - name: Akku 1
+        soc: sensor.zendure_battery_1_state_of_charge
+        temp_c: sensor.zendure_battery_1_temperature
+        balance: sensor.zendure_battery_1_cell_balance_status
+      - name: Akku 2
+        soc: sensor.zendure_battery_2_state_of_charge
+        temp_c: sensor.zendure_battery_2_temperature
+        balance: sensor.zendure_battery_2_cell_balance_status
 
   # ---------- Aquarien als eine Gruppe ----------
   - type: custom:des-storage-card
@@ -1182,7 +1241,8 @@ lokal — es bewegt sich, löst aber keinen Service-Call aus.
 | ---------------------- | --------------------- | ------------------------------------------- |
 | Slider **min. SoC**    | `threshold_pct`       | `number.set_value` / `input_number.set_value` |
 | Slider **Ladegrenze**  | `charge_target_pct`   | dito                                        |
-| **Laden \| Auto**      | `charge_mode_control` | `select_option` bzw. `turn_on`/`turn_off`   |
+| **Laden \| Auto \| Aus** | `charge_mode_control` | `select_option` bzw. `turn_on`/`turn_off` (Aus nur select, `off_state`) |
+| **Notstromsteckdose**  | `backup.switch_entity` | `switch.turn_on` / `switch.turn_off`        |
 | **An/Auto/Aus**        | `items[].mode_entity` | `input_number.set_value` mit 1 / 2 / 3      |
 | **An** / **Aus**       | `items[].switch_entity` | `switch.turn_on` / `switch.turn_off` (ohne `mode_entity`) |
 | **Auto** (nur Switch)  | —                     | kein Call — gibt an die Automation zurück    |

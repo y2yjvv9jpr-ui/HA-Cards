@@ -23,17 +23,29 @@ export type NumberValue = number | string;
  */
 export type TextValue = string | boolean;
 
-export type BackupState = 'none' | 'ready' | 'active';
+export type BackupState = 'none' | 'ready' | 'active' | 'off';
 
 /** Emergency power read from an entity instead of a fixed state. */
 export interface BackupEntityConfig {
   entity: string;
-  /** States that mean "running on backup power". Compared case-insensitively. */
+  /**
+   * States that mean the emergency outlet is on/ready. Compared
+   * case-insensitively. A match reads as green "Notstrom bereit", anything else
+   * as red "Notstrom aus".
+   */
   active_states?: string[];
+  /**
+   * Optional switch (`switch`/`input_boolean`) for the emergency outlet. When
+   * set, the expanded controls carry a "Notstromsteckdose" row that toggles it.
+   */
+  switch_entity?: string;
 }
 
-/** Battery: "charge" forces charging, "auto" is the normal control loop. */
-export type ChargeMode = 'auto' | 'charge';
+/**
+ * Battery: "charge" forces charging, "auto" is the normal control loop, "off"
+ * is a standby that only exists when `charge_mode_control.off_state` is set.
+ */
+export type ChargeMode = 'auto' | 'charge' | 'off';
 
 /**
  * Makes the Laden/Auto control write instead of only display.
@@ -49,6 +61,23 @@ export interface ChargeModeControlConfig {
   charge_state?: string;
   /** Option/state that means "back to the normal control loop". */
   auto_state?: string;
+  /**
+   * Option/state that means "standby, automations off". Only for
+   * `select`/`input_select` entities; setting it makes the control three-part
+   * (Laden | Auto | Aus) and moves it onto its own row above the sliders.
+   */
+  off_state?: string;
+}
+
+/** One pack of a multi-pack battery, shown as a compact row when expanded. */
+export interface BatteryPackConfig {
+  name: string;
+  /** State of charge in percent. */
+  soc?: NumberValue;
+  /** Cell temperature in °C; coloured on the same traffic-light as the header. */
+  temp_c?: NumberValue;
+  /** Cell-balance text, shown after "Zellen:" as reported by the sensor. */
+  balance?: TextValue;
 }
 
 /** Thermal item: "auto" lets the surplus logic decide, on/off force it. */
@@ -150,6 +179,11 @@ export interface DesStorageCardConfig {
   backup?: BackupState | BackupEntityConfig;
   /** `false` hides the control row and the chevron. Default `true`. */
   controls?: boolean;
+  /**
+   * Optional per-pack rows in the expanded area: name, soc, temperature and
+   * cell balance. For a battery made of several packs (e.g. a Zendure).
+   */
+  packs?: BatteryPackConfig[];
 
   // --- variant: thermal_group ---------------------------------------------
 
