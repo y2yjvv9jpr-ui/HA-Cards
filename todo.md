@@ -1,7 +1,24 @@
-# todo.md — offene Punkte (Stand 10.09.2026, abends)
+# todo.md — offene Punkte (Stand 10.09.2026, spät)
 
 Reihenfolge = Vorschlag. Jeder Punkt wird erst abgestimmt, dann freigegeben,
 dann umgesetzt (siehe claude.md).
+
+## Haus-Seite (neue Dashboardseite)
+
+- [x] 10.09. **des-dehumidifier-card** (v0.10.0): neue Karte für den
+      Luftentfeuchter (Arete Two 25 L, Tuya) — Ist gegen Ziel, 24-h-SVG-Verlauf,
+      Störungs-/Status-Pillen, Aufklapp-Bedienung (Ein/Aus, Zielfeuchte,
+      Max-Trocknen, Kindersicherung). service.ts um `writePower` (fan/switch/
+      input_boolean) und `writeHumidity` (`humidifier.set_humidity`) erweitert.
+      Dashboard-Datei `yaml/ui/Haus Dashboard.yaml` (Ansicht „Haus“, path `haus`,
+      Theme kibibit) angelegt. → **per HACS auf 0.10.0 aktualisieren**, Seite
+      „Haus“ in HA anlegen (Dashboard-YAML einspielen), **Entity-IDs prüfen**.
+- [ ] Verlauf im Live-Betrieb gegenchecken: liefert
+      `history/history_during_period` die Feuchte sauber, sitzt die Zielmarke,
+      passen die Achsen? Countdown-Pille/Segmented gegen die echten Select-Optionen
+      prüfen (Beschriftung „1 h“/„2 h“).
+- [ ] Als nächstes auf der Haus-Seite: **Lichtkarte** und **Rollladenkarte**
+      (Konzept vor Umsetzung abstimmen).
 
 ## 0a. 10.09. — im Repo, in HA einzuspielen
 

@@ -101,6 +101,29 @@ Aquarienheizung" (UI-Automation, 30-s-Takt): Ein ab −600 W, Aus ab −200 W am
 Trend-Sensor, bereinigt um die Zendure-Abgabe; Einschalten nur, wenn der Zendure
 voll ist / am Deckel lädt / nicht im Auto-Modus ist (`zendure_frei`).
 
+## Luftentfeuchter Arbeitszimmer (Arete Two 25 L, Tuya)
+
+Steht auf der Dashboard-Seite „Haus“ (`des-dehumidifier-card`). Anbindung über
+die Tuya-Integration; Präfix aller Entitäten:
+`…arete_r_two_25l_dehumidifier_air_purifier…`.
+
+| Zweck | Entität |
+| --- | --- |
+| Ist-Luftfeuchte (%) | `sensor.arete_r_two_25l_dehumidifier_air_purifier_luftfeuchtigkeit` |
+| Ziel + Schreiben | `humidifier.arete_r_two_25l_dehumidifier_air_purifier` (Ziel = Attribut `humidity`, `humidifier.set_humidity`) |
+| Ein/Aus | `fan.arete_r_two_25l_dehumidifier_air_purifier` (`fan.turn_on`/`turn_off`) |
+| Max-Trocknen | `select.arete_r_two_25l_dehumidifier_air_purifier_countdown` (Optionen aus der Entität, „Abbrechen“ = aus) |
+| Kindersicherung | `switch.arete_r_two_25l_dehumidifier_air_purifier_kindersicherung` |
+| Störung Tank voll (error) | `binary_sensor.arete_r_two_25l_dehumidifier_air_purifier_tank_voll` |
+| Störung Nass (error) | `binary_sensor.arete_r_two_25l_dehumidifier_air_purifier_nass` |
+| Störung Temperaturfehler (error) | `binary_sensor.arete_r_two_25l_dehumidifier_air_purifier_temperaturfehler` |
+| Abtauen (warning) | `binary_sensor.arete_r_two_25l_dehumidifier_air_purifier_abtauen` |
+
+- Tuya erlaubt die Zielfeuchte **30–80 % in 5er-Schritten**.
+- **Tuya liefert keine Rest-Zeit des Countdowns**, nur die gewählte Stufe
+  (`select`). Deshalb zeigt die Karte den Countdown als gewählte Option, nicht als
+  ablaufende Zeit.
+
 ## Eigene Helfer (Packages)
 
 | Package | Enthält |
