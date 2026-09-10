@@ -167,10 +167,12 @@ sections:
             soc: sensor.zendure_battery_1_state_of_charge
             temp_c: sensor.zendure_battery_1_temperature
             balance: sensor.zendure_battery_1_cell_balance_status
+            capacity_kwh: sensor.pv_helper_zendure_pack_1_kapazitaet
           - name: Akku 2
             soc: sensor.zendure_battery_2_state_of_charge
             temp_c: sensor.zendure_battery_2_temperature
             balance: sensor.zendure_battery_2_cell_balance_status
+            capacity_kwh: sensor.pv_helper_zendure_pack_2_kapazitaet
       - type: custom:des-storage-card
         grid_options:
           columns: 12
