@@ -208,6 +208,50 @@ export function writeCoverPosition(
   });
 }
 
+/** Optional attributes for `light.turn_on`. */
+export interface LightData {
+  /** Brightness 0-100 %. */
+  brightness_pct?: number;
+  /** White point in kelvin. */
+  color_temp_kelvin?: number;
+  /** Hue/saturation colour `[hue 0-360, saturation 0-100]`. */
+  hs_color?: [number, number];
+}
+
+/** True when this slot is a `light` entity we can drive. */
+export function isWritableLight(target: unknown): boolean {
+  return (
+    typeof target === 'string' &&
+    isEntityId(target) &&
+    domainOf(target) === 'light'
+  );
+}
+
+/**
+ * `light.turn_on` (with optional brightness / colour) or `light.turn_off`. The
+ * `data` is only sent when turning on; keys with `undefined` are dropped so a
+ * caller can pass a partial object.
+ */
+export function writeLight(
+  hass: HomeAssistant | undefined,
+  entityId: string,
+  on: boolean,
+  data?: LightData,
+): Promise<unknown> {
+  if (domainOf(entityId) !== 'light') {
+    return Promise.reject(new Error(`des-cards: ${entityId} ist keine light-Entität`));
+  }
+  if (!on) return call(hass, 'light', 'turn_off', { entity_id: entityId });
+
+  const payload: Record<string, unknown> = { entity_id: entityId };
+  if (data) {
+    for (const [key, value] of Object.entries(data)) {
+      if (value !== undefined) payload[key] = value;
+    }
+  }
+  return call(hass, 'light', 'turn_on', payload);
+}
+
 /**
  * A generic service call from a config-declared action
  * (`{ service: 'domain.service', target?, data? }`), e.g. a scene tile.
