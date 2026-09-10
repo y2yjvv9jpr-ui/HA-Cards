@@ -1,5 +1,5 @@
 import { LitElement, html, css, nothing, type TemplateResult } from 'lit';
-import { renderSegmented, segmentedStyles } from './segmented';
+import { renderSegmented, segmentedStyles, ON_OFF_OPTIONS } from './segmented';
 import { chevronStyles } from './chevron';
 import { overlayStyles, OverlayCloser } from './overlay';
 import { tokenStyles } from './tokens';
@@ -410,11 +410,8 @@ export class DesGarageCard extends LitElement {
           ${kwh === null ? '–' : `${formatFixed(kwh, 2)} kWh`}
         </td>
         <td class="col-seg">
-          ${renderSegmented<'on' | 'off'>(
-            [
-              { value: 'on', label: 'An' },
-              { value: 'off', label: 'Aus' },
-            ],
+          ${renderSegmented(
+            ON_OFF_OPTIONS,
             view.on === null ? null : view.on ? 'on' : 'off',
             (value) => this._set(view, value === 'on'),
             view.name,
@@ -436,11 +433,8 @@ export class DesGarageCard extends LitElement {
           return html`
             <div class="setting-row ${on === null ? 'dim' : ''}">
               <span class="setting-name">${s.name}</span>
-              ${renderSegmented<'on' | 'off'>(
-                [
-                  { value: 'on', label: 'An' },
-                  { value: 'off', label: 'Aus' },
-                ],
+              ${renderSegmented(
+                ON_OFF_OPTIONS,
                 on === null ? null : on ? 'on' : 'off',
                 (value) => this._setSetting(s.entity, value === 'on'),
                 s.name,
