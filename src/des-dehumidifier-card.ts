@@ -1,5 +1,5 @@
 import { LitElement, html, svg, css, nothing, type TemplateResult } from 'lit';
-import { renderSegmented, segmentedStyles } from './segmented';
+import { renderSegmented, segmentedStyles, ON_OFF_OPTIONS } from './segmented';
 import { chevronStyles } from './chevron';
 import { overlayStyles, OverlayCloser } from './overlay';
 import { tokenStyles } from './tokens';
@@ -825,11 +825,8 @@ export class DesDehumidifierCard extends LitElement {
     const on = this._powerOn();
     const powerDisabled =
       isEntityId(config.power_entity) && !isWritablePower(config.power_entity);
-    const powerSeg = renderSegmented<'on' | 'off'>(
-      [
-        { value: 'on', label: 'An' },
-        { value: 'off', label: 'Aus' },
-      ],
+    const powerSeg = renderSegmented(
+      ON_OFF_OPTIONS,
       on === null ? null : on ? 'on' : 'off',
       (value) => this._setPower(value === 'on'),
       'Gerät',
@@ -866,11 +863,8 @@ export class DesDehumidifierCard extends LitElement {
     const lockDisabled =
       isEntityId(config.child_lock_entity) &&
       !isWritableSwitch(config.child_lock_entity);
-    const lockSeg = renderSegmented<'on' | 'off'>(
-      [
-        { value: 'on', label: 'An' },
-        { value: 'off', label: 'Aus' },
-      ],
+    const lockSeg = renderSegmented(
+      ON_OFF_OPTIONS,
       lock === null ? null : lock ? 'on' : 'off',
       (value) => this._setLock(value === 'on'),
       'Kindersicherung',
