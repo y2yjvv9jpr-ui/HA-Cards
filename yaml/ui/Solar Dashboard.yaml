@@ -407,35 +407,21 @@ sections:
         default_period: day
         periods:
           day:
-            meta: gespeicherte Energie in kWh — links gesamt, rechts je Speicher
+            meta: gespeicherte Energie in kWh
             chart:
               graph_span: 24h
               span:
                 start: day
-              yaxis:
-                - id: gesamt
-                  min: 0
-                  max: 18.5
-                  decimals: 0
-                  apex_config:
-                    tickAmount: 5
-                    title:
-                      text: gesamt kWh
-                - id: einzeln
-                  opposite: true
-                  min: 0
-                  max: 13.1
-                  decimals: 0
-                  apex_config:
-                    tickAmount: 5
-                    title:
-                      text: je Speicher kWh
               apex_config:
                 legend:
                   position: bottom
                 grid:
                   borderColor: var(--divider-color)
                   strokeDashArray: 3
+                yaxis:
+                  min: 0
+                  max: 18.5
+                  tickAmount: 5
                 xaxis:
                   tooltip:
                     enabled: false
@@ -459,49 +445,33 @@ sections:
                   type: line
                   stroke_width: 2
                   color: var(--primary-text-color)
-                  yaxis_id: gesamt
-                - entity: sensor.pv_helper_hausakku_energie
+                - entity: sensor.inverter_battery
                   name: Hausakkus
                   type: area
                   stroke_width: 1
                   color: '#378ADD'
-                  yaxis_id: einzeln
+                  transform: return x * 13.1 / 100;
                 - entity: sensor.pv_helper_zendure_energie
                   name: Zendure
                   type: area
                   stroke_width: 1
                   color: '#8FC7F0'
-                  yaxis_id: einzeln
           week:
             meta: gespeicherte Energie in kWh, Wochenverlauf
             chart:
               graph_span: 7d
               span:
                 start: isoWeek
-              yaxis:
-                - id: gesamt
-                  min: 0
-                  max: 18.5
-                  decimals: 0
-                  apex_config:
-                    tickAmount: 5
-                    title:
-                      text: gesamt kWh
-                - id: einzeln
-                  opposite: true
-                  min: 0
-                  max: 13.1
-                  decimals: 0
-                  apex_config:
-                    tickAmount: 5
-                    title:
-                      text: je Speicher kWh
               apex_config:
                 legend:
                   position: bottom
                 grid:
                   borderColor: var(--divider-color)
                   strokeDashArray: 3
+                yaxis:
+                  min: 0
+                  max: 18.5
+                  tickAmount: 5
                 xaxis:
                   tooltip:
                     enabled: false
@@ -525,19 +495,17 @@ sections:
                   type: line
                   stroke_width: 2
                   color: var(--primary-text-color)
-                  yaxis_id: gesamt
-                - entity: sensor.pv_helper_hausakku_energie
+                - entity: sensor.inverter_battery
                   name: Hausakkus
                   type: area
                   stroke_width: 1
                   color: '#378ADD'
-                  yaxis_id: einzeln
+                  transform: return x * 13.1 / 100;
                 - entity: sensor.pv_helper_zendure_energie
                   name: Zendure
                   type: area
                   stroke_width: 1
                   color: '#8FC7F0'
-                  yaxis_id: einzeln
 cards: []
 dense_section_placement: false
 icon: mdi:solar-power-variant
