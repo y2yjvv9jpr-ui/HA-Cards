@@ -493,6 +493,71 @@ export interface DesChartCardConfig {
   periods?: Partial<Record<StatsPeriod, ChartPeriodConfig>>;
 }
 
+// ===========================================================================
+// des-dehumidifier-card
+// ===========================================================================
+
+/** How loud a fault reads: `error` = red pill, `warning` = amber pill. */
+export type FaultSeverity = 'error' | 'warning';
+
+/**
+ * One fault indicator. The pill only appears while the `binary_sensor` is
+ * `on`; the order of the `faults` list is the order of the pills.
+ */
+export interface DehumidifierFaultConfig {
+  /** A `binary_sensor` (or any entity whose `on` state means "fault active"). */
+  entity: string;
+  /** Pill label, e.g. "Tank voll". */
+  name: string;
+  /** Colour of the pill. Default `error`. */
+  severity?: FaultSeverity;
+}
+
+/**
+ * Phase 1 + 2 in one, like the other cards: with no entities the card shows a
+ * canned demo (52 % ist, 45 % target, device on, no fault, a synthetic 24-h
+ * trace); as soon as the live entities are configured it reads and writes them.
+ *
+ * The target humidity is read from the `humidifier` entity's `humidity`
+ * attribute and written with `humidifier.set_humidity`. Power binds to a
+ * `fan`/`switch`/`input_boolean`, Max-Trocknen to a `select`, the child lock to
+ * a `switch`.
+ */
+export interface DesDehumidifierCardConfig {
+  type: string;
+  /** Header title. Default "Luftentfeuchter". */
+  name?: string;
+  /** First part of the meta line, e.g. "Arbeitszimmer". Optional. */
+  location?: string;
+
+  /** Current relative humidity in percent. Required for live operation. */
+  humidity_entity?: string;
+  /**
+   * `humidifier` entity. Supplies the target (its `humidity` attribute) and
+   * receives `humidifier.set_humidity`.
+   */
+  humidifier_entity?: string;
+  /** On/off of the device: `fan`/`switch`/`input_boolean`. */
+  power_entity?: string;
+  /** Max-Trocknen countdown: a `select`; options come from the entity. */
+  countdown_entity?: string;
+  /** The countdown option that means "off". Default "Abbrechen". */
+  countdown_off_option?: string;
+  /** Optional child-lock `switch`. */
+  child_lock_entity?: string;
+  /** Fault indicators, in pill order. Optional. */
+  faults?: DehumidifierFaultConfig[];
+
+  /** Chart time span in hours. Default 24. */
+  history_hours?: number;
+  /** Bar / slider lower bound in percent. Default 30. */
+  target_min?: number;
+  /** Bar / slider upper bound in percent. Default 80. */
+  target_max?: number;
+  /** Slider step in percent. Default 5. */
+  target_step?: number;
+}
+
 /** Minimal shape of the Home Assistant object handed to a card. */
 export interface HomeAssistant {
   states: Record<
@@ -505,6 +570,11 @@ export interface HomeAssistant {
     service: string,
     data?: Record<string, unknown>,
   ) => Promise<unknown> | unknown;
+  /**
+   * Home Assistant's WebSocket call. Optional so a bare `hass` stub still
+   * renders; the dehumidifier card uses it for `history/history_during_period`.
+   */
+  callWS?: <T = unknown>(message: Record<string, unknown>) => Promise<T>;
   themes?: unknown;
   locale?: { language?: string };
 }

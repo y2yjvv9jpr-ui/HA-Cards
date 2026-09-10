@@ -4,6 +4,32 @@ Alle nennenswerten Änderungen an diesem Projekt werden hier festgehalten.
 Format grob nach [Keep a Changelog](https://keepachangelog.com/de/1.1.0/),
 Versionierung nach [SemVer](https://semver.org/lang/de/).
 
+## [0.10.0]
+
+### Neu
+
+- **des-dehumidifier-card** — neue Karte für einen Luftentfeuchter (Arete Two
+  25 L über die Tuya-Integration) für die neue Dashboard-Seite „Haus“. Zeigt die
+  aktuelle Luftfeuchte gegen den Zielwert, einen **24-h-Verlauf** als eigenes SVG
+  (keine Fremdbibliothek), Störungs- und Status-Pillen und im Aufklappbereich die
+  Bedienung: Gerät An/Aus (`power_entity`, `fan`/`switch`/`input_boolean`),
+  Zielfeuchte-Slider (`humidifier.set_humidity`, 300 ms Debounce), Max-Trocknen
+  (`countdown_entity`, `select`) und optional die Kindersicherung
+  (`child_lock_entity`). Verlauf per `hass.callWS`
+  (`history/history_during_period`), Nachladen alle 5 Minuten und beim Verbinden.
+  Ohne Entities läuft die Karte im Demo-Modus. Registriert als **„Daniels
+  Entfeuchterkarte“**.
+
+### Geändert
+
+- **service.ts** um zwei Domänen erweitert (gemeinsames Modul): `writePower`
+  schaltet `fan`/`switch`/`input_boolean` über `turn_on`/`turn_off`,
+  `writeHumidity` schreibt `humidifier.set_humidity`; dazu die Prüfer
+  `isWritablePower`/`isWritableHumidity`. Die bestehenden Karten sind davon nicht
+  betroffen.
+- **types.ts:** `HomeAssistant` um das optionale `callWS` ergänzt (für die
+  Verlaufs-Abfrage der Entfeuchterkarte).
+
 ## [0.9.4]
 
 ### Geändert

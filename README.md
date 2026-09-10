@@ -1240,6 +1240,110 @@ name: Chart
 
 ---
 
+## Entfeuchterkarte (`des-dehumidifier-card`)
+
+Karte für einen Luftentfeuchter (getestet gegen einen **Arete Two 25 L** über die
+Tuya-Integration): aktuelle Luftfeuchte gegen Zielwert, ein **24-h-Verlauf** als
+eigenes SVG (keine Fremdbibliothek), Störungs- und Status-Pillen sowie die
+Bedienung (Ein/Aus, Zielfeuchte, Max-Trocknen, Kindersicherung) im Aufklappbereich.
+Optik und Bausteine wie die übrigen Karten (Kopfzeile + Metazeile, Pillen rechts,
+Chevron unten mittig, Dropdown-Overlay, Segmented Controls).
+
+Wie die Haus- und Wechselrichterkarte läuft sie **ohne Entities im Demo-Modus**
+(52 % Ist, 45 % Ziel, Gerät an, keine Störung, synthetischer Verlauf), sodass sich
+jeder Baustein aus der YAML allein prüfen lässt.
+
+Im Sections-View belegt die Karte 12 von 36 Spalten und standardmäßig **5 Zeilen**
+(min. 4). Der Chart füllt die verbleibende Höhe (Mindesthöhe 140 px, `ResizeObserver`
+auf dem Container wie bei der Chartkarte), deshalb sind 5 Zeilen sinnvoll.
+
+| Option                 | Typ            | Beschreibung                                                                 |
+| ---------------------- | -------------- | ---------------------------------------------------------------------------- |
+| `name`                 | string         | Kopfzeile. Standard `Luftentfeuchter`.                                       |
+| `location`             | string         | Erster Teil der Metazeile („`<location>` · Ziel 45 %“). Optional.            |
+| `humidity_entity`      | Entity         | Ist-Luftfeuchte (%). Pflicht für den Live-Betrieb; liefert auch den Verlauf. |
+| `humidifier_entity`    | Entity         | `humidifier`: Ziel aus dem Attribut `humidity`, Schreiben per `humidifier.set_humidity`. |
+| `power_entity`         | Entity         | Ein/Aus: `fan` (`turn_on`/`turn_off`), alternativ `switch`/`input_boolean`.  |
+| `countdown_entity`     | Entity         | Max-Trocknen: ein `select`; die Optionen kommen aus der Entität.             |
+| `countdown_off_option` | string         | Option, die „aus“ bedeutet. Standard `Abbrechen`.                            |
+| `child_lock_entity`    | Entity         | Kindersicherung (`switch`). Optional — ohne die Angabe entfällt die Zeile.   |
+| `faults`               | Liste          | Störungen in Pillen-Reihenfolge (siehe unten). Optional.                     |
+| `history_hours`        | Zahl           | Zeitraum des Charts in Stunden. Standard `24`.                               |
+| `target_min`           | Zahl           | Unterer Rand von Balken und Slider. Standard `30`.                           |
+| `target_max`           | Zahl           | Oberer Rand. Standard `80` (Tuya erlaubt 30–80 in 5er-Schritten).            |
+| `target_step`          | Zahl           | Schrittweite des Sliders. Standard `5`.                                      |
+
+Je `faults`-Eintrag:
+
+| Feld       | Typ                     | Beschreibung                                                        |
+| ---------- | ----------------------- | ------------------------------------------------------------------ |
+| `entity`   | Entity                  | **Pflicht.** `binary_sensor`; die Pille erscheint nur bei `on`.    |
+| `name`     | string                  | **Pflicht.** Beschriftung der Pille.                               |
+| `severity` | `error` \| `warning`    | `error` = rot, `warning` = amber. Standard `error`.                |
+
+**Darstellung**
+
+- **Pillen rechts**, in dieser Reihenfolge: Störungen zuerst (nur bei `on`; rot
+  bzw. amber), dann „Max-Trocknen `<Option>`“ (blau, solange der Countdown nicht
+  auf `countdown_off_option` steht), dann der Status: „Läuft“ (grün, Gerät an und
+  Ist > Ziel), „Bereit“ (blau, an und Ist ≤ Ziel), „Aus“ (grau). Bei einer
+  **error**-Störung entfällt die Status-Pille.
+- **Wert groß** „52 %“ mit kleiner Beschriftung „Luftfeuchte“; rechtsbündig klein
+  „7 % über Ziel“, nur wenn das Gerät an ist und Ist > Ziel.
+- **Balken** `target_min…target_max`, Füllung = Ist, Farbe immer blau
+  (`--primary-color`), senkrechte Zielmarke, darunter die Skala „30 · Ziel 45 · 80“.
+- **Chart** (24 h): Ist-Feuchte als blaue Linie mit leichter Fläche, Ziel als
+  gestrichelte Linie. Daten per `hass.callWS({ type: 'history/history_during_period', … })`,
+  Nachladen alle 5 Minuten und bei jedem Verbinden; unbekannte/`unavailable`-Punkte
+  werden ausgelassen. y-Achse in %, Ticks auf runde 10er (mind. 20 % Spanne),
+  x-Achse mit Uhrzeit-Ticks alle 6 h und „jetzt“ am rechten Rand.
+- **Aufgeklappt** (Overlay unter der Karte): „Gerät“ (An | Aus), „Zielfeuchte“
+  (Slider, Schreiben mit 300 ms Debounce, auch bei aktivem Max-Trocknen bedienbar),
+  „Max-Trocknen“ (Segmented mit den Select-Optionen; Off-Option = „Aus“, sonst
+  führende Zahl + „ h“) und — falls `child_lock_entity` gesetzt — „Kindersicherung“.
+  Nicht lesbare Entities dimmen das jeweilige Control.
+
+**Beispiel-YAML** — Arete Two 25 L über Tuya:
+
+```yaml
+type: custom:des-dehumidifier-card
+name: Luftentfeuchter
+location: Arbeitszimmer
+humidity_entity: sensor.arete_r_two_25l_dehumidifier_air_purifier_luftfeuchtigkeit
+humidifier_entity: humidifier.arete_r_two_25l_dehumidifier_air_purifier
+power_entity: fan.arete_r_two_25l_dehumidifier_air_purifier
+countdown_entity: select.arete_r_two_25l_dehumidifier_air_purifier_countdown
+countdown_off_option: Abbrechen
+child_lock_entity: switch.arete_r_two_25l_dehumidifier_air_purifier_kindersicherung
+history_hours: 24
+target_min: 30
+target_max: 80
+target_step: 5
+faults:
+  - entity: binary_sensor.arete_r_two_25l_dehumidifier_air_purifier_tank_voll
+    name: Tank voll
+    severity: error
+  - entity: binary_sensor.arete_r_two_25l_dehumidifier_air_purifier_nass
+    name: Nass
+    severity: error
+  - entity: binary_sensor.arete_r_two_25l_dehumidifier_air_purifier_temperaturfehler
+    name: Temperaturfehler
+    severity: error
+  - entity: binary_sensor.arete_r_two_25l_dehumidifier_air_purifier_abtauen
+    name: Abtauen
+    severity: warning
+```
+
+Ohne Entities zeigt dieselbe Karte den Demo-Modus:
+
+```yaml
+type: custom:des-dehumidifier-card
+name: Luftentfeuchter
+location: Arbeitszimmer
+```
+
+---
+
 ## Schreibverhalten
 
 Grundregel: **jedes Bedienelement schreibt in die Entität, an die es gebunden
@@ -1255,9 +1359,13 @@ lokal — es bewegt sich, löst aber keinen Service-Call aus.
 | **An/Auto/Aus**        | `items[].mode_entity` | `input_number.set_value` mit 1 / 2 / 3      |
 | **An** / **Aus**       | `items[].switch_entity` | `switch.turn_on` / `switch.turn_off` (ohne `mode_entity`) |
 | **Auto** (nur Switch)  | —                     | kein Call — gibt an die Automation zurück    |
+| **Gerät An \| Aus**    | `power_entity`        | `fan.turn_on`/`turn_off` bzw. `switch`/`input_boolean` |
+| Slider **Zielfeuchte** | `humidifier_entity`   | `humidifier.set_humidity` (300 ms Debounce)  |
+| **Max-Trocknen**       | `countdown_entity`    | `select.select_option` / `input_select.select_option` |
+| **Kindersicherung**    | `child_lock_entity`   | `switch.turn_on` / `switch.turn_off`         |
 
-Nur die Domains `number`, `input_number`, `switch`, `input_boolean`, `select`
-und `input_select` werden geschrieben; alles andere bleibt lokal.
+Nur die Domains `number`, `input_number`, `switch`, `input_boolean`, `select`,
+`input_select`, `fan` und `humidifier` werden geschrieben; alles andere bleibt lokal.
 
 **Wann geschrieben wird.** Slider schreiben nicht beim Ziehen, sondern beim
 Loslassen (`change`), und dieser Schreibvorgang ist um 500 ms verzögert. Das ist

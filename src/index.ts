@@ -3,8 +3,9 @@ import { DesInverterCard } from './des-inverter-card';
 import { DesHouseCard } from './des-house-card';
 import { DesStatsCard } from './des-stats-card';
 import { DesChartCard } from './des-chart-card';
+import { DesDehumidifierCard } from './des-dehumidifier-card';
 
-const VERSION = '0.5.0';
+const VERSION = '0.10.0';
 
 interface CardRegistration {
   type: string;
@@ -49,6 +50,13 @@ const CARDS: ReadonlyArray<CardRegistration> = [
     description:
       'Kopfzeile mit Zeitraum-Umschalter und eingebettetem ApexCharts-Chart je Zeitraum.',
   },
+  {
+    type: 'des-dehumidifier-card',
+    element: DesDehumidifierCard,
+    name: 'Daniels Entfeuchterkarte',
+    description:
+      'Luftentfeuchter: Ist-Feuchte gegen Ziel, 24-h-Verlauf, Störungspillen und Bedienung (Entities oder Demo-Werte).',
+  },
 ];
 
 window.customCards = window.customCards ?? [];
@@ -81,4 +89,5 @@ export {
   DesHouseCard,
   DesStatsCard,
   DesChartCard,
+  DesDehumidifierCard,
 };
