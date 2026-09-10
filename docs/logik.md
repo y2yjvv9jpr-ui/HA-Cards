@@ -57,11 +57,11 @@ kann („Regel L3"). Spalte „Vorgabe Daniel" = die ursprüngliche Anforderung;
 | E1 | Zendure Laden/Entladen gesamt | Integral (kWh) aus Aufnahme bzw. Abgabe, ab 05.09.2026 | monoton |
 | E2 | Laden gesamt | Deye-Gesamtladung + E1-Laden | Sprungschutz: neuer Wert nur bei ≤ 5 kWh Abweichung vom letzten |
 | E3 | Entladen gesamt | Deye-Gesamtentladung + E1-Entladen | Sprungschutz |
-| E4 | Verbrauch gesamt | Deye-Gesamtverbrauch + E1-Entladen − E1-Laden | Sprungschutz; Deye zählt Zendure-Laden als Last und sieht Zendure-Abgabe nicht |
+| E4 | Verbrauch gesamt | Integral von A9 (Hausleistung, AC-seitig inkl. Zendure), seit 10.09.2026 | Sprungschutz. Vorher Deye-Verbrauchszähler + Zendure-Korrektur — der Deye zählt Netzladen der Hausakkus als Hausverbrauch (10.09.: 17,4 statt 12,2 kWh) |
 | E5 | Produktion / Import / Export gesamt | Deye-Gesamtzähler | nur Sprungschutz |
 | E6 | Solar direkt gesamt | Integral von A10 | ersetzt seit 06.09. die Zählerformel (Verbrauch − Netz − Entladen), die nachts durch Verluste negativ wurde |
 | E7 | Tag/Woche/Monat/Jahr | Utility-Meter auf E2–E5 | Tag zusätzlich für Laden/Entladen/Verbrauch; Produktion/Import/Export Tag direkt vom Deye |
-| E8 | Kalibrierung | Woche/Monat/Jahr = aktueller Gesamtwert − Wert zu Periodenbeginn (Referenzen 05.09.2026) | Skript; Referenzen bei Periodenwechsel nachziehen |
+| E8 | Kalibrierung | Woche/Monat/Jahr = aktueller Gesamtwert − Wert zu Periodenbeginn (Referenzen 05.09.2026); Verbrauch = Produktion + Import − Export + Entladen − Laden derselben Periode (seit 10.09.) | Skript; Referenzen bei Periodenwechsel nachziehen |
 
 **Gestapelter Chart (Verbrauch nach Quelle):** Die negative Reihe (Einspeisung)
 steht **zuerst** in der Reihenfolge, sonst reißt der Stapel unter 0 eine Lücke.
@@ -73,4 +73,4 @@ Balkenanfang sitzen und Reihen bündig übereinanderliegen.
 - B1/B4: 100–400 W Bereich nicht nutzbar (Gerätegrenze) — Manual-Modus prüfen.
 - C2: Programm-SoC 13 % noch nicht gesetzt.
 - C3: ungetestet.
-- E4: ob der Deye-Verbrauchszähler denselben Zendure-Fehler hat wie die Lastleistung, ist nicht geprüft.
+- E4: erledigt 10.09. (Deye-Verbrauchszähler ersetzt durch Integral der Hausleistung).
