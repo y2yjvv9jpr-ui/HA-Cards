@@ -1,0 +1,38 @@
+type: sections
+max_columns: 3
+title: Haus
+path: haus
+theme: kibibit
+sections:
+  - type: grid
+    column_span: 3
+    cards:
+      - type: custom:des-dehumidifier-card
+        grid_options:
+          columns: 12
+          rows: 5
+        name: Luftentfeuchter
+        location: Arbeitszimmer
+        humidity_entity: sensor.arete_r_two_25l_dehumidifier_air_purifier_luftfeuchtigkeit
+        humidifier_entity: humidifier.arete_r_two_25l_dehumidifier_air_purifier
+        power_entity: fan.arete_r_two_25l_dehumidifier_air_purifier
+        countdown_entity: select.arete_r_two_25l_dehumidifier_air_purifier_countdown
+        countdown_off_option: Abbrechen
+        child_lock_entity: switch.arete_r_two_25l_dehumidifier_air_purifier_kindersicherung
+        history_hours: 24
+        target_min: 30
+        target_max: 80
+        target_step: 5
+        faults:
+          - entity: binary_sensor.arete_r_two_25l_dehumidifier_air_purifier_tank_voll
+            name: Tank voll
+            severity: error
+          - entity: binary_sensor.arete_r_two_25l_dehumidifier_air_purifier_nass
+            name: Nass
+            severity: error
+          - entity: binary_sensor.arete_r_two_25l_dehumidifier_air_purifier_temperaturfehler
+            name: Temperaturfehler
+            severity: error
+          - entity: binary_sensor.arete_r_two_25l_dehumidifier_air_purifier_abtauen
+            name: Abtauen
+            severity: warning
