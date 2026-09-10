@@ -1,6 +1,6 @@
 {
   "name": "daniels-home-assistant-cards",
-  "version": "0.11.0",
+  "version": "0.12.0",
   "private": true,
   "description": "Daniels Home Assistant Cards - custom Lovelace cards for Home Assistant: storage, inverter, house, statistics and chart cards for a Deye/Zendure PV setup.",
   "type": "module",

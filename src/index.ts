@@ -4,8 +4,9 @@ import { DesHouseCard } from './des-house-card';
 import { DesStatsCard } from './des-stats-card';
 import { DesChartCard } from './des-chart-card';
 import { DesDehumidifierCard } from './des-dehumidifier-card';
+import { DesCoverCard } from './des-cover-card';
 
-const VERSION = '0.11.0';
+const VERSION = '0.12.0';
 
 interface CardRegistration {
   type: string;
@@ -57,6 +58,13 @@ const CARDS: ReadonlyArray<CardRegistration> = [
     description:
       'Luftentfeuchter: Ist-Feuchte gegen Ziel, 24-h-Verlauf, Störungspillen und Bedienung (Entities oder Demo-Werte).',
   },
+  {
+    type: 'des-cover-card',
+    element: DesCoverCard,
+    name: 'Daniels Rollladenkarte',
+    description:
+      'Rollläden: Gruppensteuerung, Szenen-Kacheln und Einzelrollläden nach Etage (Entities oder Demo-Werte).',
+  },
 ];
 
 window.customCards = window.customCards ?? [];
@@ -90,4 +98,5 @@ export {
   DesStatsCard,
   DesChartCard,
   DesDehumidifierCard,
+  DesCoverCard,
 };

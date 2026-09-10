@@ -4,6 +4,28 @@ Alle nennenswerten Änderungen an diesem Projekt werden hier festgehalten.
 Format grob nach [Keep a Changelog](https://keepachangelog.com/de/1.1.0/),
 Versionierung nach [SemVer](https://semver.org/lang/de/).
 
+## [0.12.0]
+
+### Neu
+
+- **des-cover-card** — neue Karte für alle Rollläden auf der Seite „Haus":
+  Kopfzeile mit gezählter Metazeile (offen/zu/teilweise), eine **Gruppenzeile**
+  („Haus", `group_entity`) mit ziehbarem Positionsbalken (100 = offen) und den
+  Buttons ▲ ■ ▼, eine Reihe **Szenen-Kacheln** (`scenes`, 1–6; Icon über Label,
+  Tap ruft einen beliebigen Dienst) und aufgeklappt die **Einzelrollläden nach
+  Etage** (`sections`) mit je Balken, Prozent und ▲ ■ ▼. Der Stopp-Button ist
+  blau, solange der Rollladen fährt (`opening`/`closing`). Ohne Entities
+  Demo-Modus. Registriert als **„Daniels Rollladenkarte"**.
+
+### Geändert
+
+- **service.ts** (gemeinsames Modul) um Rollladen-Dienste erweitert: `writeCover`
+  (`cover.open_cover`/`close_cover`/`stop_cover`), `writeCoverPosition`
+  (`cover.set_cover_position`), der Prüfer `isWritableCover` sowie ein generischer
+  `callAction({ service, target?, data? })` für die Szenen-Kacheln (`target` wird
+  in die Service-Daten gemischt, versionsunabhängig).
+- **types.ts:** `HassServiceCall` und die Cover-Konfigurationstypen ergänzt.
+
 ## [0.11.0]
 
 ### Neu

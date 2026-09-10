@@ -1358,6 +1358,84 @@ location: Arbeitszimmer
 
 ---
 
+## Rollladenkarte (`des-cover-card`)
+
+**Eine** Karte für alle Rollläden auf der Seite „Haus": eine Gruppenzeile, eine
+Reihe Szenen-Kacheln und — aufgeklappt — die Einzelrollläden nach Etage. Bausteine
+wie die übrigen Karten (Kopfzeile + Metazeile, Chevron unten mittig,
+Dropdown-Overlay). Läuft **ohne Entities im Demo-Modus** (Gruppe 65 %, gemischte
+Einzelpositionen).
+
+Positionen sind die **rohe HA-Position** (`current_position`): 100 = ganz offen
+(voller Balken), 0 = zu. Rollläden ohne Position werden über den Zustand
+(`open`/`closed`) gezählt.
+
+Im Sections-View belegt die Karte 12 von 36 Spalten und standardmäßig **4 Zeilen**
+(min. 3).
+
+| Option         | Typ            | Beschreibung                                                     |
+| -------------- | -------------- | ---------------------------------------------------------------- |
+| `name`         | string         | Kopfzeile. Standard `Rollläden`.                                 |
+| `group_entity` | Entity         | `cover`-Gruppe für die Gruppenzeile „Haus". Optional.            |
+| `scenes`       | Liste (1–6)    | Szenen-Kacheln in dieser Reihenfolge (siehe unten).              |
+| `sections`     | Liste          | Etagen/Gruppen, je mit ihren Rollläden; erscheinen aufgeklappt.  |
+
+Je `scenes`-Eintrag: `name`, optionales `icon` (`mdi:…`) und `action`
+(`{ service: 'domain.service', target?, data? }`). Je `sections`-Eintrag: `name`
+und `covers` (je `entity` + `name`).
+
+**Darstellung**
+
+- **Kopfzeile:** Name links, Metazeile „&lt;n&gt; offen · &lt;n&gt; zu ·
+  &lt;n&gt; teilweise" über alle Einzelrollläden. Keine Pille.
+- **Gruppenzeile:** Label „Haus", Positionsbalken (Füllung = Position, blau
+  `--primary-color`, ziehbarer Knopf; Loslassen schreibt `set_cover_position`,
+  300 ms Debounce), Prozentwert und drei Buttons ▲ ■ ▼
+  (`open_cover`/`stop_cover`/`close_cover`).
+- **Szenen-Kacheln:** eine Zeile, alle gleich breit, Icon über Label, Rahmen wie
+  die Segmented-Buttons. Tap ruft die Aktion auf (kurze Aktiv-Rückmeldung). Eine
+  Kachel ist gedimmt (Tooltip „Nicht verfügbar"), wenn die Ziel-Entität der Aktion
+  nicht in `hass.states` existiert.
+- **Aufgeklappt:** je Sektion eine kleine Überschrift, darunter je Rollladen eine
+  Zeile mit Name, Positionsbalken, Prozent und ▲ ■ ▼. Der **Stopp-Button** ist
+  blau, solange der Rollladen fährt (`opening`/`closing`). Nicht lesbare Rollläden:
+  Zeile gedimmt, Buttons deaktiviert.
+
+**Beispiel-YAML** (gekürzt):
+
+```yaml
+type: custom:des-cover-card
+name: Rollläden
+group_entity: cover.rollladen
+scenes:
+  - name: Tag
+    icon: mdi:weather-sunny
+    action: { service: script.turn_on, target: { entity_id: script.guten_morgen } }
+  - name: Aquarien
+    icon: mdi:fish
+    action:
+      service: automation.trigger
+      target: { entity_id: automation.aquarium_arbeitszimmer_sonnenschutz }
+      data: { skip_condition: true }
+sections:
+  - name: Erdgeschoss
+    covers:
+      - { entity: cover.jalousie_eg_flur_jalousie_eg_flur, name: Flur }
+      - { entity: cover.shellyswitch25_e8db84aa7195, name: Küche }
+  - name: Obergeschoss
+    covers:
+      - { entity: cover.jalousie_og_bad, name: Bad }
+```
+
+Ohne `group_entity`/`sections` zeigt dieselbe Karte den Demo-Modus:
+
+```yaml
+type: custom:des-cover-card
+name: Rollläden
+```
+
+---
+
 ## Schreibverhalten
 
 Grundregel: **jedes Bedienelement schreibt in die Entität, an die es gebunden
@@ -1377,9 +1455,15 @@ lokal — es bewegt sich, löst aber keinen Service-Call aus.
 | Slider **Zielfeuchte** | `humidifier_entity`   | `humidifier.set_humidity` (300 ms Debounce)  |
 | **Max-Trocknen**       | `countdown_entity`    | `select.select_option` / `input_select.select_option` |
 | **Kindersicherung**    | `child_lock_entity`   | `switch.turn_on` / `switch.turn_off`         |
+| **Positionsbalken**    | `group_entity` / `sections[].covers[].entity` | `cover.set_cover_position` (300 ms Debounce) |
+| **▲ ■ ▼**              | dito                  | `cover.open_cover` / `stop_cover` / `close_cover` |
+| **Szenen-Kachel**      | `scenes[].action`     | beliebiger Dienst `domain.service` (Ziel/Data aus der Aktion) |
 
 Nur die Domains `number`, `input_number`, `switch`, `input_boolean`, `select`,
-`input_select`, `fan` und `humidifier` werden geschrieben; alles andere bleibt lokal.
+`input_select`, `fan`, `humidifier` und `cover` werden von den Bedienelementen
+direkt geschrieben; alles andere bleibt lokal. Eine **Szenen-Kachel** ruft
+dagegen den in ihrer `action` genannten Dienst auf — beliebige Domain, `target`
+und `data` werden übergeben.
 
 **Wann geschrieben wird.** Slider schreiben nicht beim Ziehen, sondern beim
 Loslassen (`change`), und dieser Schreibvorgang ist um 500 ms verzögert. Das ist
