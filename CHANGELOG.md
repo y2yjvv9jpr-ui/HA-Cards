@@ -1,8 +1,19 @@
-# Changelog
+# Changelog — Daniels Home Assistant Cards
 
 Alle nennenswerten Änderungen an diesem Projekt werden hier festgehalten.
 Format grob nach [Keep a Changelog](https://keepachangelog.com/de/1.1.0/),
 Versionierung nach [SemVer](https://semver.org/lang/de/).
+
+## [0.9.4]
+
+### Geändert
+
+- **Umbenennung** des Produkts von „Daniels Energy Cards" in **„Daniels Home
+  Assistant Cards"**: `hacs.json`-Name, `package.json` (name/description),
+  README-Titel/-Einleitung, CHANGELOG-Kopf und der Konsolen-Banner. Der
+  Bundle-Dateiname `dist/daniels-energy-cards.js` und die
+  `custom:des-*`-Kartentypen bleiben unverändert (keine Konfigurationsänderung
+  in Home Assistant nötig).
 
 ## [0.9.3]
 

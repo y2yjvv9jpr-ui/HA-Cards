@@ -1,7 +1,8 @@
-# daniels-energy-cards
+# Daniels Home Assistant Cards
 
-Eigene Lovelace-Karten für Home Assistant. TypeScript + [Lit](https://lit.dev),
-gebaut mit Vite zu **einer einzelnen** JS-Datei ohne externe Laufzeit-Abhängigkeiten.
+**Daniels Home Assistant Cards** — eigene Lovelace-Karten für Home Assistant.
+TypeScript + [Lit](https://lit.dev), gebaut mit Vite zu **einer einzelnen**
+JS-Datei ohne externe Laufzeit-Abhängigkeiten.
 
 Aktuell enthalten:
 
@@ -54,7 +55,7 @@ dem Standard-Branch.
    | Repository | `https://github.com/y2yjvv9jpr-ui/HA-Cards`   |
    | Typ        | **Dashboard**                                 |
 
-4. **Hinzufügen**, dann in der HACS-Liste „Daniels Energy Cards“ öffnen und
+4. **Hinzufügen**, dann in der HACS-Liste „Daniels Home Assistant Cards“ öffnen und
    **Herunterladen**.
 5. Home Assistant neu starten bzw. Browser hart neu laden (Strg+Shift+R).
 

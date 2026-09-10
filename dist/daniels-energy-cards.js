@@ -4767,7 +4767,7 @@ for (const i of _s)
     preview: !1
   });
 console.info(
-  `%c DANIELS-ENERGY-CARDS %c v${ps} `,
+  `%c DANIELS-HOME-ASSISTANT-CARDS %c v${ps} `,
   "background:#03a9f4;color:#fff;font-weight:700;border-radius:3px 0 0 3px;padding:2px 4px",
   "background:#555;color:#fff;border-radius:0 3px 3px 0;padding:2px 4px"
 );

@@ -1,8 +1,8 @@
 {
-  "name": "daniels-energy-cards",
-  "version": "0.9.3",
+  "name": "daniels-home-assistant-cards",
+  "version": "0.9.4",
   "private": true,
-  "description": "Custom Lovelace cards for Home Assistant - storage cards for house batteries and thermal (aquarium) storage.",
+  "description": "Daniels Home Assistant Cards - custom Lovelace cards for Home Assistant: storage, inverter, house, statistics and chart cards for a Deye/Zendure PV setup.",
   "type": "module",
   "scripts": {
     "build": "vite build",
