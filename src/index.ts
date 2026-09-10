@@ -6,6 +6,7 @@ import { DesChartCard } from './des-chart-card';
 import { DesDehumidifierCard } from './des-dehumidifier-card';
 import { DesCoverCard } from './des-cover-card';
 import { DesLightCard } from './des-light-card';
+import { DesBedLightCard } from './des-bed-light-card';
 
 const VERSION = '0.13.0';
 
@@ -73,6 +74,13 @@ const CARDS: ReadonlyArray<CardRegistration> = [
     description:
       'Lichter je Raum: An/Aus, Helligkeit und Szenen je Zeile (Entities oder Demo-Werte).',
   },
+  {
+    type: 'des-bed-light-card',
+    element: DesBedLightCard,
+    name: 'Daniels Bettlichtkarte',
+    description:
+      'Bettlicht (Seiten/Kopfenden): Modi und Szenen-Editor. Vorerst nur Oberfläche mit Demo-Werten.',
+  },
 ];
 
 window.customCards = window.customCards ?? [];
@@ -108,4 +116,5 @@ export {
   DesDehumidifierCard,
   DesCoverCard,
   DesLightCard,
+  DesBedLightCard,
 };
