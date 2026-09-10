@@ -4,6 +4,14 @@ Alle nennenswerten Änderungen an diesem Projekt werden hier festgehalten.
 Format grob nach [Keep a Changelog](https://keepachangelog.com/de/1.1.0/),
 Versionierung nach [SemVer](https://semver.org/lang/de/).
 
+## [0.17.2]
+
+### Geändert
+
+- **des-light-card:** Die An/Aus-Segmente jeder Zeile nutzen jetzt die gemeinsame
+  Reihenfolge **Aus links, An rechts** (`ON_OFF_OPTIONS`). Nur Reihenfolge, kein
+  Verhaltens-/Service-Wechsel.
+
 ## [0.17.1]
 
 ### Geändert

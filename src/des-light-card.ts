@@ -1,5 +1,5 @@
 import { LitElement, html, css, nothing, type TemplateResult } from 'lit';
-import { renderSegmented, segmentedStyles } from './segmented';
+import { renderSegmented, segmentedStyles, ON_OFF_OPTIONS } from './segmented';
 import { tokenStyles } from './tokens';
 import { formatInt, clamp } from './format';
 import { entityState, entityNumberAttribute } from './resolve';
@@ -266,11 +266,8 @@ export class DesLightCard extends LitElement {
               ? html`<span class="row-hint">${view.on_label}</span>`
               : nothing}
         </div>
-        ${renderSegmented<'on' | 'off'>(
-          [
-            { value: 'on', label: 'An' },
-            { value: 'off', label: 'Aus' },
-          ],
+        ${renderSegmented(
+          ON_OFF_OPTIONS,
           on === null ? null : on ? 'on' : 'off',
           (value) => (value === 'on' ? this._turnOn(view) : this._turnOff(view)),
           view.name,
