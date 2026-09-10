@@ -1574,7 +1574,7 @@ on_threshold_w: 2
 settings:
   - entity: input_boolean.helper_moweron
     name: Mähroboter Laden aktiv
-    pill: Mäher lädt
+    pill: Ladestation aktiv
     color: blue
 ```
 

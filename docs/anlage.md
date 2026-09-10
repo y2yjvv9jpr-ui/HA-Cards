@@ -229,7 +229,7 @@ Energiesensor.
   `change`-Werte je Zeitraum). Die Werte sind stündlich (Statistik-Takt); keine
   Utility-Meter/Template-Helfer nötig.
 - **Einstellungen (aufgeklappt):** `input_boolean.helper_moweron` steuert das
-  Laden des Mähroboters („Mähroboter Laden aktiv"; Pille „Mäher lädt", blau).
+  Laden des Mähroboters („Mähroboter Laden aktiv"; Pille „Ladestation aktiv", blau).
 
 ## Eigene Helfer (Packages)
 
