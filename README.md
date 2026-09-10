@@ -1439,6 +1439,81 @@ name: Rollläden
 
 ---
 
+## Lichtkarte (`des-light-card`)
+
+Lichter eines Raumes als Liste: je Zeile Icon, Name, in der Mitte ein
+Helligkeitsbalken (bei `kind: dim`) oder ein gedämpfter Hinweistext (bei
+`kind: switch`), rechts ein Segmented **An | Aus**. Kein Chevron. Ohne `items`
+läuft die Karte im Demo-Modus.
+
+| Option  | Typ                  | Beschreibung                                             |
+| ------- | -------------------- | ------------------------------------------------------- |
+| `name`  | string               | Kopfzeile. Standard `Licht`. Metazeile „&lt;n&gt; von &lt;m&gt; an". |
+| `items` | Liste                | Die Licht-Zeilen (siehe unten).                          |
+
+Je `items`-Eintrag:
+
+| Feld        | Typ                | Beschreibung                                                            |
+| ----------- | ------------------ | ---------------------------------------------------------------------- |
+| `entity`    | Entity             | **Pflicht.** `light`, `switch` oder `input_boolean`.                   |
+| `name`      | string             | **Pflicht.** Zeilenname (64 px).                                       |
+| `icon`      | string             | `mdi:…`; an leuchtet es in `--primary-color`.                          |
+| `kind`      | `switch` \| `dim`  | `switch` (Standard) = nur An/Aus, `dim` = Helligkeitsbalken (`light`). |
+| `on_action` | Aktion             | Wird von „An" statt `turn_on` gefeuert (z. B. ein Szenen-Skript). „Aus" schaltet immer `entity` aus. |
+| `on_label`  | string             | Kleiner Hinweistext in einer `switch`-Zeile (z. B. „Ambiente").        |
+
+Der Helligkeitsbalken schreibt beim Loslassen `light.turn_on` mit
+`brightness_pct` (300 ms Debounce). Der Segmented-Zustand kommt aus dem State der
+`entity`; nicht lesbare/​nicht schaltbare Zeilen werden gedimmt.
+
+**Beispiel-YAML:**
+
+```yaml
+type: custom:des-light-card
+name: Wohnzimmer
+items:
+  - entity: light.spots_wohnzimmer
+    name: Spots
+    icon: mdi:track-light
+    kind: dim
+  - entity: switch.licht_esstisch
+    name: Essen
+    icon: mdi:vanity-light
+    kind: switch
+    on_action: { service: script.turn_on, target: { entity_id: script.esstisch_ambiente } }
+    on_label: Ambiente
+  - entity: switch.licht_couchtisch
+    name: Couch
+    icon: mdi:ceiling-light
+    kind: switch
+```
+
+---
+
+## Bettlichtkarte (`des-bed-light-card`) — nur Oberfläche
+
+Karte für ein Bettlicht (Seiten + zwei Kopfenden) mit Modus-Umschaltung und einem
+Szenen-Editor (Helligkeit, Presets, Weißton **oder** Farbe/Sättigung).
+
+> **Diese Version ist reine Oberfläche.** Alle Werte kommen aus festen
+> Demo-Daten; die Bedienelemente wirken **nur lokal** (kein Entity-Binding, keine
+> Service-Aufrufe). Konfiguration vorerst nur `name`. Die Verdrahtung
+> (`input_select` je Zeile, `input_number` je Modus, Package
+> `haus_helper_licht_bett.yaml`) ist offen — siehe `todo.md`.
+
+Eingeklappt: drei Zeilen (Farbpunkt, Name, Dreier-Segmented — Seiten
+**Aus | Ambiente | Max**, Kopfenden **Aus | Lesen | Max**), Metazeile aus den
+aktiven Modi. Aufgeklappt: „Szene bearbeiten" mit Auswahl von Zeile und Modus,
+Helligkeits-Slider, neun Farb-Presets sowie Weißton- **oder**
+Farbton-/Sättigungs-Slider (der jeweils andere Block ist gedimmt).
+
+```yaml
+type: custom:des-bed-light-card
+name: Bett
+```
+
+---
+
 ## Schreibverhalten
 
 Grundregel: **jedes Bedienelement schreibt in die Entität, an die es gebunden
@@ -1461,12 +1536,15 @@ lokal — es bewegt sich, löst aber keinen Service-Call aus.
 | **Positionsbalken**    | `group_entity` / `sections[].covers[].entity` | `cover.set_cover_position` (300 ms Debounce) |
 | **▼ ■ ▲**              | dito                  | `cover.close_cover` / `stop_cover` / `open_cover` |
 | **Szenen-Kachel**      | `scenes[].action`     | beliebiger Dienst `domain.service` (Ziel/Data aus der Aktion) |
+| **Licht An \| Aus**    | `items[].entity`      | `light.turn_on`/`turn_off` bzw. `switch`/`input_boolean`; „An" nutzt `on_action`, falls gesetzt |
+| **Helligkeit**         | `items[].entity` (`kind: dim`) | `light.turn_on` mit `brightness_pct` (300 ms Debounce) |
 
 Nur die Domains `number`, `input_number`, `switch`, `input_boolean`, `select`,
-`input_select`, `fan`, `humidifier` und `cover` werden von den Bedienelementen
-direkt geschrieben; alles andere bleibt lokal. Eine **Szenen-Kachel** ruft
-dagegen den in ihrer `action` genannten Dienst auf — beliebige Domain, `target`
-und `data` werden übergeben.
+`input_select`, `fan`, `humidifier`, `cover` und `light` werden von den
+Bedienelementen direkt geschrieben; alles andere bleibt lokal. Eine
+**Szenen-Kachel** bzw. eine `on_action` ruft dagegen den genannten Dienst auf —
+beliebige Domain, `target` und `data` werden übergeben. Die **Bettlichtkarte**
+schreibt in dieser Version gar nicht (nur Oberfläche).
 
 **Wann geschrieben wird.** Slider schreiben nicht beim Ziehen, sondern beim
 Loslassen (`change`), und dieser Schreibvorgang ist um 500 ms verzögert. Das ist

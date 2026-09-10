@@ -5,8 +5,9 @@ import { DesStatsCard } from './des-stats-card';
 import { DesChartCard } from './des-chart-card';
 import { DesDehumidifierCard } from './des-dehumidifier-card';
 import { DesCoverCard } from './des-cover-card';
+import { DesLightCard } from './des-light-card';
 
-const VERSION = '0.12.3';
+const VERSION = '0.13.0';
 
 interface CardRegistration {
   type: string;
@@ -65,6 +66,13 @@ const CARDS: ReadonlyArray<CardRegistration> = [
     description:
       'Rollläden: Gruppensteuerung, Szenen-Kacheln und Einzelrollläden nach Etage (Entities oder Demo-Werte).',
   },
+  {
+    type: 'des-light-card',
+    element: DesLightCard,
+    name: 'Daniels Lichtkarte',
+    description:
+      'Lichter je Raum: An/Aus, Helligkeit und Szenen je Zeile (Entities oder Demo-Werte).',
+  },
 ];
 
 window.customCards = window.customCards ?? [];
@@ -99,4 +107,5 @@ export {
   DesChartCard,
   DesDehumidifierCard,
   DesCoverCard,
+  DesLightCard,
 };

@@ -624,6 +624,59 @@ export interface DesCoverCardConfig {
   sections?: CoverSectionConfig[];
 }
 
+// ===========================================================================
+// des-light-card
+// ===========================================================================
+
+/** How a light row is operated: a plain on/off, or with a brightness bar. */
+export type LightItemKind = 'switch' | 'dim';
+
+/** One light row. */
+export interface LightItemConfig {
+  /** `light`, `switch` or `input_boolean`. */
+  entity: string;
+  name: string;
+  /** `mdi:…` icon. */
+  icon?: string;
+  /** `switch` (default) = on/off only, `dim` = brightness bar (needs a `light`). */
+  kind?: LightItemKind;
+  /**
+   * Fired by "An" instead of the plain turn_on, e.g. a scene script. "Aus"
+   * always turns `entity` off.
+   */
+  on_action?: HassServiceCall;
+  /** Small muted hint shown in a switch row (e.g. "Ambiente"). */
+  on_label?: string;
+}
+
+/**
+ * Phase 1 + 2 in one, like the other cards. With no `items` the card shows a
+ * canned demo; otherwise each row reads and writes its entity. `dim` rows write
+ * `light.turn_on` with `brightness_pct` (300 ms debounce); "An" fires
+ * `on_action` when set, else `turn_on`; "Aus" turns the entity off.
+ */
+export interface DesLightCardConfig {
+  type: string;
+  /** Header title. Default "Licht". */
+  name?: string;
+  items?: LightItemConfig[];
+}
+
+// ===========================================================================
+// des-bed-light-card
+// ===========================================================================
+
+/**
+ * UI-only bed light card: every value comes from fixed demo data, controls act
+ * locally only (no entities, no service calls). Wiring (input_select per row,
+ * input_number per mode, a helper package) is still open - see todo.md.
+ */
+export interface DesBedLightCardConfig {
+  type: string;
+  /** Header title. Default "Bett". */
+  name?: string;
+}
+
 /** Minimal shape of the Home Assistant object handed to a card. */
 export interface HomeAssistant {
   states: Record<

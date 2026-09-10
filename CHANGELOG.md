@@ -4,6 +4,29 @@ Alle nennenswerten Änderungen an diesem Projekt werden hier festgehalten.
 Format grob nach [Keep a Changelog](https://keepachangelog.com/de/1.1.0/),
 Versionierung nach [SemVer](https://semver.org/lang/de/).
 
+## [0.13.0]
+
+### Neu
+
+- **des-light-card** — Lichter je Raum als Liste: pro Zeile Icon, Name, in der
+  Mitte ein Helligkeitsbalken (`kind: dim`, schreibt `light.turn_on`
+  `brightness_pct`, 300 ms Debounce) oder ein Hinweistext (`kind: switch`),
+  rechts ein Segmented **An | Aus**. „An" nutzt eine optionale `on_action`
+  (z. B. Szenen-Skript), sonst `turn_on`; „Aus" schaltet die Entität aus. Ohne
+  `items` Demo-Modus. Registriert als **„Daniels Lichtkarte"**.
+- **des-bed-light-card** — Bettlicht (Seiten + zwei Kopfenden) mit
+  Modus-Umschaltung (Aus/Ambiente/Max bzw. Aus/Lesen/Max) und einem
+  aufgeklappten Szenen-Editor (Helligkeit, neun Farb-Presets, Weißton **oder**
+  Farbton/Sättigung – der jeweils andere Block gedimmt). **Vorerst reine
+  Oberfläche**: feste Demo-Werte, Bedienelemente wirken nur lokal, kein
+  Entity-Binding. Registriert als **„Daniels Bettlichtkarte"**.
+
+### Geändert
+
+- **service.ts** um `writeLight(hass, entity, on, data?)` (`light.turn_on` mit
+  optional `brightness_pct`/`color_temp_kelvin`/`hs_color`, sonst
+  `light.turn_off`) und den Prüfer `isWritableLight` erweitert.
+
 ## [0.12.3]
 
 ### Behoben
