@@ -39,7 +39,11 @@ const DEFAULT_TARGET_MAX = 80;
 const DEFAULT_TARGET_STEP = 5;
 const DEFAULT_HISTORY_HOURS = 24;
 const DEFAULT_NAME = 'Luftentfeuchter';
-const DEFAULT_OFF_OPTION = 'Abbrechen';
+/** Raw "off" state of the countdown select. HA only translates the *display*
+    ("Abbrechen"); the state itself is "cancel". */
+const DEFAULT_OFF_OPTION = 'cancel';
+/** Raw states always treated as "off", regardless of the configured option. */
+const OFF_ALIASES: ReadonlySet<string> = new Set(['cancel', 'abbrechen']);
 
 /** The target-humidity slider writes on release, debounced. */
 const WRITE_DEBOUNCE_MS = 300;
@@ -50,7 +54,6 @@ const SETTLE_TIMEOUT_MS = 8000;
 const HISTORY_REFRESH_MS = 5 * 60 * 1000;
 
 /** Chart geometry. */
-const CHART_MIN_HEIGHT_PX = 140;
 const CHART_MARGIN = { top: 6, right: 8, bottom: 18, left: 30 } as const;
 /** The y-axis is rounded to 10 % ticks and spans at least this much. */
 const Y_TICK = 10;
@@ -104,14 +107,15 @@ function hhmm(date: Date): string {
 }
 
 /**
- * Shortens a countdown option for the segmented control: the off option becomes
- * "Aus", "1 Stunde"/"2 Stunden" become "1 h"/"2 h" (leading number + " h"), and
- * anything without a leading number is left untouched.
+ * Shortens a countdown display text: the off option becomes "Aus",
+ * "1 Stunde"/"2 Stunden" become "1 h"/"2 h" (leading number + " h"), and
+ * anything without a leading number is left untouched. `display` is already the
+ * frontend-translated label; `isOff` is decided on the raw state, not the text.
  */
-function shortenCountdown(option: string, offOption: string): string {
-  if (option.trim().toLowerCase() === offOption.trim().toLowerCase()) return 'Aus';
-  const match = option.trim().match(/^(\d+(?:[.,]\d+)?)/);
-  return match ? `${match[1].replace(',', '.')} h` : option;
+function shortenCountdown(display: string, isOff: boolean): string {
+  if (isOff) return 'Aus';
+  const match = display.trim().match(/^(\d+(?:[.,]\d+)?)/);
+  return match ? `${match[1].replace(',', '.')} h` : display;
 }
 
 export class DesDehumidifierCard extends LitElement {
@@ -326,6 +330,34 @@ export class DesDehumidifierCard extends LitElement {
     return typeof o === 'string' && o.trim().length > 0 ? o : DEFAULT_OFF_OPTION;
   }
 
+  /** True when a raw countdown state means "off" (case-insensitive; the
+      configured option plus the "cancel"/"Abbrechen" aliases). */
+  private _isOffState(raw: string): boolean {
+    const s = raw.trim().toLowerCase();
+    return s === this._offOption().trim().toLowerCase() || OFF_ALIASES.has(s);
+  }
+
+  /**
+   * The frontend-translated label for a raw countdown state
+   * (`hass.formatEntityState`), falling back to the raw value. HA translates the
+   * display ("cancel" → "Abbrechen", "1_hour" → "1 Stunde") while the state
+   * stays canonical.
+   */
+  private _countdownDisplay(raw: string): string {
+    const id = this._config?.countdown_entity;
+    const stateObj = isEntityId(id) ? this.hass?.states?.[id as string] : undefined;
+    const format = this.hass?.formatEntityState;
+    if (stateObj && typeof format === 'function') {
+      try {
+        const label = format(stateObj, raw);
+        if (typeof label === 'string' && label.length > 0) return label;
+      } catch {
+        // fall through to the raw value
+      }
+    }
+    return raw;
+  }
+
   /** Current relative humidity. */
   private _humidity(): Resolved<number> {
     if (this._isDemo) return { kind: 'value', value: 52 };
@@ -426,6 +458,7 @@ export class DesDehumidifierCard extends LitElement {
             </div>
             <div class="badges">
               ${faults.map((f) => this._renderFaultBadge(f))}
+              ${this._renderLockBadge()}
               ${this._renderCountdownBadge()}
               ${hasError ? nothing : this._renderStatusBadge(on, humidity, target)}
             </div>
@@ -491,11 +524,21 @@ export class DesDehumidifierCard extends LitElement {
   /** "Max-Trocknen <Option>" in blue while the countdown is not off. */
   private _renderCountdownBadge(): TemplateResult | typeof nothing {
     const current = this._countdown();
-    if (current === null) return nothing;
-    if (current.trim().toLowerCase() === this._offOption().trim().toLowerCase()) {
-      return nothing;
-    }
-    return this._renderBadge(`Max-Trocknen ${current}`, 'badge-info');
+    if (current === null || this._isOffState(current)) return nothing;
+    const label = shortenCountdown(this._countdownDisplay(current), false);
+    return this._renderBadge(`Max-Trocknen ${label}`, 'badge-info');
+  }
+
+  /** Child-lock indicator: a grey lock pill, only while the lock is on. */
+  private _renderLockBadge(): TemplateResult | typeof nothing {
+    if (this._lockOn() !== true) return nothing;
+    return html`<span
+      class="badge badge-neutral badge-icon"
+      title="Kindersicherung aktiv"
+      aria-label="Kindersicherung aktiv"
+    >
+      <ha-icon icon="mdi:lock"></ha-icon>
+    </span>`;
   }
 
   /**
@@ -543,9 +586,10 @@ export class DesDehumidifierCard extends LitElement {
             ? nothing
             : html`<div class="bar-target" style="left:${targetPct}%"></div>`}
         </div>
+        <!-- Only the end values; the target reads from the meta line, and the
+             vertical marker in the bar already shows where it sits. -->
         <div class="bar-scale">
           <span>${formatInt(range.min)}</span>
-          <span>Ziel ${target === null ? '–' : formatInt(Math.round(target))}</span>
           <span>${formatInt(range.max)}</span>
         </div>
       </div>
@@ -786,14 +830,16 @@ export class DesDehumidifierCard extends LitElement {
 
     const options = this._countdownOptions();
     const current = this._countdown();
-    const offOption = this._offOption();
     const countdownDisabled =
       isEntityId(config.countdown_entity) &&
       !['select', 'input_select'].includes(domainOf(config.countdown_entity as string));
     const countdownSeg =
       options.length > 0
         ? renderSegmented<string>(
-            options.map((o) => ({ value: o, label: shortenCountdown(o, offOption) })),
+            options.map((o) => ({
+              value: o,
+              label: shortenCountdown(this._countdownDisplay(o), this._isOffState(o)),
+            })),
             current !== null && options.includes(current) ? current : null,
             (value) => this._setCountdown(value),
             'Max-Trocknen',
@@ -1007,6 +1053,9 @@ export class DesDehumidifierCard extends LitElement {
         box-sizing: border-box;
         display: flex;
         flex-direction: column;
+        /* Caps the card at the grid height: the chart yields so the chevron
+           keeps its normal bottom spacing instead of being pushed to the edge. */
+        overflow: hidden;
         background: var(--ha-card-background, var(--card-background-color, #fff));
         color: var(--primary-text-color);
       }
@@ -1086,6 +1135,17 @@ export class DesDehumidifierCard extends LitElement {
       .badge-label {
         display: block;
         transform: translateY(1px);
+      }
+
+      /* Icon-only pill (child lock): tighter padding, small glyph. */
+      .badge-icon {
+        padding: 0 6px;
+      }
+
+      .badge-icon ha-icon {
+        --mdc-icon-size: 14px;
+        width: 14px;
+        height: 14px;
       }
 
       /* Blue: Max-Trocknen and "Bereit" - the info colour, matching the other
@@ -1207,9 +1267,12 @@ export class DesDehumidifierCard extends LitElement {
 
       /* --- chart --- */
 
+      /* Takes the height left after header/value/bar and the chevron row.
+         min-height:0 lets it yield rather than pushing the chevron past the
+         bottom edge; the card is laid out at rows 5 so it stays tall enough. */
       .chart {
         flex: 1 1 auto;
-        min-height: ${CHART_MIN_HEIGHT_PX}px;
+        min-height: 0;
         margin-top: 10px;
         position: relative;
         overflow: hidden;

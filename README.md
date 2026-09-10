@@ -1279,8 +1279,8 @@ auf dem Container wie bei der Chartkarte), deshalb sind 5 Zeilen sinnvoll.
 | `humidifier_entity`    | Entity         | `humidifier`: Ziel aus dem Attribut `humidity`, Schreiben per `humidifier.set_humidity`. |
 | `power_entity`         | Entity         | Ein/Aus: `fan` (`turn_on`/`turn_off`), alternativ `switch`/`input_boolean`.  |
 | `countdown_entity`     | Entity         | Max-Trocknen: ein `select`; die Optionen kommen aus der Entität.             |
-| `countdown_off_option` | string         | Option, die „aus“ bedeutet. Standard `Abbrechen`.                            |
-| `child_lock_entity`    | Entity         | Kindersicherung (`switch`). Optional — ohne die Angabe entfällt die Zeile.   |
+| `countdown_off_option` | string         | Roh-Zustand, der „aus“ bedeutet. Standard `cancel` (Vergleich case-insensitiv, akzeptiert zusätzlich `Abbrechen`). |
+| `child_lock_entity`    | Entity         | Kindersicherung (`switch`). Optional. Bei „on“ eine Schloss-Pille im Kopf.   |
 | `faults`               | Liste          | Störungen in Pillen-Reihenfolge (siehe unten). Optional.                     |
 | `history_hours`        | Zahl           | Zeitraum des Charts in Stunden. Standard `24`.                               |
 | `target_min`           | Zahl           | Unterer Rand von Balken und Slider. Standard `30`.                           |
@@ -1298,14 +1298,17 @@ Je `faults`-Eintrag:
 **Darstellung**
 
 - **Pillen rechts**, in dieser Reihenfolge: Störungen zuerst (nur bei `on`; rot
-  bzw. amber), dann „Max-Trocknen `<Option>`“ (blau, solange der Countdown nicht
-  auf `countdown_off_option` steht), dann der Status: „Läuft“ (grün, Gerät an und
-  Ist > Ziel), „Bereit“ (blau, an und Ist ≤ Ziel), „Aus“ (grau). Bei einer
-  **error**-Störung entfällt die Status-Pille.
+  bzw. amber), dann — falls `child_lock_entity` „on“ — eine graue **Schloss-Pille**
+  (`mdi:lock`, Tooltip „Kindersicherung aktiv“), dann „Max-Trocknen `<Option>`“
+  (blau, solange der Countdown nicht auf der Off-Option steht), dann der Status:
+  „Läuft“ (grün, Gerät an und Ist > Ziel), „Bereit“ (blau, an und Ist ≤ Ziel),
+  „Aus“ (grau). Bei einer **error**-Störung entfällt die Status-Pille. Die
+  Countdown-Anzeige nutzt die Frontend-Übersetzung (`hass.formatEntityState`).
 - **Wert groß** „52 %“ mit kleiner Beschriftung „Luftfeuchte“; rechtsbündig klein
   „7 % über Ziel“, nur wenn das Gerät an ist und Ist > Ziel.
 - **Balken** `target_min…target_max`, Füllung = Ist, Farbe immer blau
-  (`--primary-color`), senkrechte Zielmarke, darunter die Skala „30 · Ziel 45 · 80“.
+  (`--primary-color`), senkrechte Zielmarke; darunter nur die Endwerte „30 … 80“
+  (der Zielwert steht in der Metazeile).
 - **Chart** (24 h): Ist-Feuchte als blaue Linie mit leichter Fläche, Ziel als
   gestrichelte Linie. Daten per `hass.callWS({ type: 'history/history_during_period', … })`,
   Nachladen alle 5 Minuten und bei jedem Verbinden; unbekannte/`unavailable`-Punkte

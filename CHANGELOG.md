@@ -4,6 +4,31 @@ Alle nennenswerten Änderungen an diesem Projekt werden hier festgehalten.
 Format grob nach [Keep a Changelog](https://keepachangelog.com/de/1.1.0/),
 Versionierung nach [SemVer](https://semver.org/lang/de/).
 
+## [0.12.2]
+
+### Geändert
+
+- **des-dehumidifier-card:** Der Chart nimmt nicht mehr die gesamte Resthöhe —
+  er lässt der Chevron-Zeile ihren Platz (`min-height: 0`, `overflow: hidden` auf
+  der Karte), sodass der Chevron denselben unteren Abstand hat wie in den anderen
+  Karten statt am Kartenrand zu kleben.
+- **des-dehumidifier-card:** Unter dem Balken stehen nur noch die Endwerte
+  („30 … 80“); das mittlere „Ziel 45“ entfällt (steht in der Metazeile). Die
+  senkrechte Zielmarke im Balken bleibt.
+- **des-dehumidifier-card:** Countdown-Off-Option — Standard von `Abbrechen` auf
+  **`cancel`** (der Roh-Zustand des Selects; HA übersetzt nur die Anzeige). Der
+  Vergleich ist case-insensitiv und akzeptiert zusätzlich `Abbrechen`. Die
+  Countdown-Texte (Pille und Segmented) kommen jetzt aus der
+  Frontend-Übersetzung (`hass.formatEntityState`), danach greift die bisherige
+  Kürzung („1 Stunde“ → „1 h“, Off → „Aus“).
+
+### Hinzugefügt
+
+- **des-dehumidifier-card:** Graue **Schloss-Pille** (`mdi:lock`, ohne Text,
+  Tooltip „Kindersicherung aktiv“) im Kopf, nur wenn `child_lock_entity` „on“
+  ist — vor der Max-Trocknen-Pille. Bei „off“ keine Pille.
+- **types.ts:** `HomeAssistant.formatEntityState` ergänzt.
+
 ## [0.12.1]
 
 ### Neu

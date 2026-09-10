@@ -641,6 +641,16 @@ export interface HomeAssistant {
    * renders; the dehumidifier card uses it for `history/history_during_period`.
    */
   callWS?: <T = unknown>(message: Record<string, unknown>) => Promise<T>;
+  /**
+   * Frontend state formatter. Returns the translated display for an entity's
+   * state, or for a specific `state` value (e.g. a select option). Optional so a
+   * bare `hass` stub still renders; the dehumidifier card uses it for the
+   * countdown labels and falls back to the raw value.
+   */
+  formatEntityState?: (
+    stateObj: { state: string; attributes?: Record<string, unknown> } | undefined,
+    state?: string,
+  ) => string;
   themes?: unknown;
   locale?: { language?: string };
 }
