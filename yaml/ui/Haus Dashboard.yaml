@@ -108,3 +108,31 @@ sections:
           - entity: binary_sensor.arete_r_two_25l_dehumidifier_air_purifier_abtauen
             name: Abtauen
             severity: warning
+      - type: custom:des-light-card
+        grid_options:
+          columns: 12
+          rows: 3
+        name: Wohnzimmer
+        items:
+          - entity: light.spots_wohnzimmer
+            name: Spots
+            icon: mdi:track-light
+            kind: dim
+          - entity: switch.licht_esstisch
+            name: Essen
+            icon: mdi:vanity-light
+            kind: switch
+            on_action:
+              service: script.turn_on
+              target:
+                entity_id: script.esstisch_ambiente
+            on_label: Ambiente
+          - entity: switch.licht_couchtisch
+            name: Couch
+            icon: mdi:ceiling-light
+            kind: switch
+      - type: custom:des-bed-light-card
+        grid_options:
+          columns: 12
+          rows: 3
+        name: Bett
