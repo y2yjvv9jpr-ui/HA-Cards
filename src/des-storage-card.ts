@@ -844,6 +844,15 @@ export class DesStorageCard extends LitElement {
       : null;
   }
 
+  /**
+   * The entity is the source of truth: the slider start value comes from the
+   * bound `input_number`'s current state (snapped to its own range), never from
+   * a default or the range maximum. `_dischargeLocal` only shadows it while an
+   * optimistic write is in flight and is dropped again in `willUpdate` as soon
+   * as the entity confirms - so after a reload the slider shows whatever the
+   * helper actually holds. (A helper with an `initial:` would reset itself on a
+   * restart; that is fixed helper-side, not here.)
+   */
   private _dischargeLimit(config: DesStorageCardConfig): number | null {
     if (this._dischargeLocal !== null) return this._dischargeLocal;
     const resolved = resolveNumber(config.discharge_limit_entity, this.hass);
@@ -1114,6 +1123,9 @@ export class DesStorageCard extends LitElement {
           </div>
           ${hasOff ? nothing : segmented}
         </div>
+        ${switchEntity
+          ? this._renderBackupSwitchRow(config, switchEntity)
+          : nothing}
         ${packs.length > 0
           ? html`<table class="packs">
               <thead>
@@ -1121,7 +1133,6 @@ export class DesStorageCard extends LitElement {
                   <th class="pack-col-name">Akku</th>
                   <th>kWh</th>
                   <th>SoC</th>
-                  <th>SoH</th>
                   <th>°C</th>
                   <th>Zellen</th>
                 </tr>
@@ -1131,21 +1142,18 @@ export class DesStorageCard extends LitElement {
               </tbody>
             </table>`
           : nothing}
-        ${switchEntity
-          ? this._renderBackupSwitchRow(config, switchEntity)
-          : nothing}
       </div>
     `;
   }
 
   /**
-   * One pack table row: name, stored energy, soc, soh, temperature (traffic-
-   * light coloured) and cell balance. Units live in the header, so the cells
-   * stay bare numbers; a value the card cannot read shows a muted dash.
+   * One pack table row: name, stored energy, soc, temperature (traffic-light
+   * coloured) and cell balance. Units live in the header, so the cells stay
+   * bare numbers; a value the card cannot read shows a muted dash. (No SoH: the
+   * Zendure does not expose a per-pack state of health locally.)
    */
   private _renderPack(pack: BatteryPackConfig): TemplateResult {
     const soc = resolveNumber(pack.soc, this.hass);
-    const soh = resolveNumber(pack.soh, this.hass);
     const capacity = resolveNumber(pack.capacity_kwh, this.hass);
     const temp = resolveNumber(pack.temp_c, this.hass);
     const balance = resolveText(pack.balance, this.hass);
@@ -1163,7 +1171,6 @@ export class DesStorageCard extends LitElement {
         <td class="pack-col-name">${pack.name}</td>
         <td>${energyKwh !== null ? formatFixed(energyKwh) : this._dash()}</td>
         <td>${soc.kind === 'value' ? `${formatInt(soc.value)} %` : this._dash()}</td>
-        <td>${soh.kind === 'value' ? `${formatInt(soh.value)} %` : this._dash()}</td>
         <td class="pack-temp ${tempLevel}">
           ${temp.kind === 'value' ? formatFixed(temp.value) : this._dash()}
         </td>
@@ -1977,6 +1984,8 @@ export class DesStorageCard extends LitElement {
       width: 100%;
       border-collapse: collapse;
       font-size: 12px;
+      /* Sits below the switch row / sliders; a top rule sections it off. */
+      border-top: 1px solid var(--divider-color, rgba(127, 127, 127, 0.18));
     }
 
     /* Values right-aligned; units are carried by the header, not the cells. The

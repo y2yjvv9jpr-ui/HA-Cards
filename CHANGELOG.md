@@ -4,6 +4,27 @@ Alle nennenswerten Änderungen an diesem Projekt werden hier festgehalten.
 Format grob nach [Keep a Changelog](https://keepachangelog.com/de/1.1.0/),
 Versionierung nach [SemVer](https://semver.org/lang/de/).
 
+## [0.9.2]
+
+### Geändert
+
+- **des-storage-card (Variante battery):** Die Zeile **Notstromsteckdose**
+  (`backup.switch_entity`) steht jetzt **oberhalb** der Pack-Tabelle. Reihenfolge
+  im Aufklappbereich: Umschalter, Slider, Notstromsteckdose, Pack-Tabelle.
+- **des-storage-card:** Pack-Tabelle ohne Spalte **SoH** — der Zendure liefert
+  lokal keinen Zustandswert je Pack. Die kWh-Spalte bleibt (aus
+  `packs[].capacity_kwh` × `soc`). Das Pack-Feld `soh` entfällt.
+
+### Hinweis
+
+- Der Slider **max. Entladen** (`discharge_limit_entity`) nimmt seinen Startwert
+  schon immer aus dem **Entitätszustand** (kein Default/Maximum) und schreibt
+  beim Loslassen per `input_number.set_value`; der optimistische Local-State
+  wird verworfen, sobald die Entität den Wert bestätigt. Dass der Slider nach
+  einem Neustart auf 2400 sprang, lag am `initial: 2400` des Helfers
+  `input_number.pv_helper_zendure_entladeleistung_maximum` — behoben in
+  `pv_helper_laden.yaml`, nicht in der Karte.
+
 ## [0.9.1]
 
 ### Geändert
