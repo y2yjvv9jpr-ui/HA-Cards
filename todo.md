@@ -1,4 +1,4 @@
-# todo.md — offene Punkte (Stand 10.09.2026, 16:20)
+# todo.md — offene Punkte (Stand 10.09.2026, 17:30)
 
 Reihenfolge = Vorschlag. Jeder Punkt wird erst abgestimmt, dann freigegeben,
 dann umgesetzt (siehe claude.md).
@@ -20,6 +20,16 @@ dann umgesetzt (siehe claude.md).
       **umgedreht**: Treffer in `active_states` = grün „Notstrom bereit", kein
       Treffer = rot „Notstrom aus" (feste Formen `active`/`ready` unverändert).
       → per HACS auf 0.9.0 aktualisieren; Dashboard-YAML liegt schon passend im Repo.
+- [x] 10.09. des-storage-card (v0.9.1): `packs` als kompakte Tabelle
+      (Akku · kWh · SoC · SoH · °C · Zellen) statt Textzeilen; neue Pack-Felder
+      `capacity_kwh` (kWh-Spalte = SoC × Kapazität) und `soh`; Notstrom-Schalter
+      auf Bedienelement-Größe gebracht (kompakter ha-switch). → per HACS auf 0.9.1.
+- [x] 10.09. `pv_helper_speicher.yaml`: Gesamtenergie-Sensor
+      `pv_helper_speicher_energie` (Hausakkus + Zendure). → Package neu einspielen
+      (Template neu laden).
+- [x] 10.09. Chart „Speicher-Füllstand" auf zwei Achsen: Gesamt-Linie (linke
+      Achse 0–18,5 kWh) über Flächen je Speicher (rechte Achse 0–13,1 kWh).
+      → Dashboard-YAML in HA ersetzen.
 - [ ] docs/logik.md B7 (Karten-Schalter Zendure) und docs/anlage.md
       (Notstromsteckdose-Schalter, Lademodus **Aus**) nachziehen — Geräteregeln
       stehen bisher nur im Package-Kopf von `pv_helper_laden.yaml`.
