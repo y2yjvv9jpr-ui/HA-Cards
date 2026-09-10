@@ -710,6 +710,20 @@ export interface GarageDeviceConfig {
   energy_entity?: string;
 }
 
+/** Pill colour for a garage setting: blue / amber / grey. */
+export type GarageSettingColor = 'blue' | 'amber' | 'gray';
+
+/** One extra on/off setting (e.g. an automation enable), shown when expanded. */
+export interface GarageSettingConfig {
+  /** `input_boolean` or `switch`. */
+  entity: string;
+  name: string;
+  /** Header pill text while the setting is on. Optional (no pill without it). */
+  pill?: string;
+  /** Pill colour. Default `blue`. */
+  color?: GarageSettingColor;
+}
+
 /**
  * Garage overview: collapsed a pure status grid, expanded a table with power,
  * per-period consumption (from long-term statistics) and on/off per device.
@@ -725,6 +739,8 @@ export interface DesGarageCardConfig {
   devices?: GarageDeviceConfig[];
   /** Power (W) at/above which a device counts as active (green dot). Default 2. */
   on_threshold_w?: number;
+  /** Extra on/off settings shown under the table when expanded. */
+  settings?: GarageSettingConfig[];
 }
 
 /** Minimal shape of the Home Assistant object handed to a card. */

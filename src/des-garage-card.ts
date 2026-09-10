@@ -9,9 +9,18 @@ import { isWritableSwitch, isWritableLight, writeSwitch, writeLight } from './se
 import type {
   DesGarageCardConfig,
   GarageDeviceConfig,
+  GarageSettingConfig,
+  GarageSettingColor,
   HomeAssistant,
   StatsPeriod,
 } from './types';
+
+/** Setting pill colour → CSS class (same tones as the other cards' pills). */
+const SETTING_PILL_CLASS: Record<GarageSettingColor, string> = {
+  blue: 'pill-blue',
+  amber: 'pill-amber',
+  gray: 'pill-gray',
+};
 
 const GRID_COLUMNS = 12;
 const GRID_ROWS = 4;
@@ -120,6 +129,19 @@ export class DesGarageCard extends LitElement {
     if (config.light && (!config.light.entity || !config.light.name)) {
       throw new Error('des-garage-card: "light" braucht "entity" und "name"');
     }
+    if (config.settings !== undefined) {
+      if (!Array.isArray(config.settings)) {
+        throw new Error('des-garage-card: "settings" muss eine Liste sein');
+      }
+      for (const s of config.settings) {
+        if (!s || !s.entity || !s.name) {
+          throw new Error('des-garage-card: jede Einstellung braucht "entity" und "name"');
+        }
+        if (s.color !== undefined && !['blue', 'amber', 'gray'].includes(s.color)) {
+          throw new Error('des-garage-card: "color" muss "blue", "amber" oder "gray" sein');
+        }
+      }
+    }
     this._config = config;
     this._expanded = false;
     this._onLocal = {};
@@ -148,7 +170,9 @@ export class DesGarageCard extends LitElement {
 
   protected override willUpdate(): void {
     this.toggleAttribute('expanded', this._expanded);
-    if (this._isDemo || Object.keys(this._onLocal).length === 0) return;
+    // Not gated on demo: settings use real entities even on an otherwise-demo
+    // card; the entityState check below simply never confirms a demo entity.
+    if (Object.keys(this._onLocal).length === 0) return;
     let next = this._onLocal;
     let changed = false;
     for (const [entity, val] of Object.entries(this._onLocal)) {
@@ -267,6 +291,10 @@ export class DesGarageCard extends LitElement {
     const devicesOn = devices.filter((v) => v.on === true).length;
     const meta = `${devicesOn} Geräte an · ${formatInt(totalW)} W`;
     const lightOn = light?.on === true;
+    const settings = config.settings ?? [];
+    const activeSettings = settings.filter(
+      (s) => s.pill && this._on(s.entity) === true,
+    );
 
     return html`
       <ha-card>
@@ -277,6 +305,11 @@ export class DesGarageCard extends LitElement {
               ${lightOn
                 ? html`<span class="badge badge-amber"><span class="badge-label">Licht an</span></span>`
                 : nothing}
+              ${activeSettings.map(
+                (s) => html`<span class="badge ${SETTING_PILL_CLASS[s.color ?? 'blue']}">
+                  <span class="badge-label">${s.pill}</span>
+                </span>`,
+              )}
             </div>
           </div>
           <div class="meta">${meta}</div>
@@ -296,7 +329,12 @@ export class DesGarageCard extends LitElement {
           </div>
         </div>
         ${this._expanded
-          ? html`<div class="overlay">${this._renderTable(light, devices)}</div>`
+          ? html`<div class="overlay">
+              ${this._renderTable(light, devices)}
+              ${(config.settings ?? []).length > 0
+                ? this._renderSettings(config.settings ?? [])
+                : nothing}
+            </div>`
           : nothing}
       </ha-card>
     `;
@@ -385,6 +423,44 @@ export class DesGarageCard extends LitElement {
         </td>
       </tr>
     `;
+  }
+
+  /** "Einstellungen" block under the table: one on/off row per setting. */
+  private _renderSettings(settings: GarageSettingConfig[]): TemplateResult {
+    return html`
+      <div class="settings">
+        <div class="settings-title">Einstellungen</div>
+        ${settings.map((s) => {
+          const on = this._on(s.entity);
+          const disabled = !isWritableSwitch(s.entity);
+          return html`
+            <div class="setting-row ${on === null ? 'dim' : ''}">
+              <span class="setting-name">${s.name}</span>
+              ${renderSegmented<'on' | 'off'>(
+                [
+                  { value: 'on', label: 'An' },
+                  { value: 'off', label: 'Aus' },
+                ],
+                on === null ? null : on ? 'on' : 'off',
+                (value) => this._setSetting(s.entity, value === 'on'),
+                s.name,
+                disabled,
+              )}
+            </div>
+          `;
+        })}
+      </div>
+    `;
+  }
+
+  private _setSetting(entity: string, on: boolean): void {
+    this._onLocal = { ...this._onLocal, [entity]: on };
+    if (!isWritableSwitch(entity)) return;
+    this._holdOptimistic(entity, () => this._clearOnLocal(entity));
+    void this._write(writeSwitch(this.hass, entity, on), () => {
+      this._clearSettle(entity);
+      this._clearOnLocal(entity);
+    });
   }
 
   // =========================================================================
@@ -634,10 +710,23 @@ export class DesGarageCard extends LitElement {
         transform: translateY(1px);
       }
 
-      .badge-amber {
+      .badge-amber,
+      .pill-amber {
         background: rgba(255, 152, 0, 0.16);
         background: color-mix(in srgb, var(--warning-color, #ff9800) 16%, transparent);
         color: var(--warning-color, #ff9800);
+      }
+
+      .pill-blue {
+        background: rgba(33, 150, 243, 0.16);
+        background: color-mix(in srgb, var(--info-color, #2196f3) 16%, transparent);
+        color: var(--info-color, #2196f3);
+      }
+
+      .pill-gray {
+        background: rgba(127, 127, 127, 0.16);
+        background: color-mix(in srgb, var(--secondary-text-color, #727272) 16%, transparent);
+        color: var(--secondary-text-color);
       }
 
       .meta {
@@ -773,6 +862,42 @@ export class DesGarageCard extends LitElement {
       /* Right-align the segmented control in its cell. */
       .tbl .col-seg .seg {
         float: right;
+      }
+
+      /* --- settings block --- */
+
+      .settings {
+        margin-top: 12px;
+        padding-top: 10px;
+        border-top: 1px solid var(--divider-color, rgba(127, 127, 127, 0.18));
+      }
+
+      .settings-title {
+        font-size: 11px;
+        color: var(--secondary-text-color);
+        letter-spacing: 0.04em;
+        margin-bottom: 4px;
+      }
+
+      .setting-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+        padding: 6px 0;
+      }
+
+      .setting-row.dim {
+        opacity: 0.5;
+      }
+
+      .setting-name {
+        font-size: 13px;
+        color: var(--primary-text-color);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        min-width: 0;
       }
     `,
   ];

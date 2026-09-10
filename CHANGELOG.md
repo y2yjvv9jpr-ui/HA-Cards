@@ -4,6 +4,17 @@ Alle nennenswerten Änderungen an diesem Projekt werden hier festgehalten.
 Format grob nach [Keep a Changelog](https://keepachangelog.com/de/1.1.0/),
 Versionierung nach [SemVer](https://semver.org/lang/de/).
 
+## [0.17.0]
+
+### Neu
+
+- **des-garage-card:** optionale **`settings`** — ein Block „Einstellungen" unter
+  der Tabelle (aufgeklappt) mit je Eintrag einer Zeile Name + Segmented
+  **An | Aus** (`switch.turn_on`/`turn_off`, `input_boolean`/`switch`). Ist `pill`
+  gesetzt und der Zustand `on`, erscheint eine Pille (in `color` blau/amber/grau)
+  im Kopf, rechts neben „Licht an". Ohne `settings` entfällt der Block; nicht
+  lesbare Entitäten dimmen das Segmented.
+
 ## [0.16.0]
 
 ### Neu

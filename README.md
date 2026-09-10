@@ -1538,7 +1538,10 @@ An/Aus je Gerät. Ohne `light`/`devices` läuft die Karte im Demo-Modus.
 - **Aufgeklappt:** oben rechts ein Zeitraum-Umschalter Tag/Woche/Monat/Jahr
   (lokaler Zustand). Tabelle: Gerät, Leistung, Verbrauch (kWh, 2 Nachkommastellen),
   An | Aus. Erste Zeile Licht (`light.turn_on`/`turn_off`), dann die Geräte
-  (`switch.turn_on`/`turn_off`), letzte Zeile „Gesamt".
+  (`switch.turn_on`/`turn_off`), letzte Zeile „Gesamt". Sind `settings` gesetzt,
+  folgt darunter ein Block „Einstellungen" mit je Eintrag einer Zeile Name +
+  Segmented An | Aus (`switch.turn_on`/`turn_off`); ein `on`-Eintrag mit `pill`
+  zeigt zusätzlich eine Pille (in `color`) im Kopf, rechts neben „Licht an".
 
 **Verbrauch ohne Helfer:** aus der Langzeitstatistik per
 `recorder/statistics_during_period` (`types: ['change']`, `period` = `hour`/`day`/
@@ -1554,6 +1557,7 @@ stündlich (Tooltip „Stand der letzten vollen Stunde").
 | `light`          | Objekt | `entity` (`light`), `name`, optional `power_entity`/`energy_entity`. |
 | `devices`        | Liste  | Je Gerät `entity` (`switch`), `name`, optional `power_entity`/`energy_entity`. |
 | `on_threshold_w` | Zahl   | Ab dieser Leistung gilt ein Gerät als aktiv (grüner Punkt). Standard `2`. |
+| `settings`       | Liste  | Zusätzliche An/Aus-Einstellungen (aufgeklappt): je `entity` (`input_boolean`/`switch`), `name`, optional `pill` + `color` (`blue`/`amber`/`gray`). |
 
 ```yaml
 type: custom:des-garage-card
@@ -1567,6 +1571,11 @@ devices:
   - { entity: switch.garage_steckdose_werkbank, power_entity: sensor.garage_steckdose_werkbank_power, energy_entity: sensor.garage_steckdose_werkbank_energy, name: Werkbank }
   - { entity: switch.garage_kompressor, power_entity: sensor.garage_kompressor_power, energy_entity: sensor.garage_kompressor_energy, name: Kompressor }
 on_threshold_w: 2
+settings:
+  - entity: input_boolean.helper_moweron
+    name: Mähroboter Laden aktiv
+    pill: Mäher lädt
+    color: blue
 ```
 
 ---
@@ -1597,6 +1606,7 @@ lokal — es bewegt sich, löst aber keinen Service-Call aus.
 | **Helligkeit**         | `items[].entity` (`kind: dim`) | `light.turn_on` mit `brightness_pct` (300 ms Debounce) |
 | **Automatik An \| Aus** | `modes[].entity` (Rollladenkarte) | `switch.turn_on` / `turn_off` (`input_boolean`/`switch`) |
 | **Garage An \| Aus**   | `light`/`devices[].entity` | `light.turn_on`/`turn_off` (Licht) bzw. `switch.turn_on`/`turn_off` |
+| **Garage-Einstellung** | `settings[].entity`   | `switch.turn_on` / `turn_off` (`input_boolean`/`switch`) |
 
 Nur die Domains `number`, `input_number`, `switch`, `input_boolean`, `select`,
 `input_select`, `fan`, `humidifier`, `cover` und `light` werden von den
