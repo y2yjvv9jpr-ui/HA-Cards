@@ -10,6 +10,15 @@ import { css, html, nothing, type TemplateResult } from 'lit';
  * the two cards from drifting apart.
  */
 
+/**
+ * The two options of every An/Aus toggle, in one place so all cards order them
+ * the same way. Konvention: Aus links, An rechts – wie ein Schalter.
+ */
+export const ON_OFF_OPTIONS: ReadonlyArray<{ value: 'on' | 'off'; label: string }> = [
+  { value: 'off', label: 'Aus' },
+  { value: 'on', label: 'An' },
+];
+
 /** Drop `segmentedStyles` into a component's `static styles` array. */
 export const segmentedStyles = css`
   .seg {
