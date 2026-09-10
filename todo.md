@@ -24,6 +24,12 @@ dann umgesetzt (siehe claude.md).
       (Akku · kWh · SoC · SoH · °C · Zellen) statt Textzeilen; neue Pack-Felder
       `capacity_kwh` (kWh-Spalte = SoC × Kapazität) und `soh`; Notstrom-Schalter
       auf Bedienelement-Größe gebracht (kompakter ha-switch). → per HACS auf 0.9.1.
+- [x] 10.09. des-storage-card (v0.9.2): Notstromsteckdosen-Zeile jetzt **über**
+      der Pack-Tabelle (Reihenfolge: Umschalter, Slider, Notstromsteckdose,
+      Tabelle); Spalte **SoH entfernt** (Gerät liefert lokal keinen Wert), kWh
+      weiter aus `packs[].capacity_kwh`. Slider „max. Entladen" liest den
+      Startwert bereits aus der Entität (der 2400-Reset kam vom `initial:` des
+      Helfers). → per HACS auf 0.9.2.
 - [x] 10.09. `pv_helper_speicher.yaml`: Gesamtenergie-Sensor
       `pv_helper_speicher_energie` (Hausakkus + Zendure). → Package neu einspielen
       (Template neu laden).
@@ -33,6 +39,13 @@ dann umgesetzt (siehe claude.md).
 - [ ] docs/logik.md B7 (Karten-Schalter Zendure) und docs/anlage.md
       (Notstromsteckdose-Schalter, Lademodus **Aus**) nachziehen — Geräteregeln
       stehen bisher nur im Package-Kopf von `pv_helper_laden.yaml`.
+- [x] 10.09. `initial:` an allen pv_helper-Helfern entfernt (Lademodus Zendure/Hausakku,
+      Lade-/Entladeleistung, Netzladestrom): HA setzte sie bei jedem Neustart zurück
+      (Laden → Auto, max. Entladen → 2400). Jetzt bleibt der letzte Wert erhalten.
+      → Packages einspielen, Neustart; danach Werte einmal auf der Karte setzen.
+      Kehrseite: „Laden" überlebt einen Neustart (Daniel informiert).
+- [x] 10.09. `pv_helper_zendure_packs.yaml`: Kapazität je Pack (REST, Pack-Typ → kWh);
+      SoH liefert das Gerät lokal nicht. → einspielen, Neustart.
 - [ ] 10.09. Pingpong am Minimum: Gielz-Schutzladung lädt bei 15 % auf ~20 %, unsere
       Entlade-Hysterese startet ab 20 % → Kreislauf. Entscheidung: Schutz abschalten
       (`input_boolean.zendure_setting_soc_protection_disabled` an) ODER Startschwelle
