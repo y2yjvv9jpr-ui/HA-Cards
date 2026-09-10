@@ -90,6 +90,10 @@ dann umgesetzt (siehe claude.md).
 - [ ] Garagenkarte live gegenchecken: liefern die `energy`-Sensoren Statistik
       (`statistics_during_period`)? Zeiträume korrekt, Statuspunkte plausibel,
       passt die Kartenhöhe (rows 4)?
+- [x] 10.09. Garagenkarte auf die **Haus-Seite** verschoben; eigene
+      Garage-Seite entfällt. `yaml/ui/Garage Dashboard.yaml` gelöscht, Karte
+      unverändert hinter der Bett-Karte im Haus-Dashboard.
+      → **Haus-Dashboard neu einspielen**, **Garage-Seite in HA löschen**.
 
 ## 0a. 10.09. — im Repo, in HA einzuspielen
 

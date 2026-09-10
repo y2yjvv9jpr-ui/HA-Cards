@@ -208,8 +208,9 @@ genaue Wirkung der beiden Modi trägt Daniel nach.
 
 ## Garage
 
-Eigene Dashboard-Seite „Garage" (`des-garage-card`). Licht + sechs schaltbare
-Geräte, je mit Leistungs- und Energiesensor.
+Auf der Dashboard-Seite „Haus" (`des-garage-card`; eine eigene Garage-Seite gibt
+es nicht mehr). Licht + sechs schaltbare Geräte, je mit Leistungs- und
+Energiesensor.
 
 | Gerät | Schalter | Leistung | Energie |
 | --- | --- | --- | --- |
