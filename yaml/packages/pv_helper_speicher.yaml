@@ -44,3 +44,16 @@ template:
               * states('sensor.zendure_total_capacity') | float(0) / 100) | round(2) }}
         availability: >-
           {{ has_value('sensor.zendure_total_state_of_charge') and has_value('sensor.zendure_total_capacity') }}
+
+      - name: PV Helper Speicher Energie
+        unique_id: pv_helper_speicher_energie
+        unit_of_measurement: kWh
+        device_class: energy_storage
+        state_class: measurement
+        icon: mdi:battery-charging-100
+        # Gesamt gespeicherte Energie aller Speicher.
+        state: >-
+          {{ (states('sensor.pv_helper_hausakku_energie') | float(0)
+              + states('sensor.pv_helper_zendure_energie') | float(0)) | round(2) }}
+        availability: >-
+          {{ has_value('sensor.pv_helper_hausakku_energie') and has_value('sensor.pv_helper_zendure_energie') }}
