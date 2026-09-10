@@ -1,4 +1,4 @@
-# todo.md — offene Punkte (Stand 10.09.2026, 17:30)
+# todo.md — offene Punkte (Stand 10.09.2026, abends)
 
 Reihenfolge = Vorschlag. Jeder Punkt wird erst abgestimmt, dann freigegeben,
 dann umgesetzt (siehe claude.md).
@@ -33,6 +33,13 @@ dann umgesetzt (siehe claude.md).
 - [ ] docs/logik.md B7 (Karten-Schalter Zendure) und docs/anlage.md
       (Notstromsteckdose-Schalter, Lademodus **Aus**) nachziehen — Geräteregeln
       stehen bisher nur im Package-Kopf von `pv_helper_laden.yaml`.
+- [ ] 10.09. Pingpong am Minimum: Gielz-Schutzladung lädt bei 15 % auf ~20 %, unsere
+      Entlade-Hysterese startet ab 20 % → Kreislauf. Entscheidung: Schutz abschalten
+      (`input_boolean.zendure_setting_soc_protection_disabled` an) ODER Startschwelle
+      auf Minimum + 10 %. Empfehlung: Schutz aus.
+- [x] 10.09. Füllstand-Chart: eine Achse (0–18,5 kWh), Linie Gesamt + überlagerte
+      Flächen; Hausakkus wieder aus dem SoC-Sensor (Historie bleibt), Zendure/Gesamt
+      aus den neuen kWh-Sensoren (Historie ab 10.09.). → Dashboard-YAML einspielen.
 - [x] 10.09. `pv_helper_energiezaehler.yaml`: Verbrauch = Integral der Hausleistung
       (`pv_helper_energie_verbrauch_integral` aus `pv_helper_haus_leistung`) statt
       Deye-Verbrauchszähler (zählte Netzladen als Hausverbrauch: 17,4 statt 12,2 kWh).
