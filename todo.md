@@ -30,6 +30,9 @@ dann umgesetzt (siehe claude.md).
       weiter aus `packs[].capacity_kwh`. Slider „max. Entladen" liest den
       Startwert bereits aus der Entität (der 2400-Reset kam vom `initial:` des
       Helfers). → per HACS auf 0.9.2.
+- [x] 10.09. des-storage-card (v0.9.3): Pack-Tabelle mit zwei kWh-Spalten —
+      **Kapazität** (aus `packs[].capacity_kwh`) und **Rest** (SoC × Kapazität);
+      Reihenfolge Akku · Kapazität · Rest · SoC · °C · Zellen. → per HACS auf 0.9.3.
 - [x] 10.09. `pv_helper_speicher.yaml`: Gesamtenergie-Sensor
       `pv_helper_speicher_energie` (Hausakkus + Zendure). → Package neu einspielen
       (Template neu laden).
