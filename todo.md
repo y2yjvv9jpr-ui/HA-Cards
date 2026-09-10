@@ -13,10 +13,17 @@ dann umgesetzt (siehe claude.md).
       Dashboard-Datei `yaml/ui/Haus Dashboard.yaml` (Ansicht „Haus“, path `haus`,
       Theme kibibit) angelegt. → **per HACS auf 0.10.0 aktualisieren**, Seite
       „Haus“ in HA anlegen (Dashboard-YAML einspielen), **Entity-IDs prüfen**.
+- [x] 10.09. **des-dehumidifier-card** (v0.12.2): Korrekturen nach erstem Test —
+      Chart lässt der Chevron-Zeile Platz (kein Kleben am Rand); Balken-Skala nur
+      noch Endwerte „30 … 80“; Countdown-Off-Default `cancel` (case-insensitiv,
+      akzeptiert `Abbrechen`), Anzeige aus `hass.formatEntityState`; graue
+      Schloss-Pille bei aktiver Kindersicherung (vor Max-Trocknen).
+      → **per HACS auf 0.12.2**.
 - [ ] Verlauf im Live-Betrieb gegenchecken: liefert
       `history/history_during_period` die Feuchte sauber, sitzt die Zielmarke,
       passen die Achsen? Countdown-Pille/Segmented gegen die echten Select-Optionen
-      prüfen (Beschriftung „1 h“/„2 h“).
+      prüfen (Beschriftung „1 h“/„2 h“, Off erkannt). Schloss-Pille bei aktiver
+      Kindersicherung sichtbar?
 - [x] 10.09. **des-cover-card** (v0.12.0): Rollladenkarte — Gruppenzeile „Haus"
       (`cover.rollladen`), fünf Szenen-Kacheln (Tag/Nacht/Vormittag/Nachmittag/
       Aquarien) und aufgeklappt die Einzelrollläden nach Etage (Positionsbalken,
