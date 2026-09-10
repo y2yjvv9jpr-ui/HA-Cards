@@ -7711,7 +7711,7 @@ const so = {
   blue: "pill-blue",
   amber: "pill-amber",
   gray: "pill-gray"
-}, oo = 12, vr = 4, no = 3, br = "Garage", ao = 2, lo = 8e3, co = 900 * 1e3, ho = ["day", "week", "month", "year"], uo = {
+}, oo = 12, vr = 2, no = 2, br = "Garage", ao = 2, lo = 8e3, co = 900 * 1e3, ho = ["day", "week", "month", "year"], uo = {
   day: "Tag",
   week: "Woche",
   month: "Monat",
@@ -7861,7 +7861,9 @@ const so = {
           <div class="header">
             <span class="name">${e.name ?? br}</span>
             <div class="badges">
-              ${l ? a`<span class="badge badge-amber"><span class="badge-label">Licht an</span></span>` : d}
+              ${t ? a`<span class="badge ${l ? "badge-amber" : "pill-green"}">
+                    <span class="badge-label">${l ? "Licht an" : "Licht aus"}</span>
+                  </span>` : d}
               ${h.map(
       (u) => a`<span class="badge ${so[u.color ?? "blue"]}">
                   <span class="badge-label">${u.pill}</span>
@@ -7871,7 +7873,7 @@ const so = {
           </div>
           <div class="meta">${c}</div>
 
-          <div class="grid">${r.map((u) => this._renderTile(u))}</div>
+          <div class="chips">${r.map((u) => this._renderChip(u))}</div>
 
           <div
             class="chevron-row clickable"
@@ -7892,13 +7894,12 @@ const so = {
       </ha-card>
     `;
   }
-  _renderTile(e) {
-    const t = this._dotState(e), r = t === !0 ? "on" : t === !1 ? "idle" : "off", i = e.on === !0 && e.powerW !== null ? `${_(e.powerW)} W` : "–";
+  _renderChip(e) {
+    const t = this._dotState(e), r = t === !0 ? "on" : t === !1 ? "idle" : "off", i = t === !0 && e.powerW !== null ? `${e.name} · ${_(e.powerW)} W` : e.name;
     return a`
-      <div class="tile">
+      <div class="chip ${t === !0 ? "active" : ""}">
         <span class="dot ${r}"></span>
-        <span class="tile-name">${e.name}</span>
-        <span class="tile-power">${i}</span>
+        <span class="chip-label">${i}</span>
       </div>
     `;
   }
@@ -8193,6 +8194,13 @@ ze.properties = {
         color: var(--secondary-text-color);
       }
 
+      /* Green: "Licht aus" - same success green as "Läuft"/Notstrom bereit. */
+      .pill-green {
+        background: rgba(46, 125, 50, 0.16);
+        background: color-mix(in srgb, var(--success-color, #2e7d32) 16%, transparent);
+        color: var(--success-color, #2e7d32);
+      }
+
       .meta {
         flex: 0 0 auto;
         margin-top: 2px;
@@ -8201,27 +8209,42 @@ ze.properties = {
         white-space: nowrap;
       }
 
-      /* --- collapsed status grid --- */
-
-      .grid {
-        margin-top: 8px;
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: 6px;
+      /* Chevron sits directly under the chip row. */
+      .chevron-row {
+        margin-top: 4px;
       }
 
-      .tile {
+      /* --- collapsed status chips --- */
+
+      .chips {
+        flex: 0 0 auto;
+        margin-top: 8px;
         display: flex;
+        flex-wrap: wrap;
+        gap: 5px;
+      }
+
+      .chip {
+        display: inline-flex;
         align-items: center;
-        gap: 8px;
-        padding: 5px 8px;
+        gap: 6px;
+        padding: 3px 7px;
         border: 1px solid var(--divider-color, rgba(127, 127, 127, 0.28));
-        border-radius: 6px;
+        border-radius: 999px;
+        font-size: 11px;
+        color: var(--secondary-text-color);
+        white-space: nowrap;
+      }
+
+      /* Active chip: readable text, a slightly stronger border. */
+      .chip.active {
+        color: var(--primary-text-color);
+        border-color: var(--secondary-text-color);
       }
 
       .dot {
-        width: 10px;
-        height: 10px;
+        width: 8px;
+        height: 8px;
         border-radius: 50%;
         flex-shrink: 0;
       }
@@ -8239,23 +8262,6 @@ ze.properties = {
       .dot.off {
         background: transparent;
         border: 1px solid var(--divider-color, rgba(127, 127, 127, 0.5));
-      }
-
-      .tile-name {
-        font-size: 13px;
-        color: var(--primary-text-color);
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        min-width: 0;
-      }
-
-      .tile-power {
-        margin-left: auto;
-        font-size: 12px;
-        color: var(--secondary-text-color);
-        white-space: nowrap;
-        flex-shrink: 0;
       }
 
       /* --- expanded table --- */
@@ -8366,7 +8372,7 @@ ze.properties = {
     `
 ];
 let _t = ze;
-const go = "0.17.4", fo = [
+const go = "0.18.0", fo = [
   {
     type: "des-storage-card",
     element: st,

@@ -4,6 +4,20 @@ Alle nennenswerten Änderungen an diesem Projekt werden hier festgehalten.
 Format grob nach [Keep a Changelog](https://keepachangelog.com/de/1.1.0/),
 Versionierung nach [SemVer](https://semver.org/lang/de/).
 
+## [0.18.0]
+
+### Geändert
+
+- **des-garage-card:** Eingeklappt kompakter — statt des 2-Spalten-Kachelrasters
+  eine umbrechende **Chip-Zeile** (je Gerät ein Chip mit 8-px-Statuspunkt, Radius
+  999 px). Aktiv (Schalter an **und** ≥ `on_threshold_w`): grüner Punkt, Label
+  „&lt;Name&gt; · &lt;W&gt; W"; an-aber-unter-Schwelle: grauer Punkt, nur Name;
+  aus/unlesbar: leerer Punkt, nur Name. Chevron sitzt direkt darunter,
+  Standardhöhe von 4 auf **2 Zeilen** gesenkt (Dashboard `rows: 2`).
+- **des-garage-card:** Die **Licht-Pille** ist jetzt immer sichtbar: „Licht aus"
+  grün (Erfolgs-Grün) bzw. „Licht an" amber. Der aufgeklappte Bereich ist
+  unverändert.
+
 ## [0.17.4]
 
 ### Geändert

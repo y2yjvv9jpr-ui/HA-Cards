@@ -23,8 +23,8 @@ const SETTING_PILL_CLASS: Record<GarageSettingColor, string> = {
 };
 
 const GRID_COLUMNS = 12;
-const GRID_ROWS = 4;
-const GRID_MIN_ROWS = 3;
+const GRID_ROWS = 2;
+const GRID_MIN_ROWS = 2;
 const DEFAULT_NAME = 'Garage';
 const DEFAULT_THRESHOLD_W = 2;
 const SETTLE_TIMEOUT_MS = 8000;
@@ -302,8 +302,10 @@ export class DesGarageCard extends LitElement {
           <div class="header">
             <span class="name">${config.name ?? DEFAULT_NAME}</span>
             <div class="badges">
-              ${lightOn
-                ? html`<span class="badge badge-amber"><span class="badge-label">Licht an</span></span>`
+              ${light
+                ? html`<span class="badge ${lightOn ? 'badge-amber' : 'pill-green'}">
+                    <span class="badge-label">${lightOn ? 'Licht an' : 'Licht aus'}</span>
+                  </span>`
                 : nothing}
               ${activeSettings.map(
                 (s) => html`<span class="badge ${SETTING_PILL_CLASS[s.color ?? 'blue']}">
@@ -314,7 +316,7 @@ export class DesGarageCard extends LitElement {
           </div>
           <div class="meta">${meta}</div>
 
-          <div class="grid">${devices.map((v) => this._renderTile(v))}</div>
+          <div class="chips">${devices.map((v) => this._renderChip(v))}</div>
 
           <div
             class="chevron-row clickable"
@@ -340,16 +342,18 @@ export class DesGarageCard extends LitElement {
     `;
   }
 
-  private _renderTile(view: ItemView): TemplateResult {
+  private _renderChip(view: ItemView): TemplateResult {
     const dot = this._dotState(view);
     const dotClass = dot === true ? 'on' : dot === false ? 'idle' : 'off';
-    const power =
-      view.on === true && view.powerW !== null ? `${formatInt(view.powerW)} W` : '–';
+    // Active (on and above threshold) shows the power; otherwise just the name.
+    const label =
+      dot === true && view.powerW !== null
+        ? `${view.name} · ${formatInt(view.powerW)} W`
+        : view.name;
     return html`
-      <div class="tile">
+      <div class="chip ${dot === true ? 'active' : ''}">
         <span class="dot ${dotClass}"></span>
-        <span class="tile-name">${view.name}</span>
-        <span class="tile-power">${power}</span>
+        <span class="chip-label">${label}</span>
       </div>
     `;
   }
@@ -723,6 +727,13 @@ export class DesGarageCard extends LitElement {
         color: var(--secondary-text-color);
       }
 
+      /* Green: "Licht aus" - same success green as "Läuft"/Notstrom bereit. */
+      .pill-green {
+        background: rgba(46, 125, 50, 0.16);
+        background: color-mix(in srgb, var(--success-color, #2e7d32) 16%, transparent);
+        color: var(--success-color, #2e7d32);
+      }
+
       .meta {
         flex: 0 0 auto;
         margin-top: 2px;
@@ -731,27 +742,42 @@ export class DesGarageCard extends LitElement {
         white-space: nowrap;
       }
 
-      /* --- collapsed status grid --- */
-
-      .grid {
-        margin-top: 8px;
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: 6px;
+      /* Chevron sits directly under the chip row. */
+      .chevron-row {
+        margin-top: 4px;
       }
 
-      .tile {
+      /* --- collapsed status chips --- */
+
+      .chips {
+        flex: 0 0 auto;
+        margin-top: 8px;
         display: flex;
+        flex-wrap: wrap;
+        gap: 5px;
+      }
+
+      .chip {
+        display: inline-flex;
         align-items: center;
-        gap: 8px;
-        padding: 5px 8px;
+        gap: 6px;
+        padding: 3px 7px;
         border: 1px solid var(--divider-color, rgba(127, 127, 127, 0.28));
-        border-radius: 6px;
+        border-radius: 999px;
+        font-size: 11px;
+        color: var(--secondary-text-color);
+        white-space: nowrap;
+      }
+
+      /* Active chip: readable text, a slightly stronger border. */
+      .chip.active {
+        color: var(--primary-text-color);
+        border-color: var(--secondary-text-color);
       }
 
       .dot {
-        width: 10px;
-        height: 10px;
+        width: 8px;
+        height: 8px;
         border-radius: 50%;
         flex-shrink: 0;
       }
@@ -769,23 +795,6 @@ export class DesGarageCard extends LitElement {
       .dot.off {
         background: transparent;
         border: 1px solid var(--divider-color, rgba(127, 127, 127, 0.5));
-      }
-
-      .tile-name {
-        font-size: 13px;
-        color: var(--primary-text-color);
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        min-width: 0;
-      }
-
-      .tile-power {
-        margin-left: auto;
-        font-size: 12px;
-        color: var(--secondary-text-color);
-        white-space: nowrap;
-        flex-shrink: 0;
       }
 
       /* --- expanded table --- */
