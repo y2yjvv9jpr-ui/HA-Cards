@@ -177,7 +177,7 @@ sections:
       - type: custom:des-garage-card
         grid_options:
           columns: 12
-          rows: 2
+          rows: 3
         name: Garage
         on_threshold_w: 2
         light:
@@ -213,6 +213,6 @@ sections:
         settings:
           - entity: input_boolean.helper_moweron
             name: Mähroboter Laden aktiv
-            pill: Mäher lädt
+            pill: Ladestation aktiv
             color: blue
 cards: []
