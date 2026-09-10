@@ -155,10 +155,22 @@ sections:
           entity: input_select.pv_helper_zendure_lademodus
           charge_state: Laden
           auto_state: Auto
+          off_state: Aus
         backup:
           entity: sensor.zendure_offgrid_mode
           active_states:
-            - 'On'
+            - Normal
+            - Eco
+          switch_entity: switch.pv_helper_zendure_notstromsteckdose
+        packs:
+          - name: Akku 1
+            soc: sensor.zendure_battery_1_state_of_charge
+            temp_c: sensor.zendure_battery_1_temperature
+            balance: sensor.zendure_battery_1_cell_balance_status
+          - name: Akku 2
+            soc: sensor.zendure_battery_2_state_of_charge
+            temp_c: sensor.zendure_battery_2_temperature
+            balance: sensor.zendure_battery_2_cell_balance_status
       - type: custom:des-storage-card
         grid_options:
           columns: 12
@@ -411,7 +423,7 @@ sections:
                   strokeDashArray: 3
                 yaxis:
                   min: 0
-                  max: 15.5
+                  max: 18.5
                   tickAmount: 5
                 xaxis:
                   tooltip:
@@ -433,14 +445,12 @@ sections:
                   func: avg
                   duration: 10min
               series:
-                - entity: sensor.inverter_battery
+                - entity: sensor.pv_helper_hausakku_energie
                   name: Hausakkus
                   color: '#378ADD'
-                  transform: return x * 13.1 / 100;
-                - entity: sensor.zendure_total_state_of_charge
+                - entity: sensor.pv_helper_zendure_energie
                   name: Zendure
                   color: '#8FC7F0'
-                  transform: return x * 2.4 / 100;
           week:
             meta: gespeicherte Energie in kWh, Wochenverlauf
             chart:
@@ -458,7 +468,7 @@ sections:
                   strokeDashArray: 3
                 yaxis:
                   min: 0
-                  max: 15.5
+                  max: 18.5
                   tickAmount: 5
                 xaxis:
                   tooltip:
@@ -480,14 +490,12 @@ sections:
                   func: avg
                   duration: 1h
               series:
-                - entity: sensor.inverter_battery
+                - entity: sensor.pv_helper_hausakku_energie
                   name: Hausakkus
                   color: '#378ADD'
-                  transform: return x * 13.1 / 100;
-                - entity: sensor.zendure_total_state_of_charge
+                - entity: sensor.pv_helper_zendure_energie
                   name: Zendure
                   color: '#8FC7F0'
-                  transform: return x * 2.4 / 100;
 cards: []
 dense_section_placement: false
 icon: mdi:solar-power-variant
