@@ -7,6 +7,78 @@ sections:
   - type: grid
     column_span: 3
     cards:
+      - type: custom:des-cover-card
+        grid_options:
+          columns: 12
+          rows: 4
+        name: Rollläden
+        group_entity: cover.rollladen
+        scenes:
+          - name: Tag
+            icon: mdi:weather-sunny
+            action:
+              service: script.turn_on
+              target:
+                entity_id: script.guten_morgen
+          - name: Nacht
+            icon: mdi:weather-night
+            action:
+              service: script.turn_on
+              target:
+                entity_id: script.gute_nacht
+          - name: Vormittag
+            icon: mdi:weather-sunset-up
+            action:
+              service: input_boolean.turn_on
+              target:
+                entity_id: input_boolean.helperrssunvormittag
+          - name: Nachmittag
+            icon: mdi:weather-sunset-down
+            action:
+              service: input_boolean.turn_on
+              target:
+                entity_id: input_boolean.helperrssunnachmittag
+          - name: Aquarien
+            icon: mdi:fish
+            action:
+              service: automation.trigger
+              target:
+                entity_id: automation.aquarium_arbeitszimmer_sonnenschutz
+              data:
+                skip_condition: true
+        sections:
+          - name: Erdgeschoss
+            covers:
+              - entity: cover.jalousie_eg_flur_jalousie_eg_flur
+                name: Flur
+              - entity: cover.jalousie_eg_arbeitszimmer_vorn_2
+                name: Arbeitszimmer vorne
+              - entity: cover.jalousie_eg_arbeitszimmer_seite
+                name: Arbeitszimmer Seite
+              - entity: cover.jalousie_eg_couch_klein
+                name: Couch klein
+              - entity: cover.jalousie_eg_couch_gross_2
+                name: Couch groß
+              - entity: cover.shelly2pmg4_48f6eed04f08_jalousie_eg_esszimmer
+                name: Esszimmer
+              - entity: cover.shellyswitch25_e8db84aa7195
+                name: Küche
+              - entity: cover.jalousie_eg_technikraum_jalousie_eg_technikraum
+                name: Technikraum
+              - entity: cover.jalousie_eg_wc_jalousie_eg_wc
+                name: Gäste-WC
+          - name: Obergeschoss
+            covers:
+              - entity: cover.jalousie_og_bad
+                name: Bad
+              - entity: cover.jalousie_og_ankleide
+                name: Ankleide
+              - entity: cover.jalousie_og_schlafzimmer_2
+                name: Schlafzimmer
+              - entity: cover.jalousie_og_marie_jalousie_og_marie
+                name: Kinderzimmer Marie
+              - entity: cover.jalousie_og_aneka_jalousie_og_aneka
+                name: Anekas Zimmer
       - type: custom:des-dehumidifier-card
         grid_options:
           columns: 12
