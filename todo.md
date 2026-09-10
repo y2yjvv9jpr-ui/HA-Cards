@@ -22,6 +22,14 @@ dann umgesetzt (siehe claude.md).
 
 ## 0a. 10.09. — im Repo, in HA einzuspielen
 
+- [x] 10.09. Temperatur-Einfärbung zentralisiert (v0.11.0): neues Modul
+      `src/temperature.ts` (`temperatureLevel(temp, profile, override?)`, Profile
+      **battery**/**inverter**, gemeinsame Pillen-Styles). des-storage-card nutzt
+      Profil battery (Kopf-Pille + Pack-Tabelle, Verhalten unverändert);
+      des-inverter-card zeigt die WR-Temperatur jetzt als Pille in der Kopfzeile
+      (Profil inverter, > 60 gelb, > 75 rot), Thermometer in der Leistungszeile
+      entfällt, DC-Temperatur in der Fußzeile eingefärbt. Grenzen je Karte per
+      `temp_warn_c`/`temp_alert_c` überschreibbar. → per HACS auf 0.11.0.
 - [x] 10.09. Zendure-Zusatzakku (AB3000X, Gesamt 5,3 kWh): `pv_helper_speicher.yaml`
       liefert `pv_helper_hausakku_energie` (SoC × 13,1) und `pv_helper_zendure_energie`
       (SoC × `zendure_total_capacity`); Chart „Speicher-Füllstand" liest diese

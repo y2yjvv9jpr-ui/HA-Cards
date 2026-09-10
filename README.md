@@ -139,7 +139,9 @@ eine Entity-ID.
 | `idle_threshold_w`           | number \| Entity             | Unterhalb dieses Betrags gilt der Akku als „Bereit“. Standard: `20`.                |
 | `status`                     | Status \| Entity             | **Optional** — ohne Angabe aus der Leistung abgeleitet.                            |
 | `energy_kwh`                 | number \| Entity             | **Optional** — ohne Angabe aus `soc × capacity_kwh / 100` berechnet.               |
-| `temp_c`                     | number \| Entity \| `null`   | Akkutemperatur als farbige Pille. Bei `null` entfällt sie.                         |
+| `temp_c`                     | number \| Entity \| `null`   | Akkutemperatur als farbige Pille (Profil `battery`, siehe Ampel unten). Bei `null` entfällt sie. |
+| `temp_warn_c`                | number                       | Überschreibt die obere **gelb**-Grenze des `battery`-Profils (Standard 40 °C).     |
+| `temp_alert_c`               | number                       | Überschreibt die obere **rot**-Grenze des `battery`-Profils (Standard 50 °C).      |
 | `threshold_pct`              | number \| Entity             | Minimaler Ladestand; Slider 10–80/5 oder aus der Entität, siehe unten.             |
 | `charge_target_pct`          | number \| Entity             | Ladegrenze (max. SoC), in allen Modi gültig; Slider 50–100/5 oder aus der Entität.  |
 | `discharge_limit_entity`     | Entity (`input_number`)      | Max. Entladeleistung in W. Gesetzt → dritte Slider-Zeile „max. Entladen" (Min/Max/Schritt aus den Entitäts-Attributen), immer bedienbar. Ohne Angabe entfällt die Zeile. |
@@ -368,7 +370,8 @@ steht in der Kopfzeile. Ohne `capacity_kwh` zeigen **Kapazität und Rest** „�
 | `charge`   | „Laden“         | Laden erzwungen, ggf. aus dem Netz         |
 | `off_state`| „Aus“           | Standby (nur bei gesetztem `off_state`)    |
 
-**Temperatur-Ampel** — die °C-Pille färbt sich nach Wert:
+**Temperatur-Ampel** — die °C-Pille (Kopf und Pack-Tabelle) färbt sich nach dem
+Profil `battery`:
 
 | Bereich          | Farbe    |
 | ---------------- | -------- |
@@ -377,6 +380,11 @@ steht in der Kopfzeile. Ohne `capacity_kwh` zeigen **Kapazität und Rest** „�
 | 8 bis 40 °C      | neutral  |
 | über 40 bis 50 °C| gelb     |
 | über 50 °C       | rot      |
+
+Die **oberen** Grenzen lassen sich pro Karte mit `temp_warn_c` (gelb ab) und
+`temp_alert_c` (rot ab) verschieben; die Kältegrenzen (4/8 °C) bleiben. Die
+Ampel-Logik liegt zentral in `src/temperature.ts` und wird von der
+Wechselrichterkarte (Profil `inverter`) mitbenutzt.
 
 ### `variant: thermal_group`
 
@@ -689,6 +697,8 @@ ein Klick auf das Chevron klappt sie auf.
 | `kwp_pv2`         | number (kWp)                    | Spitzenleistung String PV2 — Vollausschlag seines Balkens. Standard `6.0`.       |
 | `invert_grid`     | boolean                         | Dreht das Vorzeichen der Netzleistung. Standard `false`.                          |
 | `show_dc_temp`    | boolean                         | Zeigt die DC-Temperatur in der Fußzeile (aufgeklappt). Standard `true`.           |
+| `temp_warn_c`     | number (°C)                     | Überschreibt die **gelb**-Grenze des `inverter`-Profils. Standard `60`.           |
+| `temp_alert_c`    | number (°C)                     | Überschreibt die **rot**-Grenze des `inverter`-Profils. Standard `75`.            |
 | `imbalance_warn`  | boolean                         | Markiert einen stark unsymmetrischen String amber. Standard `true`.               |
 | `imbalance_ratio` | number (0–1)                    | Ein String gilt als schwach unter diesem Anteil des anderen. Standard `0.5`.      |
 | `imbalance_min_w` | number (W)                      | …aber nur, wenn der andere String diese Leistung übersteigt. Standard `500`.      |
@@ -706,8 +716,8 @@ werden über `unit_of_measurement` umgerechnet (`kW`/`MW` → W, `Wh`/`MWh` → 
 | `fault_entity`              | Text        | Fehlertext; `OK`/nicht verfügbar = kein Fehler.             |
 | `alarm_entity`              | Text        | Alarmtext; `OK`/nicht verfügbar = kein Alarm.               |
 | `device_state_entity`       | Text        | Gerätestatus (grüne Pille). Fehlt er, „Normal".             |
-| `inverter_temp_entity`      | °C          | WR-Temperatur (Leistungszeile).                            |
-| `dc_temp_entity`            | °C          | DC-Temperatur (Fußzeile, nur bei `show_dc_temp`).           |
+| `inverter_temp_entity`      | °C          | WR-Temperatur als Pille in der Kopfzeile (Profil `inverter`). |
+| `dc_temp_entity`            | °C          | DC-Temperatur (Fußzeile, nur bei `show_dc_temp`; eingefärbt nach Profil `inverter`). |
 | `grid_frequency_entity`     | Hz          | Netzfrequenz (Fußzeile).                                    |
 | `pv1_power_entity` … `pv1_current_entity` | W / V / A | String PV1: Leistung, Spannung, Strom.        |
 | `pv2_power_entity` … `pv2_current_entity` | W / V / A | String PV2: Leistung, Spannung, Strom.        |
@@ -739,11 +749,14 @@ jede Darstellung geprüft werden kann:
 **Aufbau — eingeklappt**
 
 - **Kopfzeile** — Name links, darunter gedämpft
-  `Modell · … kWh heute · … kWh gesamt`. Rechts **eine** Status-Pille: rot
-  `Fault: …`, sonst amber `Alarm: …`, sonst grün der Gerätestatus. Farbtokens wie
-  bei der Speicherkarte (grün = ok, amber = Alarm, rot = Fault).
+  `Modell · … kWh heute · … kWh gesamt`. Rechts die Pillen: links die
+  **WR-Temperatur** (`inverter_temp_entity`, z. B. „51,6 °C", gleiche Pille wie
+  bei den Akkus, Profil `inverter`: > 60 °C gelb, > 75 °C rot), rechts daneben
+  **eine** Status-Pille: rot `Fault: …`, sonst amber `Alarm: …`, sonst grün der
+  Gerätestatus. Farbtokens wie bei der Speicherkarte (grün = ok, amber = Alarm,
+  rot = Fault). Ohne lesbare Temperatur entfällt die Temperatur-Pille.
 - **Leistungszeile** — PV-Leistung groß und grün (bei 0 W gedämpft), daneben klein
-  `… % von … kWp`; rechts Thermometer-Icon und die WR-Temperatur.
+  `… % von … kWp`.
 - **String-Zeilen** — `PV1`/`PV2` mit schmalem Balken (Füllung = Leistung /
   `kwp_pvX`, grün, bei Unsymmetrie amber) und Leistung in W.
 - **Export-Zeile** — gleiche Bauart darunter: Label `Export`, Balken, Wert in W.
@@ -761,7 +774,8 @@ jede Darstellung geprüft werden kann:
 - **Phasen** — je Phase L1/L2/L3 die Netzleistung (mit Vorzeichen und echtem
   Minuszeichen: Einspeisung grün, Bezug rot, 0 gedämpft), der WR-Ausgang und die
   Spannung, plus eine hervorgehobene Summenzeile `Σ`.
-- **Fußzeile** — DC-Temperatur (nur bei `show_dc_temp`) und Netzfrequenz (Hz).
+- **Fußzeile** — DC-Temperatur (nur bei `show_dc_temp`, eingefärbt nach Profil
+  `inverter`) und Netzfrequenz (Hz).
 - **Wechselrichter-Uhr** — nur mit `time_entity`, siehe unten.
 
 **Uhrzeit-Überwachung** — nur wenn `time_entity` gesetzt ist; ohne dieses Feld
@@ -1479,6 +1493,7 @@ src/
   chevron.ts           Gemeinsamer Chevron-Stil (Storage-, Wechselrichter-, Hauskarte)
   overlay.ts           Dropdown-Panel für den Detailblock (Storage-, Wechselrichter-, Hauskarte)
   tokens.ts            Gemeinsame Design-Tokens (z. B. --des-export-color)
+  temperature.ts       Temperatur-Ampel (Profile battery/inverter) + Pillen-Styles
   format.ts            Zahlenformatierung (de-DE)
 vite.config.ts         Lib-Build → dist/daniels-energy-cards.js
 hacs.json              HACS-Manifest (Typ Dashboard)
