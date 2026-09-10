@@ -48,8 +48,22 @@ dann umgesetzt (siehe claude.md).
       Passt die Karte bei `rows: 3` (Kopf, Gruppe, Kacheln, Chevron ohne
       Abschneiden)? Szenen-Kacheln lösen die richtigen Skripte/Booleans/die
       Aquarien-Automation aus; nicht existente Ziele werden gedimmt.
-- [ ] Als nächstes auf der Haus-Seite: **Lichtkarte(n)** und eine
-      **Haus-Konfigurationskarte** (Konzept vor Umsetzung abstimmen).
+- [x] 10.09. **des-light-card** + **des-bed-light-card** (v0.13.0): zwei
+      Lichtkarten. Wohnzimmer funktional (An/Aus, Helligkeit, `on_action`;
+      `light.spots_wohnzimmer`, `switch.licht_esstisch` → `script.esstisch_ambiente`,
+      `switch.licht_couchtisch`). Bett vorerst **nur Oberfläche** (Demo-Werte,
+      lokal). service.ts um `writeLight`/`isWritableLight` erweitert. Beide im
+      Dashboard (columns 12, rows 3). → **per HACS auf 0.13.0**, Dashboard
+      einspielen, **Wohnzimmer-Entity-IDs prüfen**.
+- [ ] Wohnzimmer-Lichtkarte live gegenchecken: Helligkeit von
+      `light.spots_wohnzimmer` (Attribut `brightness`), schaltet „Essen" das
+      Ambiente-Skript, Segmented-Zustände korrekt?
+- [ ] **Bettlicht-Steuerung in HA reparieren** (derzeit defekt); danach
+      Helfer-Package `haus_helper_licht_bett.yaml` (`input_select` je Zeile,
+      `input_number` je Modus für Helligkeit/Weißton/Farbton/Sättigung) und die
+      **Bettkarte verdrahten** (Entity-Binding statt Demo).
+- [ ] Als nächstes auf der Haus-Seite: **Haus-Konfigurationskarte**
+      (Konzept vor Umsetzung abstimmen).
 
 ## 0a. 10.09. — im Repo, in HA einzuspielen
 

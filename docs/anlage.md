@@ -172,6 +172,26 @@ rohe HA-Position (`current_position`, 100 = ganz offen, 0 = zu). Steuerung über
   Zeit per `automation.trigger` mit `skip_condition: true` aus (Bedingungen
   übersprungen), sodass sie sofort läuft.
 
+## Licht
+
+Auf der Dashboard-Seite „Haus".
+
+**Wohnzimmer** (`des-light-card`, funktional):
+
+| Zeile | Entität | Art |
+| --- | --- | --- |
+| Spots | `light.spots_wohnzimmer` | dimmbar (`light.turn_on` mit `brightness_pct`) |
+| Essen | `switch.licht_esstisch` | Schalter; „An" löst `script.esstisch_ambiente` aus (`on_action`) |
+| Couch | `switch.licht_couchtisch` | Schalter |
+
+**Bett** (`des-bed-light-card`): **noch nicht verdrahtet.** Die Karte ist derzeit
+reine Oberfläche mit Demo-Werten (Zeilen „Seiten", „Kopfende Aneka", „Kopfende
+Daniel"; Modi Aus/Ambiente/Max bzw. Aus/Lesen/Max; Szenen-Editor mit
+Helligkeit/Weißton/Farbe). Grund: die **Bettlicht-Steuerung in HA ist derzeit
+defekt**. Offen sind die Entitäten/Helfer und ein Package
+`haus_helper_licht_bett.yaml` (`input_select` je Zeile, `input_number` je Modus
+für Helligkeit/Weißton/Farbton/Sättigung) — siehe `todo.md`.
+
 ## Eigene Helfer (Packages)
 
 | Package | Enthält |
