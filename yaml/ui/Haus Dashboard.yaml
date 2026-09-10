@@ -177,7 +177,7 @@ sections:
       - type: custom:des-garage-card
         grid_options:
           columns: 12
-          rows: 3
+          rows: 2
         name: Garage
         on_threshold_w: 2
         light:
