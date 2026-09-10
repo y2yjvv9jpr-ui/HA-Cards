@@ -1382,10 +1382,18 @@ Im Sections-View belegt die Karte 12 von 36 Spalten und standardmäßig **4 Zeil
 | `group_entity` | Entity         | `cover`-Gruppe für die Gruppenzeile „Haus". Optional.            |
 | `scenes`       | Liste (1–6)    | Szenen-Kacheln in dieser Reihenfolge (siehe unten).              |
 | `sections`     | Liste          | Etagen/Gruppen, je mit ihren Rollläden; erscheinen aufgeklappt.  |
+| `modes`        | Liste          | Automatik-Modi (Lüftung/Urlaub …) als „Automatik"-Zeile unter den Kacheln. Optional. |
 
 Je `scenes`-Eintrag: `name`, optionales `icon` (`mdi:…`) und `action`
 (`{ service: 'domain.service', target?, data? }`). Je `sections`-Eintrag: `name`
-und `covers` (je `entity` + `name`).
+und `covers` (je `entity` + `name`). Je `modes`-Eintrag: `entity`
+(`input_boolean`/`switch`), `name` und optional `color` (`blue`/`amber`/`gray`).
+
+**Automatik-Modi:** Sind `modes` gesetzt, erscheint eingeklappt unter den
+Szenen-Kacheln eine Zeile „Automatik" mit je Modus `<name>` + Segmented An | Aus
+(`switch.turn_on`/`turn_off`); jeder eingeschaltete Modus zeigt zusätzlich eine
+Pille in `color` im Kopf. (Diese Modi ersetzen die frühere
+`des-settings-card`.)
 
 **Darstellung**
 

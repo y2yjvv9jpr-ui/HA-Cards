@@ -3,20 +3,32 @@ import { chevronStyles } from './chevron';
 import { overlayStyles, OverlayCloser } from './overlay';
 import { tokenStyles } from './tokens';
 import { iconButtonStyles, renderIconButtons } from './icon-buttons';
+import { renderSegmented, segmentedStyles } from './segmented';
 import { formatInt, clamp } from './format';
 import { entityState, entityNumberAttribute, isEntityId } from './resolve';
 import {
   isWritableCover,
+  isWritableSwitch,
   writeCover,
   writeCoverPosition,
+  writeSwitch,
   callAction,
 } from './service';
 import type {
   DesCoverCardConfig,
   CoverSceneConfig,
   CoverItemConfig,
+  CoverModeConfig,
+  CoverModeColor,
   HomeAssistant,
 } from './types';
+
+/** Mode pill colour → CSS class (same tones as the other cards' pills). */
+const MODE_PILL_CLASS: Record<CoverModeColor, string> = {
+  blue: 'pill-blue',
+  amber: 'pill-amber',
+  gray: 'pill-gray',
+};
 
 /** Grid size in a HA sections view (column_span 3 → 36 columns): a third wide. */
 const GRID_COLUMNS = 12;
@@ -80,6 +92,7 @@ export class DesCoverCard extends LitElement {
     _config: { state: true },
     _expanded: { state: true },
     _posLocal: { state: true },
+    _modeLocal: { state: true },
     _flashScene: { state: true },
   };
 
@@ -88,6 +101,8 @@ export class DesCoverCard extends LitElement {
   declare _expanded: boolean;
   /** Optimistic per-entity positions while a write is in flight / being dragged. */
   declare _posLocal: Record<string, number>;
+  /** Optimistic per-entity on/off of the automatic modes. */
+  declare _modeLocal: Record<string, boolean>;
   declare _flashScene: number | null;
 
   private _closer = new OverlayCloser(this, () => this._collapse());
@@ -98,6 +113,7 @@ export class DesCoverCard extends LitElement {
     super();
     this._expanded = false;
     this._posLocal = {};
+    this._modeLocal = {};
     this._flashScene = null;
   }
 
@@ -137,9 +153,24 @@ export class DesCoverCard extends LitElement {
       }
     }
 
+    if (config.modes !== undefined) {
+      if (!Array.isArray(config.modes)) {
+        throw new Error('des-cover-card: "modes" muss eine Liste sein');
+      }
+      for (const mode of config.modes) {
+        if (!mode || !mode.entity || !mode.name) {
+          throw new Error('des-cover-card: jeder Modus braucht "entity" und "name"');
+        }
+        if (mode.color !== undefined && !['blue', 'amber', 'gray'].includes(mode.color)) {
+          throw new Error('des-cover-card: "color" muss "blue", "amber" oder "gray" sein');
+        }
+      }
+    }
+
     this._config = config;
     this._expanded = false;
     this._posLocal = {};
+    this._modeLocal = {};
   }
 
   getCardSize(): number {
@@ -165,6 +196,24 @@ export class DesCoverCard extends LitElement {
 
   /** Drops optimistic positions the entity has meanwhile confirmed. */
   protected override willUpdate(): void {
+    // Modes use real entities even in the (cover-)demo, so clear them first.
+    if (Object.keys(this._modeLocal).length > 0) {
+      let next = this._modeLocal;
+      let changed = false;
+      for (const [entity, val] of Object.entries(this._modeLocal)) {
+        const state = entityState(entity, this.hass);
+        if (state !== null && (state.toLowerCase() === 'on') === val) {
+          if (!changed) {
+            next = { ...this._modeLocal };
+            changed = true;
+          }
+          delete next[entity];
+          this._clearSettle(`mode:${entity}`);
+        }
+      }
+      if (changed) this._modeLocal = next;
+    }
+
     if (this._isDemo) return;
     const keys = Object.keys(this._posLocal);
     if (keys.length === 0) return;
@@ -302,6 +351,8 @@ export class DesCoverCard extends LitElement {
     const counts = this._counts(allCovers);
     const group = this._groupView();
     const scenes = config.scenes ?? [];
+    const modes = config.modes ?? [];
+    const activeModes = modes.filter((m) => this._modeOn(m.entity) === true);
 
     const meta = `${counts.open} offen · ${counts.closed} zu · ${counts.partial} teilweise`;
 
@@ -310,7 +361,16 @@ export class DesCoverCard extends LitElement {
         <div class="card">
           <div class="header">
             <span class="name">${config.name ?? DEFAULT_NAME}</span>
-            <div class="meta">${meta}</div>
+            <div class="head-right">
+              <div class="badges">
+                ${activeModes.map(
+                  (m) => html`<span class="badge ${MODE_PILL_CLASS[m.color ?? 'blue']}">
+                    <span class="badge-label">${m.name}</span>
+                  </span>`,
+                )}
+              </div>
+              <div class="meta">${meta}</div>
+            </div>
           </div>
 
           ${group
@@ -325,6 +385,8 @@ export class DesCoverCard extends LitElement {
                 ${scenes.map((scene, index) => this._renderScene(scene, index))}
               </div>`
             : nothing}
+
+          ${modes.length > 0 ? this._renderModes(modes) : nothing}
 
           <div
             class="chevron-row clickable"
@@ -350,6 +412,61 @@ export class DesCoverCard extends LitElement {
 
   private _dash(): TemplateResult {
     return html`<span class="unavail">–</span>`;
+  }
+
+  /** On/off of an automatic mode (local override wins), null when unreadable. */
+  private _modeOn(entity: string): boolean | null {
+    const local = this._modeLocal[entity];
+    if (local !== undefined) return local;
+    const state = entityState(entity, this.hass);
+    return state === null ? null : state.toLowerCase() === 'on';
+  }
+
+  /** The "Automatik" row under the scene tiles: label + a segmented per mode. */
+  private _renderModes(modes: CoverModeConfig[]): TemplateResult {
+    return html`
+      <div class="modes-row">
+        <span class="modes-title">Automatik</span>
+        <div class="modes">
+          ${modes.map((mode) => {
+            const on = this._modeOn(mode.entity);
+            const disabled = !isWritableSwitch(mode.entity);
+            return html`
+              <div class="mode">
+                <span class="mode-name">${mode.name}</span>
+                ${renderSegmented<'on' | 'off'>(
+                  [
+                    { value: 'on', label: 'An' },
+                    { value: 'off', label: 'Aus' },
+                  ],
+                  on === null ? null : on ? 'on' : 'off',
+                  (value) => this._setMode(mode.entity, value === 'on'),
+                  mode.name,
+                  disabled,
+                )}
+              </div>
+            `;
+          })}
+        </div>
+      </div>
+    `;
+  }
+
+  private _setMode(entity: string, on: boolean): void {
+    this._modeLocal = { ...this._modeLocal, [entity]: on };
+    if (!isWritableSwitch(entity)) return;
+    this._holdOptimistic(`mode:${entity}`, () => this._clearModeLocal(entity));
+    void this._write(writeSwitch(this.hass, entity, on), () => {
+      this._clearSettle(`mode:${entity}`);
+      this._clearModeLocal(entity);
+    });
+  }
+
+  private _clearModeLocal(entity: string): void {
+    if (this._modeLocal[entity] === undefined) return;
+    const next = { ...this._modeLocal };
+    delete next[entity];
+    this._modeLocal = next;
   }
 
   private _renderScene(scene: CoverSceneConfig, index: number): TemplateResult {
@@ -539,6 +656,7 @@ export class DesCoverCard extends LitElement {
     chevronStyles,
     overlayStyles,
     iconButtonStyles,
+    segmentedStyles,
     css`
       :host {
         display: block;
@@ -567,7 +685,7 @@ export class DesCoverCard extends LitElement {
       .header {
         flex: 0 0 auto;
         display: flex;
-        align-items: baseline;
+        align-items: flex-start;
         justify-content: space-between;
         gap: 8px;
       }
@@ -581,6 +699,59 @@ export class DesCoverCard extends LitElement {
         text-overflow: ellipsis;
       }
 
+      .head-right {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-end;
+        gap: 3px;
+        flex-shrink: 0;
+        min-width: 0;
+      }
+
+      .badges {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        flex-wrap: wrap;
+        justify-content: flex-end;
+      }
+
+      .badge {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 20px;
+        padding: 0 9px;
+        border-radius: 10px;
+        font-size: 11px;
+        font-weight: 500;
+        line-height: 1;
+        white-space: nowrap;
+      }
+
+      .badge-label {
+        display: block;
+        transform: translateY(1px);
+      }
+
+      .pill-blue {
+        background: rgba(33, 150, 243, 0.16);
+        background: color-mix(in srgb, var(--info-color, #2196f3) 16%, transparent);
+        color: var(--info-color, #2196f3);
+      }
+
+      .pill-amber {
+        background: rgba(255, 152, 0, 0.16);
+        background: color-mix(in srgb, var(--warning-color, #ff9800) 16%, transparent);
+        color: var(--warning-color, #ff9800);
+      }
+
+      .pill-gray {
+        background: rgba(127, 127, 127, 0.16);
+        background: color-mix(in srgb, var(--secondary-text-color, #727272) 16%, transparent);
+        color: var(--secondary-text-color);
+      }
+
       .meta {
         font-size: 12px;
         color: var(--secondary-text-color);
@@ -591,6 +762,45 @@ export class DesCoverCard extends LitElement {
       .unavail {
         color: var(--secondary-text-color);
         opacity: 0.7;
+      }
+
+      /* --- automatic modes row --- */
+
+      .modes-row {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        margin-top: 12px;
+        padding-top: 10px;
+        border-top: 1px solid var(--divider-color, rgba(127, 127, 127, 0.18));
+      }
+
+      .modes-title {
+        font-size: 11px;
+        color: var(--secondary-text-color);
+        letter-spacing: 0.04em;
+        flex-shrink: 0;
+      }
+
+      .modes {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        flex-wrap: wrap;
+        margin-left: auto;
+        justify-content: flex-end;
+      }
+
+      .mode {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+
+      .mode-name {
+        font-size: 13px;
+        color: var(--primary-text-color);
+        white-space: nowrap;
       }
 
       /* --- group row / cover row --- */

@@ -603,6 +603,18 @@ export interface CoverSectionConfig {
   covers: CoverItemConfig[];
 }
 
+/** Pill colour for an automatic mode: blue / amber / grey. */
+export type CoverModeColor = 'blue' | 'amber' | 'gray';
+
+/** One automatic operating mode backed by an `input_boolean` (or switch). */
+export interface CoverModeConfig {
+  /** `input_boolean` or `switch` steering the cover automations. */
+  entity: string;
+  name: string;
+  /** Pill colour. Default `blue`. */
+  color?: CoverModeColor;
+}
+
 /**
  * Phase 1 + 2 in one, like the other cards. With no entities the card shows a
  * canned demo (group at 65 %, mixed individual positions); as soon as
@@ -622,6 +634,12 @@ export interface DesCoverCardConfig {
   scenes?: CoverSceneConfig[];
   /** Floors / groups, each with its covers; shown when expanded. */
   sections?: CoverSectionConfig[];
+  /**
+   * Automatic modes (Lüftung/Urlaub …) as an "Automatik" row under the scene
+   * tiles; each `on` mode also shows a header pill. Switched via
+   * `switch.turn_on`/`turn_off`.
+   */
+  modes?: CoverModeConfig[];
 }
 
 // ===========================================================================

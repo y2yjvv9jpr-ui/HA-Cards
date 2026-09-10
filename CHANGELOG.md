@@ -4,6 +4,24 @@ Alle nennenswerten Änderungen an diesem Projekt werden hier festgehalten.
 Format grob nach [Keep a Changelog](https://keepachangelog.com/de/1.1.0/),
 Versionierung nach [SemVer](https://semver.org/lang/de/).
 
+## [0.16.0]
+
+### Neu
+
+- **des-cover-card:** optionale **Automatik-Modi** (`modes`). Eingeklappt
+  erscheint unter den Szenen-Kacheln eine Zeile „Automatik" mit je Modus dem
+  Namen und einem Segmented **An | Aus** (`switch.turn_on`/`turn_off`); jeder
+  eingeschaltete Modus zeigt eine Pille (`name` in `color` blau/amber/grau) im
+  Kopf. Ohne `modes` entfällt die Zeile. Nicht lesbare Entitäten dimmen das
+  jeweilige Segmented.
+
+### Entfernt
+
+- **des-settings-card** entfernt — die Funktion (Haus-Betriebsmodi als
+  An/Aus mit Pillen) steckt jetzt in der Rollladenkarte (`des-cover-card`,
+  `modes`). Der Kartentyp `custom:des-settings-card` existiert nicht mehr; im
+  Dashboard durch die `modes` der Rollladenkarte ersetzen.
+
 ## [0.15.0]
 
 ### Neu

@@ -10,7 +10,7 @@ import { DesBedLightCard } from './des-bed-light-card';
 import { DesSettingsCard } from './des-settings-card';
 import { DesGarageCard } from './des-garage-card';
 
-const VERSION = '0.15.0';
+const VERSION = '0.16.0';
 
 interface CardRegistration {
   type: string;
