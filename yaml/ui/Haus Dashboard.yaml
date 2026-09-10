@@ -10,7 +10,7 @@ sections:
       - type: custom:des-cover-card
         grid_options:
           columns: 12
-          rows: 3
+          rows: 4
         name: Rollläden
         group_entity: cover.rollladen
         scenes:
@@ -79,6 +79,13 @@ sections:
                 name: Kinderzimmer Marie
               - entity: cover.jalousie_og_aneka_jalousie_og_aneka
                 name: Anekas Zimmer
+        modes:
+          - entity: input_boolean.helperluftungsmodus
+            name: Lüftung
+            color: blue
+          - entity: input_boolean.urlaub
+            name: Urlaub
+            color: amber
       - type: custom:des-light-card
         grid_options:
           columns: 12
@@ -168,18 +175,4 @@ sections:
           columns: 12
           rows: 3
         name: Bett
-      - type: custom:des-settings-card
-        grid_options:
-          columns: 12
-          rows: 3
-        name: Haus
-        items:
-          - entity: input_boolean.helperluftungsmodus
-            name: Lüftungsmodus
-            pill: Lüftung
-            color: blue
-          - entity: input_boolean.urlaub
-            name: Urlaubsmodus
-            pill: Urlaub
-            color: amber
 cards: []
