@@ -566,6 +566,64 @@ export interface DesDehumidifierCardConfig {
   target_step?: number;
 }
 
+// ===========================================================================
+// des-cover-card
+// ===========================================================================
+
+/**
+ * A declarative service call: `service` is `domain.service`, `target` carries
+ * the entity/device/area, `data` the service data. Used by the cover card's
+ * scene tiles and drivable through `service.ts`' `callAction`.
+ */
+export interface HassServiceCall {
+  service: string;
+  target?: Record<string, unknown>;
+  data?: Record<string, unknown>;
+}
+
+/** One scene tile in the cover card's tile row. */
+export interface CoverSceneConfig {
+  name: string;
+  /** Optional `mdi:…` icon. */
+  icon?: string;
+  /** The action fired on tap. */
+  action: HassServiceCall;
+}
+
+/** One roller shutter in a section. */
+export interface CoverItemConfig {
+  entity: string;
+  /** Label shown in the expanded per-cover row. */
+  name: string;
+}
+
+/** One floor / group of covers in the expanded area. */
+export interface CoverSectionConfig {
+  name: string;
+  covers: CoverItemConfig[];
+}
+
+/**
+ * Phase 1 + 2 in one, like the other cards. With no entities the card shows a
+ * canned demo (group at 65 %, mixed individual positions); as soon as
+ * `group_entity` or `sections` are configured it reads and writes them.
+ *
+ * Positions are the raw Home Assistant cover position (100 = fully open, full
+ * bar). Covers are driven with `cover.open_cover`/`close_cover`/`stop_cover`
+ * and `cover.set_cover_position`; scene tiles fire an arbitrary service call.
+ */
+export interface DesCoverCardConfig {
+  type: string;
+  /** Header title. Default "Rollläden". */
+  name?: string;
+  /** Cover group for the "Haus" group row (e.g. `cover.rollladen`). */
+  group_entity?: string;
+  /** 1-6 scene tiles, in order. */
+  scenes?: CoverSceneConfig[];
+  /** Floors / groups, each with its covers; shown when expanded. */
+  sections?: CoverSectionConfig[];
+}
+
 /** Minimal shape of the Home Assistant object handed to a card. */
 export interface HomeAssistant {
   states: Record<

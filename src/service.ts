@@ -1,5 +1,9 @@
 import { isEntityId } from './resolve';
-import type { ChargeModeControlConfig, HomeAssistant } from './types';
+import type {
+  ChargeModeControlConfig,
+  HassServiceCall,
+  HomeAssistant,
+} from './types';
 
 /** Domains whose value is written with `set_value`. */
 const NUMBER_DOMAINS = new Set(['number', 'input_number']);
@@ -160,6 +164,74 @@ export function writeSelect(
     );
   }
   return call(hass, domain, 'select_option', { entity_id: entityId, option });
+}
+
+/** True when this slot is a `cover` entity we can drive. */
+export function isWritableCover(target: unknown): boolean {
+  return (
+    typeof target === 'string' &&
+    isEntityId(target) &&
+    domainOf(target) === 'cover'
+  );
+}
+
+/** `cover.open_cover` / `cover.close_cover` / `cover.stop_cover`. */
+export function writeCover(
+  hass: HomeAssistant | undefined,
+  entityId: string,
+  action: 'open' | 'close' | 'stop',
+): Promise<unknown> {
+  if (domainOf(entityId) !== 'cover') {
+    return Promise.reject(new Error(`des-cards: ${entityId} ist keine cover-Entität`));
+  }
+  const service =
+    action === 'open'
+      ? 'open_cover'
+      : action === 'close'
+        ? 'close_cover'
+        : 'stop_cover';
+  return call(hass, 'cover', service, { entity_id: entityId });
+}
+
+/** `cover.set_cover_position` - position in percent (100 = fully open). */
+export function writeCoverPosition(
+  hass: HomeAssistant | undefined,
+  entityId: string,
+  position: number,
+): Promise<unknown> {
+  if (domainOf(entityId) !== 'cover') {
+    return Promise.reject(new Error(`des-cards: ${entityId} ist keine cover-Entität`));
+  }
+  return call(hass, 'cover', 'set_cover_position', {
+    entity_id: entityId,
+    position,
+  });
+}
+
+/**
+ * A generic service call from a config-declared action
+ * (`{ service: 'domain.service', target?, data? }`), e.g. a scene tile.
+ *
+ * `target` (entity_id/device_id/area_id) is merged into the service data:
+ * Home Assistant accepts those keys in the data payload across versions, which
+ * keeps this independent of the frontend's separate `target` argument.
+ */
+export function callAction(
+  hass: HomeAssistant | undefined,
+  action: HassServiceCall | undefined,
+): Promise<unknown> {
+  const service = action?.service;
+  if (typeof service !== 'string') {
+    return Promise.reject(new Error('des-cards: Aktion ohne "service"'));
+  }
+  const dot = service.indexOf('.');
+  if (dot <= 0 || dot === service.length - 1) {
+    return Promise.reject(
+      new Error(`des-cards: "service" muss "domain.service" sein (ist: ${service})`),
+    );
+  }
+  const data = { ...(action?.data ?? {}), ...(action?.target ?? {}) };
+  return call(hass, service.slice(0, dot), service.slice(dot + 1), data);
 }
 
 /**
