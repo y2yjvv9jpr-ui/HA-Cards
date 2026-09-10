@@ -2,7 +2,6 @@ type: sections
 max_columns: 3
 title: Haus
 path: haus
-theme: kibibit
 sections:
   - type: grid
     column_span: 3
