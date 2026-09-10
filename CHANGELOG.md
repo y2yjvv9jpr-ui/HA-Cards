@@ -23,6 +23,12 @@ Versionierung nach [SemVer](https://semver.org/lang/de/).
   die Temperatur-Ampel jetzt aus dem gemeinsamen Modul (Profil **battery**);
   Grenzen per `temp_warn_c` / `temp_alert_c` überschreibbar. Optik und Verhalten
   unverändert.
+- **des-inverter-card:** Die Wechselrichter-Temperatur (`inverter_temp_entity`)
+  steht jetzt als **Pille in der Kopfzeile** links neben der Status-Pille
+  (Format „51,6 °C", gleiche Pille wie bei den Akkus, Profil **inverter**); das
+  Thermometer-Element in der Leistungszeile entfällt. Die **DC-Temperatur**
+  (`show_dc_temp`) bleibt in der Fußzeile, wird nun aber nach demselben Profil
+  eingefärbt. Grenzen per `temp_warn_c` / `temp_alert_c` überschreibbar.
 
 ## [0.10.0]
 

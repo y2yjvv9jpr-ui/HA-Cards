@@ -312,10 +312,14 @@ export interface DesInverterCardConfig {
   alarm_entity?: string;
   /** Device state shown when neither fault nor alarm is raised. Default "Normal". */
   device_state_entity?: string;
-  /** Inverter (AC board) temperature (°C). */
+  /** Inverter (AC board) temperature (°C), shown as a pill in the header. */
   inverter_temp_entity?: string;
   /** DC-side temperature (°C), footer. */
   dc_temp_entity?: string;
+  /** Overrides the `inverter` profile's upper warn threshold (°C). Default 60. */
+  temp_warn_c?: number;
+  /** Overrides the `inverter` profile's upper alert threshold (°C). Default 75. */
+  temp_alert_c?: number;
   /** Grid frequency (Hz), footer. */
   grid_frequency_entity?: string;
 

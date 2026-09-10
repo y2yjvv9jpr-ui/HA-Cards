@@ -1,4 +1,4 @@
-import { LitElement, html, css, nothing, svg, type TemplateResult } from 'lit';
+import { LitElement, html, css, nothing, type TemplateResult } from 'lit';
 import {
   formatDecimal,
   formatFixed,
@@ -10,6 +10,12 @@ import { entityUnit, isEntityId, resolveNumber, resolveText } from './resolve';
 import { chevronStyles } from './chevron';
 import { overlayStyles, OverlayCloser } from './overlay';
 import { tokenStyles } from './tokens';
+import {
+  renderTemperaturePill,
+  temperatureLevel,
+  temperaturePillStyles,
+  type TemperatureOverride,
+} from './temperature';
 import type {
   DesInverterCardConfig,
   HomeAssistant,
@@ -706,6 +712,7 @@ export class DesInverterCard extends LitElement {
         </div>
         <div class="pills">
           ${this._renderClockPill(this._clockReading())}
+          ${this._renderTempPill(view)}
           ${this._renderPill(view)}
         </div>
       </div>
@@ -767,6 +774,26 @@ export class DesInverterCard extends LitElement {
     </span>`;
   }
 
+  /** Per-card override of the `inverter` profile's upper temperature thresholds. */
+  private _tempOverride(): TemperatureOverride {
+    const config = this._config;
+    return { warn: config?.temp_warn_c, alert: config?.temp_alert_c };
+  }
+
+  /**
+   * Inverter (AC-board) temperature as the shared pill, left of the status pill.
+   * Uses the `inverter` profile; omitted when there is no readable temperature.
+   */
+  private _renderTempPill(view: InverterView): TemplateResult | typeof nothing {
+    if (view.inverterTemp === null) return nothing;
+    const level = temperatureLevel(
+      view.inverterTemp,
+      'inverter',
+      this._tempOverride(),
+    );
+    return renderTemperaturePill(`${formatFixed(view.inverterTemp)} °C`, level);
+  }
+
   private _renderPowerRow(view: InverterView): TemplateResult {
     const producing = view.pvPower !== null && view.pvPower > 0;
     const kwpTotal = this._kwpTotal;
@@ -786,10 +813,6 @@ export class DesInverterCard extends LitElement {
             : html`<span class="pv-share">
                 ${formatInt(share)} % von ${formatDecimal(kwpTotal)} kWp
               </span>`}
-        </div>
-        <div class="temp">
-          ${this._thermometer()}
-          ${this._unit(view.inverterTemp, formatFixed, '°C')}
         </div>
       </div>
     `;
@@ -933,9 +956,7 @@ export class DesInverterCard extends LitElement {
         ${view.showDcItem
           ? html`<div class="foot-item">
               <span class="foot-label">DC-Temperatur</span>
-              <span class="foot-value">
-                ${this._unit(view.dcTemp, formatFixed, '°C')}
-              </span>
+              ${this._renderDcTemp(view)}
             </div>`
           : nothing}
         ${view.showFreqItem
@@ -971,21 +992,15 @@ export class DesInverterCard extends LitElement {
     return value < 0 ? 'grid-feed' : 'grid-draw';
   }
 
-  /** Inline thermometer glyph, so the card needs no external icon set. */
-  private _thermometer(): TemplateResult {
-    return html`<svg
-      class="thermo"
-      viewBox="0 0 24 24"
-      width="14"
-      height="14"
-      role="img"
-      aria-label="Temperatur"
-    >
-      ${svg`<path
-        fill="currentColor"
-        d="M15 13V5a3 3 0 0 0-6 0v8a5 5 0 1 0 6 0m-3-10a2 2 0 0 1 2 2v1h-4V5a2 2 0 0 1 2-2Z"
-      />`}
-    </svg>`;
+  /** DC-side temperature in the footer, coloured on the `inverter` profile. */
+  private _renderDcTemp(view: InverterView): TemplateResult {
+    if (view.dcTemp === null) {
+      return html`<span class="foot-value"><span class="unavail">–</span></span>`;
+    }
+    const level = temperatureLevel(view.dcTemp, 'inverter', this._tempOverride());
+    return html`<span class="foot-value ${level}">
+      ${formatFixed(view.dcTemp)} °C
+    </span>`;
   }
 
   private _toggleExpanded(): void {
@@ -1011,6 +1026,7 @@ export class DesInverterCard extends LitElement {
     chevronStyles,
     overlayStyles,
     tokenStyles,
+    temperaturePillStyles,
     css`
     :host {
       display: block;
@@ -1159,21 +1175,6 @@ export class DesInverterCard extends LitElement {
       white-space: nowrap;
     }
 
-    .temp {
-      display: inline-flex;
-      align-items: center;
-      gap: 4px;
-      font-size: 12px;
-      color: var(--secondary-text-color);
-      white-space: nowrap;
-      flex-shrink: 0;
-    }
-
-    .thermo {
-      flex-shrink: 0;
-      opacity: 0.8;
-    }
-
     /* --- string bars --- */
 
     .strings {
@@ -1307,6 +1308,15 @@ export class DesInverterCard extends LitElement {
       font-size: 13px;
       color: var(--primary-text-color);
       font-variant-numeric: tabular-nums;
+    }
+
+    /* DC temperature colouring (inverter profile); neutral keeps primary text. */
+    .foot-value.warn {
+      color: var(--warning-color, #ff9800);
+    }
+
+    .foot-value.alert {
+      color: var(--error-color, #d32f2f);
     }
 
     /* --- inverter clock --- */
