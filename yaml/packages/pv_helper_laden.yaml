@@ -25,8 +25,9 @@
 #   Entladen erst ab (Entlademinimum + 50 W) Hausakku-Entnahme. Feinere
 #   Leistungen wären nur über den Modus Manual möglich (offen).
 #
-# Ein Schalter: input_select.pv_helper_zendure_lademodus (Karte Laden|Auto)
+# Ein Schalter: input_select.pv_helper_zendure_lademodus (Karte Laden|Auto|Aus)
 #   Laden → Quick Charge mit 2400 W bis zur Ladegrenze, egal was los ist.
+#   Aus   → Standby, Automationen inaktiv (zum An-/Abstecken von Packs; 10.09.).
 #   Auto  → Laden:    Einspeisung > 450 W → Quick Charge mit (Überschuss − 50 W),
 #                     400–2400 W, auch parallel zu ladenden Hausakkus. Sollwert
 #                     < 400 W oder (Hausakkus laden und Überschuss < 100 W), 1 min
@@ -46,7 +47,10 @@
 # Prio Entladen: Zendure vor Hausakku — Ziel Hausakku-Entnahme ≈ 50 W.
 # Smart Matching (Gielz-Schleife) wird nicht mehr verwendet.
 # Hinweis: Das SoC-Ziel hat gerätseitig eine Hysterese von ≥ 2 %.
-# Stand: 2026-09-06
+# Notstromsteckdose: switch.pv_helper_zendure_notstromsteckdose schaltet die
+#   Offgrid-Steckdose (gridOffMode 0 = Normal, 2 = Aus) über rest_command
+#   zendure_setting des Gielz-Pakets; Zustand aus sensor.zendure_offgrid_mode.
+# Stand: 2026-09-10
 # ---------------------------------------------------------------------------
 
 input_select:
@@ -55,6 +59,7 @@ input_select:
     options:
       - Laden
       - Auto
+      - Aus
     initial: Auto
     icon: mdi:battery-charging-high
 
@@ -183,15 +188,37 @@ template:
              and states('sensor.pv_helper_zendure_entladeleistung_soll') | float(minimum) < minimum }}
         availability: "{{ has_value('sensor.pv_helper_zendure_entladeleistung_soll') }}"
 
+  - switch:
+      - name: PV Helper Zendure Notstromsteckdose
+        unique_id: pv_helper_zendure_notstromsteckdose
+        icon: mdi:power-socket-de
+        # Offgrid-Steckdose des Zendure: gridOffMode 0 = Normal (an), 2 = Aus.
+        # Schreibt über rest_command.zendure_setting des Gielz-Pakets.
+        state: "{{ not is_state('sensor.zendure_offgrid_mode', 'Turned Off') }}"
+        availability: "{{ has_value('sensor.zendure_offgrid_mode') and has_value('sensor.zendure_serial_number') }}"
+        turn_on:
+          - action: rest_command.zendure_setting
+            data:
+              sn: "{{ states('sensor.zendure_serial_number') }}"
+              instellingitem: gridOffMode
+              instellinginhoud: 0
+        turn_off:
+          - action: rest_command.zendure_setting
+            data:
+              sn: "{{ states('sensor.zendure_serial_number') }}"
+              instellingitem: gridOffMode
+              instellinginhoud: 2
+
 automation:
   # -------------------------------------------------------------------------
-  # Umschalten Laden|Auto sofort ausführen
+  # Umschalten Laden|Auto|Aus sofort ausführen
   # -------------------------------------------------------------------------
   - id: pv_helper_zendure_lademodus
     alias: PV Helper Zendure Lademodus
     description: >-
       Setzt den Zendure beim Umschalten des Karten-Schalters sofort um:
-      Laden → Quick Charge 2400 W; Auto → Standby (Automatik übernimmt).
+      Laden → Quick Charge 2400 W; Auto → Standby (Automatik übernimmt);
+      Aus → Standby, Automatik inaktiv.
     triggers:
       - trigger: state
         entity_id: input_select.pv_helper_zendure_lademodus
@@ -216,6 +243,16 @@ automation:
               - condition: state
                 entity_id: input_select.pv_helper_zendure_lademodus
                 state: Auto
+            sequence:
+              - action: input_select.select_option
+                target:
+                  entity_id: input_select.zendure_operation_mode
+                data:
+                  option: Standby
+          - conditions:
+              - condition: state
+                entity_id: input_select.pv_helper_zendure_lademodus
+                state: Aus
             sequence:
               - action: input_select.select_option
                 target:
