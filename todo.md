@@ -25,10 +25,17 @@ dann umgesetzt (siehe claude.md).
       links neben der Entfeuchterkarte im Dashboard. → **per HACS auf 0.12.0**,
       Dashboard-Datei `yaml/ui/Haus Dashboard.yaml` in HA einspielen,
       **Entity-IDs prüfen** (Cover, Skripte, input_boolean, Aquarien-Automation).
+- [x] 10.09. **des-cover-card** (v0.12.1): Korrekturen nach erstem Test —
+      neues Modul `src/icon-buttons.ts` (eigene Rahmen, 3 px Gap, aktiver Rahmen
+      nicht mehr abgeschnitten); Button-Reihenfolge überall **▼ ■ ▲** (zu/stop/
+      auf); zugeklappt kein Leerraum unter den Kacheln (Chevron direkt darunter),
+      Standardhöhe 3 Zeilen, Dashboard `rows: 3`. → **per HACS auf 0.12.1**,
+      Dashboard-Datei neu einspielen.
 - [ ] Rollladenkarte live gegenchecken: liefern alle Cover `current_position`
-      (voller Balken = offen)? Fahren ▲ ■ ▼ richtig, wird Stopp bei Fahrt blau?
-      Szenen-Kacheln lösen die richtigen Skripte/Booleans/die Aquarien-Automation
-      aus; nicht existente Ziele werden gedimmt.
+      (voller Balken = offen)? Fahren ▼ ■ ▲ richtig, wird Stopp bei Fahrt blau?
+      Passt die Karte bei `rows: 3` (Kopf, Gruppe, Kacheln, Chevron ohne
+      Abschneiden)? Szenen-Kacheln lösen die richtigen Skripte/Booleans/die
+      Aquarien-Automation aus; nicht existente Ziele werden gedimmt.
 - [ ] Als nächstes auf der Haus-Seite: **Lichtkarte(n)** und eine
       **Haus-Konfigurationskarte** (Konzept vor Umsetzung abstimmen).
 
