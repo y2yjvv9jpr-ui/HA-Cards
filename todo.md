@@ -5,6 +5,12 @@ dann umgesetzt (siehe claude.md).
 
 ## Karten-Konvention
 
+- [x] 11.09. **des-garage-card** (v0.18.0): eingeklappt kompakt — Chip-Zeile
+      (umbrechend) statt 2-Spalten-Raster; Chevron direkt darunter; Dashboard
+      `rows: 2`. Licht-Pille immer sichtbar („Licht aus" grün / „Licht an"
+      amber). Aufgeklappter Bereich unverändert. → **per HACS auf 0.18.0**,
+      Haus-Dashboard neu einspielen; prüfen, ob die Karte bei `rows: 2` mit zwei
+      Chip-Umbruchzeilen passt (sonst rows 3).
 - [x] 11.09. An/Aus-Reihenfolge vereinheitlicht: gemeinsame `ON_OFF_OPTIONS`
       (Aus links, An rechts – wie ein Schalter) in `segmented.ts`; umgestellt in
       des-cover-card (v0.17.1), des-light-card (v0.17.2), des-garage-card
