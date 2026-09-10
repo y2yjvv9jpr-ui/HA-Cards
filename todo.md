@@ -72,6 +72,21 @@ dann umgesetzt (siehe claude.md).
 - [ ] Offen Haus-Seite: **Bettlicht-Steuerung reparieren** + Verdrahtung (s. o.);
       **Lampe-außerhalb-geschaltet-Automation**; **Wirkung der Betriebsmodi**
       (Lüftungs-/Urlaubsmodus) dokumentieren, sobald Daniel sie beschrieben hat.
+- [x] 10.09. Haus-Dashboard: `des-settings-card` war bei `rows: 2` unten
+      abgeschnitten → auf `rows: 3` korrigiert. → Dashboard neu einspielen.
+
+## Garage-Seite
+
+- [x] 10.09. **des-garage-card** (v0.15.0): Statusübersicht (2-Spalten-Kacheln,
+      Statuspunkt + Leistung, „Licht an"-Pille) und aufgeklappt eine Schalttabelle
+      mit Leistung, Verbrauch je Zeitraum (aus `recorder/statistics_during_period`,
+      ohne Helfer) und An/Aus je Gerät. Neue Datei `yaml/ui/Garage Dashboard.yaml`
+      (Ansicht „Garage", Theme „Caule Black Yellow"). → **per HACS auf 0.15.0**,
+      Garage-Seite anlegen (Dashboard-YAML einspielen), **Entity-IDs prüfen**;
+      bisherige Button-/mini-graph-Karten der Seite entfallen.
+- [ ] Garagenkarte live gegenchecken: liefern die `energy`-Sensoren Statistik
+      (`statistics_during_period`)? Zeiträume korrekt, Statuspunkte plausibel,
+      passt die Kartenhöhe (rows 4)?
 
 ## 0a. 10.09. — im Repo, in HA einzuspielen
 

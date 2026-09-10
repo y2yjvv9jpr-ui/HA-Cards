@@ -206,6 +206,28 @@ steuern die Rollladen-Automatik:
 **Abweichung** und erscheint als Pille auf der Karte. Die genaue Wirkung der
 beiden Modi trägt Daniel nach.
 
+## Garage
+
+Eigene Dashboard-Seite „Garage" (`des-garage-card`). Licht + sechs schaltbare
+Geräte, je mit Leistungs- und Energiesensor.
+
+| Gerät | Schalter | Leistung | Energie |
+| --- | --- | --- | --- |
+| Licht | `light.garage_licht` | `sensor.garage_licht_power` | `sensor.garage_licht_energy` |
+| Werkbank | `switch.garage_steckdose_werkbank` | `sensor.garage_steckdose_werkbank_power` | `sensor.garage_steckdose_werkbank_energy` |
+| Fräse | `switch.garage_fraese` | `sensor.garage_fraese_power` | `sensor.garage_fraese_energy` |
+| Kappex | `switch.garage_steckdose_kappex` | `sensor.garage_steckdose_kappex_power` | `sensor.garage_steckdose_kappex_energy` |
+| Kompressor | `switch.garage_kompressor` | `sensor.garage_kompressor_power` | `sensor.garage_kompressor_energy` |
+| Staubsauger | `switch.garage_steckdose_staubsauger` | `sensor.garage_steckdose_staubsauger_power` | `sensor.garage_steckdose_staubsauger_energy` |
+| Tür | `switch.garage_steckdose_tuer` | `sensor.garage_steckdose_tuer_power` | `sensor.garage_steckdose_tuer_energy` |
+
+- „Aktiv" (grüner Punkt) = Schalter an **und** Leistung ≥ `on_threshold_w` (2 W).
+  Steckdose an, aber Gerät aus (unter der Schwelle) = grauer Punkt.
+- **Verbrauch ohne eigene Helfer:** die Karte liest die Langzeitstatistik der
+  `energy`-Sensoren direkt (`recorder/statistics_during_period`, Summe der
+  `change`-Werte je Zeitraum). Die Werte sind stündlich (Statistik-Takt); keine
+  Utility-Meter/Template-Helfer nötig.
+
 ## Eigene Helfer (Packages)
 
 | Package | Enthält |
