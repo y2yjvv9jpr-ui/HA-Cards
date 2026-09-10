@@ -4,6 +4,18 @@ Alle nennenswerten Änderungen an diesem Projekt werden hier festgehalten.
 Format grob nach [Keep a Changelog](https://keepachangelog.com/de/1.1.0/),
 Versionierung nach [SemVer](https://semver.org/lang/de/).
 
+## [0.18.1]
+
+### Geändert
+
+- **des-garage-card:** Eingeklappt noch kompakter — die Chips haben **keinen
+  Rahmen** mehr (nur Statuspunkt 8 px + Name, 11 px, 12 px Abstand zwischen den
+  Chips), sodass sie möglichst in **eine Zeile** passen (Umbruch bleibt als
+  Fallback). Keine Leistung mehr im Chip. Metazeile: „&lt;n&gt; Geräte an ·
+  &lt;Summe&gt; W", bei genau einem aktiven Gerät stattdessen „&lt;Name&gt; an ·
+  &lt;Leistung&gt; W". Chevron wie gehabt unten mittig (margin-top 4 px).
+  Dashboard-Höhe der Karte auf `rows: 2`.
+
 ## [0.18.0]
 
 ### Geändert

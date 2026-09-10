@@ -288,8 +288,12 @@ export class DesGarageCard extends LitElement {
     const all = light ? [light, ...devices] : devices;
 
     const totalW = all.reduce((sum, v) => sum + (v.powerW ?? 0), 0);
-    const devicesOn = devices.filter((v) => v.on === true).length;
-    const meta = `${devicesOn} Geräte an · ${formatInt(totalW)} W`;
+    const onDevices = devices.filter((v) => v.on === true);
+    // Exactly one device on → name it and show its own power; else the count.
+    const meta =
+      onDevices.length === 1
+        ? `${onDevices[0].name} an · ${formatInt(onDevices[0].powerW ?? 0)} W`
+        : `${onDevices.length} Geräte an · ${formatInt(totalW)} W`;
     const lightOn = light?.on === true;
     const settings = config.settings ?? [];
     const activeSettings = settings.filter(
@@ -345,15 +349,10 @@ export class DesGarageCard extends LitElement {
   private _renderChip(view: ItemView): TemplateResult {
     const dot = this._dotState(view);
     const dotClass = dot === true ? 'on' : dot === false ? 'idle' : 'off';
-    // Active (on and above threshold) shows the power; otherwise just the name.
-    const label =
-      dot === true && view.powerW !== null
-        ? `${view.name} · ${formatInt(view.powerW)} W`
-        : view.name;
     return html`
       <div class="chip ${dot === true ? 'active' : ''}">
         <span class="dot ${dotClass}"></span>
-        <span class="chip-label">${label}</span>
+        <span class="chip-label">${view.name}</span>
       </div>
     `;
   }
@@ -749,30 +748,29 @@ export class DesGarageCard extends LitElement {
 
       /* --- collapsed status chips --- */
 
+      /* One dense row: dot + name, no frames. Wrap only as a fallback. */
       .chips {
         flex: 0 0 auto;
         margin-top: 8px;
         display: flex;
         flex-wrap: wrap;
-        gap: 5px;
+        column-gap: 12px;
+        row-gap: 4px;
       }
 
       .chip {
         display: inline-flex;
         align-items: center;
         gap: 6px;
-        padding: 3px 7px;
-        border: 1px solid var(--divider-color, rgba(127, 127, 127, 0.28));
-        border-radius: 999px;
+        padding: 2px 0;
         font-size: 11px;
         color: var(--secondary-text-color);
         white-space: nowrap;
       }
 
-      /* Active chip: readable text, a slightly stronger border. */
+      /* Active chip: readable text. */
       .chip.active {
         color: var(--primary-text-color);
-        border-color: var(--secondary-text-color);
       }
 
       .dot {

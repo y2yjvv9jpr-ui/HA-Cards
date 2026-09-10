@@ -7852,7 +7852,7 @@ const so = {
   render() {
     const e = this._config;
     if (!e) return d;
-    const t = this._lightView(), r = this._deviceViews(), o = (t ? [t, ...r] : r).reduce((u, g) => u + (g.powerW ?? 0), 0), c = `${r.filter((u) => u.on === !0).length} Geräte an · ${_(o)} W`, l = t?.on === !0, h = (e.settings ?? []).filter(
+    const t = this._lightView(), r = this._deviceViews(), o = (t ? [t, ...r] : r).reduce((u, g) => u + (g.powerW ?? 0), 0), n = r.filter((u) => u.on === !0), c = n.length === 1 ? `${n[0].name} an · ${_(n[0].powerW ?? 0)} W` : `${n.length} Geräte an · ${_(o)} W`, l = t?.on === !0, h = (e.settings ?? []).filter(
       (u) => u.pill && this._on(u.entity) === !0
     );
     return a`
@@ -7895,11 +7895,11 @@ const so = {
     `;
   }
   _renderChip(e) {
-    const t = this._dotState(e), r = t === !0 ? "on" : t === !1 ? "idle" : "off", i = t === !0 && e.powerW !== null ? `${e.name} · ${_(e.powerW)} W` : e.name;
+    const t = this._dotState(e);
     return a`
       <div class="chip ${t === !0 ? "active" : ""}">
-        <span class="dot ${r}"></span>
-        <span class="chip-label">${i}</span>
+        <span class="dot ${t === !0 ? "on" : t === !1 ? "idle" : "off"}"></span>
+        <span class="chip-label">${e.name}</span>
       </div>
     `;
   }
@@ -8216,30 +8216,29 @@ ze.properties = {
 
       /* --- collapsed status chips --- */
 
+      /* One dense row: dot + name, no frames. Wrap only as a fallback. */
       .chips {
         flex: 0 0 auto;
         margin-top: 8px;
         display: flex;
         flex-wrap: wrap;
-        gap: 5px;
+        column-gap: 12px;
+        row-gap: 4px;
       }
 
       .chip {
         display: inline-flex;
         align-items: center;
         gap: 6px;
-        padding: 3px 7px;
-        border: 1px solid var(--divider-color, rgba(127, 127, 127, 0.28));
-        border-radius: 999px;
+        padding: 2px 0;
         font-size: 11px;
         color: var(--secondary-text-color);
         white-space: nowrap;
       }
 
-      /* Active chip: readable text, a slightly stronger border. */
+      /* Active chip: readable text. */
       .chip.active {
         color: var(--primary-text-color);
-        border-color: var(--secondary-text-color);
       }
 
       .dot {
@@ -8372,7 +8371,7 @@ ze.properties = {
     `
 ];
 let _t = ze;
-const go = "0.18.0", fo = [
+const go = "0.18.1", fo = [
   {
     type: "des-storage-card",
     element: st,
