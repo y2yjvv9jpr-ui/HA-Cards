@@ -155,6 +155,10 @@ export interface DesStorageCardConfig {
   idle_threshold_w?: NumberValue;
   /** Cell temperature in °C. `null` drops the segment from the meta line. */
   temp_c?: NumberValue | null;
+  /** Overrides the `battery` profile's upper warn threshold (°C). */
+  temp_warn_c?: number;
+  /** Overrides the `battery` profile's upper alert threshold (°C). */
+  temp_alert_c?: number;
   /** Minimum state of charge in percent; start value of the slider. */
   threshold_pct?: NumberValue;
   /** Charge limit (max. SoC), valid in every mode; start value of the slider. */

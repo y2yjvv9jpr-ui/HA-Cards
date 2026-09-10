@@ -4,6 +4,26 @@ Alle nennenswerten Änderungen an diesem Projekt werden hier festgehalten.
 Format grob nach [Keep a Changelog](https://keepachangelog.com/de/1.1.0/),
 Versionierung nach [SemVer](https://semver.org/lang/de/).
 
+## [0.11.0]
+
+### Neu
+
+- **src/temperature.ts** — gemeinsames Modul für die Temperatur-Einfärbung:
+  `temperatureLevel(temp, profile, override?)` mit den Profilen **battery**
+  (< 4 alert, < 8 warn, > 40 warn, > 50 alert) und **inverter** (> 60 warn,
+  > 75 alert, keine Kältegrenzen); Rückgabe `neutral | warn | alert`. Optionale
+  Overrides `temp_warn_c` / `temp_alert_c` heben die **oberen** Grenzen des
+  Profils an bzw. ab. Dazu wiederverwendbare Pillen-Styles
+  (`temperaturePillStyles`, Tönung per `color-mix`, Farben `--warning-color` /
+  `--error-color` / `--secondary-text-color`) und `renderTemperaturePill`.
+
+### Geändert
+
+- **des-storage-card (Variante battery):** Kopf-Pille und Pack-Tabelle beziehen
+  die Temperatur-Ampel jetzt aus dem gemeinsamen Modul (Profil **battery**);
+  Grenzen per `temp_warn_c` / `temp_alert_c` überschreibbar. Optik und Verhalten
+  unverändert.
+
 ## [0.10.0]
 
 ### Neu

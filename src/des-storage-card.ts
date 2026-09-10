@@ -21,6 +21,13 @@ import {
 import { renderSegmented, segmentedStyles } from './segmented';
 import { chevronStyles } from './chevron';
 import { overlayStyles, OverlayCloser } from './overlay';
+import {
+  renderTemperaturePill,
+  temperatureLevel,
+  temperaturePillStyles,
+  type TemperatureLevel,
+  type TemperatureOverride,
+} from './temperature';
 import type {
   BackupState,
   BatteryPackConfig,
@@ -227,24 +234,6 @@ function formatEstimate(hours: number): string | null {
     Math.round((hours * 60) / ESTIMATE_STEP_MIN) * ESTIMATE_STEP_MIN;
   if (minutes < ESTIMATE_MIN_MINUTES) return `< ${ESTIMATE_MIN_MINUTES} min`;
   return `${Math.floor(minutes / 60)}h ${minutes % 60}m`;
-}
-
-/**
- * Traffic-light level for the battery temperature, shared by the header pill
- * and the per-pack rows.
- *
- *   < 4 °C  red · 4-8 °C  yellow · 8-40 °C  neutral · 40-50 °C  yellow · > 50 °C  red
- */
-function temperatureLevel(temp: number): 'neutral' | 'warn' | 'alert' {
-  if (temp < 4 || temp > 50) return 'alert';
-  if (temp < 8 || temp > 40) return 'warn';
-  return 'neutral';
-}
-
-/** Pill modifier for the header temperature pill. */
-function temperatureBadge(temp: number): string {
-  const level = temperatureLevel(temp);
-  return level === 'neutral' ? 'badge-neutral' : `badge-${level}`;
 }
 
 export class DesStorageCard extends LitElement {
@@ -1139,7 +1128,9 @@ export class DesStorageCard extends LitElement {
                 </tr>
               </thead>
               <tbody>
-                ${packs.map((pack) => this._renderPack(pack))}
+                ${packs.map((pack) =>
+                  this._renderPack(pack, this._tempOverride(config)),
+                )}
               </tbody>
             </table>`
           : nothing}
@@ -1155,7 +1146,10 @@ export class DesStorageCard extends LitElement {
    * the capacity and the remaining-energy cell are dashes. (No SoH: the Zendure
    * does not expose a per-pack state of health locally.)
    */
-  private _renderPack(pack: BatteryPackConfig): TemplateResult {
+  private _renderPack(
+    pack: BatteryPackConfig,
+    override: TemperatureOverride,
+  ): TemplateResult {
     const soc = resolveNumber(pack.soc, this.hass);
     const capacity = resolveNumber(pack.capacity_kwh, this.hass);
     const temp = resolveNumber(pack.temp_c, this.hass);
@@ -1167,7 +1161,10 @@ export class DesStorageCard extends LitElement {
         ? (soc.value * capacity.value) / 100
         : null;
 
-    const tempLevel = temp.kind === 'value' ? temperatureLevel(temp.value) : 'neutral';
+    const tempLevel =
+      temp.kind === 'value'
+        ? temperatureLevel(temp.value, 'battery', override)
+        : 'neutral';
 
     return html`
       <tr>
@@ -1226,19 +1223,29 @@ export class DesStorageCard extends LitElement {
     );
   }
 
-  /** Temperature as a pill, colour-coded on the same thresholds as before. */
+  /** Per-card override of the battery profile's upper temperature thresholds. */
+  private _tempOverride(config: DesStorageCardConfig): TemperatureOverride {
+    return { warn: config.temp_warn_c, alert: config.temp_alert_c };
+  }
+
+  /** Battery temperature level under the shared `battery` profile. */
+  private _tempLevel(config: DesStorageCardConfig, temp: number): TemperatureLevel {
+    return temperatureLevel(temp, 'battery', this._tempOverride(config));
+  }
+
+  /** Temperature as the shared pill, colour-coded on the `battery` profile. */
   private _renderTemperatureBadge(
     config: DesStorageCardConfig,
   ): TemplateResult | typeof nothing {
     const temp = resolveNumber(config.temp_c, this.hass);
     if (temp.kind === 'unset') return nothing;
     if (temp.kind === 'unavailable') {
-      return this._renderBadge(html`${this._dash()} °C`, 'badge-neutral');
+      return renderTemperaturePill(html`${this._dash()} °C`, 'neutral');
     }
 
-    return this._renderBadge(
+    return renderTemperaturePill(
       `${formatFixed(temp.value)} °C`,
-      temperatureBadge(temp.value),
+      this._tempLevel(config, temp.value),
     );
   }
 
@@ -1649,6 +1656,7 @@ export class DesStorageCard extends LitElement {
     segmentedStyles,
     chevronStyles,
     overlayStyles,
+    temperaturePillStyles,
     css`
     /* The card fills whatever height the sections grid hands it, so several
        cards in one row can be levelled with grid_options.rows. */
@@ -1747,8 +1755,7 @@ export class DesStorageCard extends LitElement {
     }
 
     .status-discharging,
-    .status-heating,
-    .badge-warn {
+    .status-heating {
       background: rgba(255, 152, 0, 0.16);
       background: color-mix(
         in srgb,
@@ -1782,12 +1789,6 @@ export class DesStorageCard extends LitElement {
 
     /* Emergency outlet off - red, but not the loud all-caps "aktiv" alarm. */
     .backup-off {
-      background: rgba(211, 47, 47, 0.16);
-      background: color-mix(in srgb, var(--error-color, #d32f2f) 16%, transparent);
-      color: var(--error-color, #d32f2f);
-    }
-
-    .badge-alert {
       background: rgba(211, 47, 47, 0.16);
       background: color-mix(in srgb, var(--error-color, #d32f2f) 16%, transparent);
       color: var(--error-color, #d32f2f);
