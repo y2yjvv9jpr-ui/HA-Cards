@@ -4,6 +4,26 @@ Alle nennenswerten Änderungen an diesem Projekt werden hier festgehalten.
 Format grob nach [Keep a Changelog](https://keepachangelog.com/de/1.1.0/),
 Versionierung nach [SemVer](https://semver.org/lang/de/).
 
+## [0.9.1]
+
+### Geändert
+
+- **des-storage-card (Variante battery):** `packs` wird jetzt als kompakte
+  **Tabelle** dargestellt (Spalten **Akku · kWh · SoC · SoH · °C · Zellen**) statt
+  als Textzeilen. Kopfzeile gedämpft, Werte rechtsbündig, Temperatur mit der
+  Ampelfarbe, Zellbalance-Text aus dem Sensor; fehlende Werte „–". Zeilenhöhe wie
+  die Item-Zeilen der `thermal_group`.
+- **des-storage-card:** Der Schalter der **Notstromsteckdose**
+  (`backup.switch_entity`) war überproportional groß und ist jetzt auf die Größe
+  der übrigen Bedienelemente gebracht (Label links, kompakter Schalter rechts,
+  Zeilenhöhe wie eine Slider-Zeile).
+
+### Hinzugefügt
+
+- **des-storage-card:** Neue optionale Pack-Felder `capacity_kwh` (Entity oder
+  Zahl; ergibt zusammen mit `soc` die kWh-Spalte) und `soh` (Entity; eigene
+  Spalte).
+
 ## [0.9.0]
 
 ### Hinzugefügt

@@ -69,14 +69,18 @@ export interface ChargeModeControlConfig {
   off_state?: string;
 }
 
-/** One pack of a multi-pack battery, shown as a compact row when expanded. */
+/** One pack of a multi-pack battery, shown as a compact table row when expanded. */
 export interface BatteryPackConfig {
   name: string;
   /** State of charge in percent. */
   soc?: NumberValue;
+  /** State of health in percent. */
+  soh?: NumberValue;
+  /** Nominal capacity in kWh; with `soc` it yields the stored-energy column. */
+  capacity_kwh?: NumberValue;
   /** Cell temperature in °C; coloured on the same traffic-light as the header. */
   temp_c?: NumberValue;
-  /** Cell-balance text, shown after "Zellen:" as reported by the sensor. */
+  /** Cell-balance text, shown in the "Zellen" column as reported by the sensor. */
   balance?: TextValue;
 }
 

@@ -294,17 +294,21 @@ erkannt, sobald er `off_state` entspricht (Groß-/Kleinschreibung egal). Ohne
 meldet beim Laden einen Konfigurationsfehler.
 
 **`packs`** — eine Liste, die im aufgeklappten Bedienbereich (zwischen Slidern
-und Notstromsteckdose) je Eintrag eine kompakte Zeile zeigt:
+und Notstromsteckdose) als kompakte **Tabelle** erscheint, eine Zeile je Eintrag,
+mit den Spalten **Akku · kWh · SoC · SoH · °C · Zellen**:
 
-| Feld      | Typ              | Beschreibung                                            |
-| --------- | ---------------- | ------------------------------------------------------- |
-| `name`    | string           | **Pflicht.** Zeilenbeschriftung (z. B. „Akku 1“).       |
-| `soc`     | number \| Entity | Ladestand in %.                                         |
-| `temp_c`  | number \| Entity | Zelltemperatur in °C, mit der Temperatur-Ampel gefärbt. |
-| `balance` | string \| Entity | Zellbalance-Text, hinter „Zellen:“ ausgegeben.          |
+| Feld           | Typ              | Beschreibung                                                        |
+| -------------- | ---------------- | ------------------------------------------------------------------- |
+| `name`         | string           | **Pflicht.** Spalte „Akku“.                                         |
+| `capacity_kwh` | number \| Entity | Kapazität; ergibt mit `soc` die kWh-Spalte (`soc × capacity / 100`). |
+| `soc`          | number \| Entity | Ladestand in %.                                                     |
+| `soh`          | number \| Entity | Zustand/Gesundheit (State of Health) in %.                          |
+| `temp_c`       | number \| Entity | Zelltemperatur in °C, mit der Temperatur-Ampel gefärbt.             |
+| `balance`      | string \| Entity | Zellbalance-Text, Spalte „Zellen“.                                  |
 
-Die Zeile liest sich z. B. „Akku 1 · 72 % · 34 °C · Zellen: Excellent“. Fehlende
-oder nicht lesbare Werte zeigen „–“.
+Die Einheiten stehen in der Kopfzeile (gedämpft); die Werte sind rechtsbündig.
+Die kWh-Spalte bleibt leer („–“), wenn `soc` **oder** `capacity_kwh` fehlt;
+jeder andere fehlende oder nicht lesbare Wert zeigt ebenfalls „–“.
 
 **Aufbau**
 
@@ -325,7 +329,7 @@ oder nicht lesbare Werte zeigen „–“.
   Zeilen zentriert, der Umschalter **Laden | Auto**. Mit `off_state` wird er
   dreiteilig (**Laden | Auto | Aus**) und sitzt stattdessen in einer eigenen
   Zeile oberhalb der Slider (rechtsbündig). Darunter folgen — sofern
-  konfiguriert — die **Pack-Zeilen** (`packs`) und ganz unten die Zeile
+  konfiguriert — die **Pack-Tabelle** (`packs`) und ganz unten die Zeile
   **Notstromsteckdose** (`backup.switch_entity`).
 
   | Zeile | Label          | Slider / Entität           | Bereich / Einheit         |
@@ -602,14 +606,20 @@ cards:
         - Normal
         - Eco
       switch_entity: switch.pv_helper_zendure_notstromsteckdose
-    # Kompakte Pack-Zeilen (SoC, Temperatur, Zellbalance).
+    # Pack-Tabelle: Akku | kWh | SoC | SoH | °C | Zellen.
+    # capacity_kwh darf eine Zahl oder eine Entitaet sein; mit soc ergibt es
+    # die kWh-Spalte. soh ist optional.
     packs:
       - name: Akku 1
+        capacity_kwh: sensor.zendure_battery_1_capacity
         soc: sensor.zendure_battery_1_state_of_charge
+        soh: sensor.zendure_battery_1_state_of_health
         temp_c: sensor.zendure_battery_1_temperature
         balance: sensor.zendure_battery_1_cell_balance_status
       - name: Akku 2
+        capacity_kwh: sensor.zendure_battery_2_capacity
         soc: sensor.zendure_battery_2_state_of_charge
+        soh: sensor.zendure_battery_2_state_of_health
         temp_c: sensor.zendure_battery_2_temperature
         balance: sensor.zendure_battery_2_cell_balance_status
 

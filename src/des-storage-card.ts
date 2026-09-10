@@ -1115,9 +1115,21 @@ export class DesStorageCard extends LitElement {
           ${hasOff ? nothing : segmented}
         </div>
         ${packs.length > 0
-          ? html`<div class="packs">
-              ${packs.map((pack) => this._renderPack(pack))}
-            </div>`
+          ? html`<table class="packs">
+              <thead>
+                <tr>
+                  <th class="pack-col-name">Akku</th>
+                  <th>kWh</th>
+                  <th>SoC</th>
+                  <th>SoH</th>
+                  <th>°C</th>
+                  <th>Zellen</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${packs.map((pack) => this._renderPack(pack))}
+              </tbody>
+            </table>`
           : nothing}
         ${switchEntity
           ? this._renderBackupSwitchRow(config, switchEntity)
@@ -1127,32 +1139,36 @@ export class DesStorageCard extends LitElement {
   }
 
   /**
-   * One compact pack row: name, soc, temperature (traffic-light coloured) and
-   * cell balance. A value the card cannot read shows a muted dash.
+   * One pack table row: name, stored energy, soc, soh, temperature (traffic-
+   * light coloured) and cell balance. Units live in the header, so the cells
+   * stay bare numbers; a value the card cannot read shows a muted dash.
    */
   private _renderPack(pack: BatteryPackConfig): TemplateResult {
     const soc = resolveNumber(pack.soc, this.hass);
+    const soh = resolveNumber(pack.soh, this.hass);
+    const capacity = resolveNumber(pack.capacity_kwh, this.hass);
     const temp = resolveNumber(pack.temp_c, this.hass);
     const balance = resolveText(pack.balance, this.hass);
+
+    // Stored energy needs both a state of charge and a capacity to divide it.
+    const energyKwh =
+      soc.kind === 'value' && capacity.kind === 'value'
+        ? (soc.value * capacity.value) / 100
+        : null;
 
     const tempLevel = temp.kind === 'value' ? temperatureLevel(temp.value) : 'neutral';
 
     return html`
-      <div class="pack">
-        <span class="pack-name">${pack.name}</span>
-        <span class="pack-sep">·</span>
-        <span class="pack-val">
-          ${soc.kind === 'value' ? `${formatInt(soc.value)} %` : this._dash()}
-        </span>
-        <span class="pack-sep">·</span>
-        <span class="pack-val pack-temp ${tempLevel}">
-          ${temp.kind === 'value' ? `${formatFixed(temp.value)} °C` : this._dash()}
-        </span>
-        <span class="pack-sep">·</span>
-        <span class="pack-val">
-          Zellen: ${balance.kind === 'value' ? balance.value : this._dash()}
-        </span>
-      </div>
+      <tr>
+        <td class="pack-col-name">${pack.name}</td>
+        <td>${energyKwh !== null ? formatFixed(energyKwh) : this._dash()}</td>
+        <td>${soc.kind === 'value' ? `${formatInt(soc.value)} %` : this._dash()}</td>
+        <td>${soh.kind === 'value' ? `${formatInt(soh.value)} %` : this._dash()}</td>
+        <td class="pack-temp ${tempLevel}">
+          ${temp.kind === 'value' ? formatFixed(temp.value) : this._dash()}
+        </td>
+        <td>${balance.kind === 'value' ? balance.value : this._dash()}</td>
+      </tr>
     `;
   }
 
@@ -1955,41 +1971,63 @@ export class DesStorageCard extends LitElement {
       border-radius: 3px;
     }
 
-    /* --- battery pack rows --- */
+    /* --- battery pack table --- */
 
     .packs {
-      display: flex;
-      flex-direction: column;
-      gap: 4px;
-      padding-top: 10px;
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 12px;
+    }
+
+    /* Values right-aligned; units are carried by the header, not the cells. The
+       row height (6px top/bottom) matches the thermal-group item rows. */
+    .packs th,
+    .packs td {
+      padding: 6px 6px;
+      text-align: right;
+      white-space: nowrap;
+      color: var(--secondary-text-color);
+    }
+
+    .packs th:first-child,
+    .packs td:first-child {
+      padding-left: 0;
+    }
+
+    .packs th:last-child,
+    .packs td:last-child {
+      padding-right: 0;
+    }
+
+    .packs thead th {
+      font-weight: 500;
+      border-bottom: 1px solid var(--divider-color, rgba(127, 127, 127, 0.18));
+    }
+
+    .packs tbody td {
       border-top: 1px solid var(--divider-color, rgba(127, 127, 127, 0.18));
     }
 
-    .pack {
-      display: flex;
-      align-items: baseline;
-      flex-wrap: wrap;
-      gap: 4px 5px;
-      font-size: 12px;
-      color: var(--secondary-text-color);
-      line-height: 1.3;
+    /* The header rule already separates the first data row. */
+    .packs tbody tr:first-child td {
+      border-top: none;
     }
 
-    .pack-name {
+    .pack-col-name {
+      text-align: left;
+    }
+
+    td.pack-col-name {
       color: var(--primary-text-color);
       font-weight: 500;
     }
 
-    .pack-sep {
-      opacity: 0.5;
-    }
-
     /* Same traffic light as the header temperature pill, applied to the text. */
-    .pack-temp.warn {
+    td.pack-temp.warn {
       color: var(--warning-color, #ff9800);
     }
 
-    .pack-temp.alert {
+    td.pack-temp.alert {
       color: var(--error-color, #d32f2f);
     }
 
@@ -2000,12 +2038,18 @@ export class DesStorageCard extends LitElement {
       align-items: center;
       justify-content: space-between;
       gap: 12px;
-      padding-top: 10px;
+      padding-top: 8px;
       border-top: 1px solid var(--divider-color, rgba(127, 127, 127, 0.18));
     }
 
+    /* HA sizes ha-switch for touch, which dwarfs the sliders. Scale it onto the
+       card's control size and claw back the height its larger box would add, so
+       the row stays as low as a slider row. */
     .switch-row ha-switch {
       flex-shrink: 0;
+      transform: scale(0.72);
+      transform-origin: center right;
+      margin: -6px 0;
     }
 
     /* --- thermal group item rows --- */
