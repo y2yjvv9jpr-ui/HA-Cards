@@ -13,6 +13,12 @@ dann umgesetzt (siehe claude.md).
       Chip-Umbruchzeilen + Chevron zu knapp); settings-Pille „Mäher lädt" →
       „Ladestation aktiv". → Dashboard neu einspielen. Reine Dashboard-Änderung,
       keine neue Kartenversion.
+- [x] 11.09. **des-garage-card** (v0.18.1): Chips ohne Rahmen (nur Punkt + Name,
+      12 px Abstand) → passen möglichst in eine Zeile; keine Leistung im Chip.
+      Metazeile bei genau einem aktiven Gerät „&lt;Name&gt; an · &lt;W&gt; W".
+      Dashboard-Höhe zurück auf `rows: 2`. → **per HACS auf 0.18.1**, Dashboard
+      neu einspielen; auf schmalen Screens kann die Chip-Zeile umbrechen (dann
+      ggf. rows 3).
 - [x] 11.09. An/Aus-Reihenfolge vereinheitlicht: gemeinsame `ON_OFF_OPTIONS`
       (Aus links, An rechts – wie ein Schalter) in `segmented.ts`; umgestellt in
       des-cover-card (v0.17.1), des-light-card (v0.17.2), des-garage-card
