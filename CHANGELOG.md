@@ -4,6 +4,29 @@ Alle nennenswerten Änderungen an diesem Projekt werden hier festgehalten.
 Format grob nach [Keep a Changelog](https://keepachangelog.com/de/1.1.0/),
 Versionierung nach [SemVer](https://semver.org/lang/de/).
 
+## [0.12.1]
+
+### Neu
+
+- **src/icon-buttons.ts** — gemeinsames Modul für eine Reihe Icon-Buttons
+  (`iconButtonStyles` + `renderIconButtons(items, onSelect, groupLabel?)`). Jeder
+  Button ist ein eigenes Element mit vollem Rahmen und Radius, 24×22 px, 3 px
+  Gap, **kein negativer Margin, kein Überlappen** — ein hervorgehobener Button
+  (`active`: Rahmen + Icon in `--primary-color`) ist rundum sichtbar. Später auch
+  für die Lichtkarte gedacht.
+
+### Geändert
+
+- **des-cover-card:** Die ▼ ■ ▲-Buttons nutzen jetzt das neue Modul (vorher
+  segmentiert mit geteiltem Rahmen — der aktive Stopp-Rahmen wurde vom Nachbarn
+  abgeschnitten). **Reihenfolge überall** (Gruppenzeile und Einzelrollläden):
+  links **▼** (zu, `close_cover`), Mitte **■** (stop), rechts **▲** (auf,
+  `open_cover`).
+- **des-cover-card:** Zugeklappt bleibt unter den Kacheln kein Leerraum — der
+  Chevron sitzt direkt darunter (8 px), Karteninhalt oben ausgerichtet, und die
+  Standardhöhe im Sections-View ist von 4 auf **3 Zeilen** gesenkt (Dashboard
+  entsprechend auf `rows: 3`).
+
 ## [0.12.0]
 
 ### Neu

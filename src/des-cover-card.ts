@@ -2,6 +2,7 @@ import { LitElement, html, css, nothing, type TemplateResult } from 'lit';
 import { chevronStyles } from './chevron';
 import { overlayStyles, OverlayCloser } from './overlay';
 import { tokenStyles } from './tokens';
+import { iconButtonStyles, renderIconButtons } from './icon-buttons';
 import { formatInt, clamp } from './format';
 import { entityState, entityNumberAttribute, isEntityId } from './resolve';
 import {
@@ -19,7 +20,8 @@ import type {
 
 /** Grid size in a HA sections view (column_span 3 → 36 columns): a third wide. */
 const GRID_COLUMNS = 12;
-const GRID_ROWS = 4;
+/** Collapsed the card is short: header, group row, scene tiles, chevron. */
+const GRID_ROWS = 3;
 const GRID_MIN_ROWS = 3;
 
 const DEFAULT_NAME = 'Rollläden';
@@ -413,33 +415,21 @@ export class DesCoverCard extends LitElement {
       <span class="pos-pct">
         ${position === null ? this._dash() : `${formatInt(position)} %`}
       </span>
-      <div class="pos-btns">
-        <button
-          type="button"
-          aria-label="Öffnen"
-          ?disabled=${!readable}
-          @click=${() => this._cover(entity, 'open')}
-        >
-          <ha-icon icon="mdi:chevron-up"></ha-icon>
-        </button>
-        <button
-          type="button"
-          class="stop ${stopActive ? 'active' : ''}"
-          aria-label="Stopp"
-          ?disabled=${!readable}
-          @click=${() => this._cover(entity, 'stop')}
-        >
-          <ha-icon icon="mdi:stop"></ha-icon>
-        </button>
-        <button
-          type="button"
-          aria-label="Schließen"
-          ?disabled=${!readable}
-          @click=${() => this._cover(entity, 'close')}
-        >
-          <ha-icon icon="mdi:chevron-down"></ha-icon>
-        </button>
-      </div>
+      ${renderIconButtons<'close' | 'stop' | 'open'>(
+        [
+          { value: 'close', icon: 'mdi:chevron-down', label: 'Schließen', disabled: !readable },
+          {
+            value: 'stop',
+            icon: 'mdi:stop',
+            label: 'Stopp',
+            active: stopActive,
+            disabled: !readable,
+          },
+          { value: 'open', icon: 'mdi:chevron-up', label: 'Öffnen', disabled: !readable },
+        ],
+        (action) => this._cover(entity, action),
+        `Rollladen ${view.name}`,
+      )}
     `;
   }
 
@@ -548,6 +538,7 @@ export class DesCoverCard extends LitElement {
     tokenStyles,
     chevronStyles,
     overlayStyles,
+    iconButtonStyles,
     css`
       :host {
         display: block;
@@ -713,61 +704,7 @@ export class DesCoverCard extends LitElement {
         flex-shrink: 0;
       }
 
-      /* --- ▲ ■ ▼ buttons (segmented look) --- */
-
-      .pos-btns {
-        display: inline-flex;
-        flex-shrink: 0;
-      }
-
-      .pos-btns button {
-        width: 24px;
-        height: 22px;
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        padding: 0;
-        background: none;
-        border: 1px solid var(--divider-color, rgba(127, 127, 127, 0.28));
-        border-left: none;
-        color: var(--secondary-text-color);
-        cursor: pointer;
-      }
-
-      .pos-btns button:first-child {
-        border-left: 1px solid var(--divider-color, rgba(127, 127, 127, 0.28));
-        border-radius: 5px 0 0 5px;
-      }
-
-      .pos-btns button:last-child {
-        border-radius: 0 5px 5px 0;
-      }
-
-      .pos-btns button:hover {
-        color: var(--primary-text-color);
-      }
-
-      .pos-btns button:disabled {
-        opacity: 0.4;
-        cursor: not-allowed;
-      }
-
-      /* Stop button while the cover is moving: blue outline + glyph. */
-      .pos-btns .stop.active {
-        color: var(--primary-color, #03a9f4);
-        border-color: var(--primary-color, #03a9f4);
-      }
-
-      .pos-btns button:focus-visible {
-        outline: 2px solid var(--primary-color, #03a9f4);
-        outline-offset: -2px;
-      }
-
-      .pos-btns ha-icon {
-        --mdc-icon-size: 18px;
-        width: 18px;
-        height: 18px;
-      }
+      /* The ▼ ■ ▲ buttons come from the shared icon-buttons module. */
 
       /* --- scene tiles --- */
 

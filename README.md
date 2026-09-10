@@ -1390,14 +1390,14 @@ und `covers` (je `entity` + `name`).
   &lt;n&gt; teilweise" über alle Einzelrollläden. Keine Pille.
 - **Gruppenzeile:** Label „Haus", Positionsbalken (Füllung = Position, blau
   `--primary-color`, ziehbarer Knopf; Loslassen schreibt `set_cover_position`,
-  300 ms Debounce), Prozentwert und drei Buttons ▲ ■ ▼
-  (`open_cover`/`stop_cover`/`close_cover`).
+  300 ms Debounce), Prozentwert und drei Buttons **▼ ■ ▲** (links zu
+  `close_cover`, Mitte `stop_cover`, rechts auf `open_cover`).
 - **Szenen-Kacheln:** eine Zeile, alle gleich breit, Icon über Label, Rahmen wie
   die Segmented-Buttons. Tap ruft die Aktion auf (kurze Aktiv-Rückmeldung). Eine
   Kachel ist gedimmt (Tooltip „Nicht verfügbar"), wenn die Ziel-Entität der Aktion
   nicht in `hass.states` existiert.
 - **Aufgeklappt:** je Sektion eine kleine Überschrift, darunter je Rollladen eine
-  Zeile mit Name, Positionsbalken, Prozent und ▲ ■ ▼. Der **Stopp-Button** ist
+  Zeile mit Name, Positionsbalken, Prozent und ▼ ■ ▲. Der **Stopp-Button** ist
   blau, solange der Rollladen fährt (`opening`/`closing`). Nicht lesbare Rollläden:
   Zeile gedimmt, Buttons deaktiviert.
 
@@ -1456,7 +1456,7 @@ lokal — es bewegt sich, löst aber keinen Service-Call aus.
 | **Max-Trocknen**       | `countdown_entity`    | `select.select_option` / `input_select.select_option` |
 | **Kindersicherung**    | `child_lock_entity`   | `switch.turn_on` / `switch.turn_off`         |
 | **Positionsbalken**    | `group_entity` / `sections[].covers[].entity` | `cover.set_cover_position` (300 ms Debounce) |
-| **▲ ■ ▼**              | dito                  | `cover.open_cover` / `stop_cover` / `close_cover` |
+| **▼ ■ ▲**              | dito                  | `cover.close_cover` / `stop_cover` / `open_cover` |
 | **Szenen-Kachel**      | `scenes[].action`     | beliebiger Dienst `domain.service` (Ziel/Data aus der Aktion) |
 
 Nur die Domains `number`, `input_number`, `switch`, `input_boolean`, `select`,

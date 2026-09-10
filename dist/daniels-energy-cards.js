@@ -5739,7 +5739,79 @@ Te.properties = {
     `
 ];
 let tt = Te;
-const ps = 12, Yt = 4, _s = 3, Zt = "Rollläden", Xt = 6, gs = 300, fs = 8e3, ms = 100, Ge = { entity: "cover.__demo_group__", position: 65 }, vs = [
+const ps = L`
+  .icon-btns {
+    display: inline-flex;
+    /* A real gap, not a negative margin: neighbours never overlap, so an
+       active button's border stays fully visible. */
+    gap: 3px;
+    flex-shrink: 0;
+  }
+
+  .icon-btns button {
+    box-sizing: border-box;
+    width: 24px;
+    height: 22px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    background: none;
+    border: 1px solid var(--divider-color, rgba(127, 127, 127, 0.28));
+    border-radius: 5px;
+    color: var(--secondary-text-color);
+    cursor: pointer;
+  }
+
+  .icon-btns button:hover {
+    color: var(--primary-text-color);
+  }
+
+  .icon-btns button:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+
+  /* Highlighted (e.g. the stop button while a cover is moving). */
+  .icon-btns button.active {
+    color: var(--primary-color, #03a9f4);
+    border-color: var(--primary-color, #03a9f4);
+  }
+
+  .icon-btns button:focus-visible {
+    outline: 2px solid var(--primary-color, #03a9f4);
+    outline-offset: 1px;
+  }
+
+  .icon-btns ha-icon {
+    --mdc-icon-size: 18px;
+    width: 18px;
+    height: 18px;
+  }
+`;
+function _s(s, e, t) {
+  return l`
+    <div class="icon-btns" role="group" aria-label=${t ?? d}>
+      ${s.map(
+    (r) => l`
+          <button
+            type="button"
+            class=${r.active ? "active" : ""}
+            aria-label=${r.label}
+            title=${r.label}
+            ?disabled=${r.disabled}
+            @click=${(i) => {
+      i.stopPropagation(), e(r.value);
+    }}
+          >
+            <ha-icon icon=${r.icon}></ha-icon>
+          </button>
+        `
+  )}
+    </div>
+  `;
+}
+const gs = 12, Yt = 3, fs = 3, Zt = "Rollläden", Xt = 6, ms = 300, vs = 8e3, ws = 100, Ge = { entity: "cover.__demo_group__", position: 65 }, bs = [
   {
     name: "Erdgeschoss",
     covers: [
@@ -5792,7 +5864,7 @@ const ps = 12, Yt = 4, _s = 3, Zt = "Rollläden", Xt = 6, gs = 300, fs = 8e3, ms
     return Yt;
   }
   getGridOptions() {
-    return { columns: ps, rows: Yt, min_rows: _s };
+    return { columns: gs, rows: Yt, min_rows: fs };
   }
   static getStubConfig() {
     return { type: "custom:des-cover-card", name: Zt };
@@ -5844,7 +5916,7 @@ const ps = 12, Yt = 4, _s = 3, Zt = "Rollläden", Xt = 6, gs = 300, fs = 8e3, ms
     };
   }
   _sectionViews() {
-    return this._isDemo ? vs.map((e) => ({
+    return this._isDemo ? bs.map((e) => ({
       name: e.name,
       covers: e.covers.map((t) => ({
         entity: t.entity,
@@ -5992,33 +6064,21 @@ const ps = 12, Yt = 4, _s = 3, Zt = "Rollläden", Xt = 6, gs = 300, fs = 8e3, ms
       <span class="pos-pct">
         ${r === null ? this._dash() : `${m(r)} %`}
       </span>
-      <div class="pos-btns">
-        <button
-          type="button"
-          aria-label="Öffnen"
-          ?disabled=${!o}
-          @click=${() => this._cover(t, "open")}
-        >
-          <ha-icon icon="mdi:chevron-up"></ha-icon>
-        </button>
-        <button
-          type="button"
-          class="stop ${c ? "active" : ""}"
-          aria-label="Stopp"
-          ?disabled=${!o}
-          @click=${() => this._cover(t, "stop")}
-        >
-          <ha-icon icon="mdi:stop"></ha-icon>
-        </button>
-        <button
-          type="button"
-          aria-label="Schließen"
-          ?disabled=${!o}
-          @click=${() => this._cover(t, "close")}
-        >
-          <ha-icon icon="mdi:chevron-down"></ha-icon>
-        </button>
-      </div>
+      ${_s(
+      [
+        { value: "close", icon: "mdi:chevron-down", label: "Schließen", disabled: !o },
+        {
+          value: "stop",
+          icon: "mdi:stop",
+          label: "Stopp",
+          active: c,
+          disabled: !o
+        },
+        { value: "open", icon: "mdi:chevron-up", label: "Öffnen", disabled: !o }
+      ],
+      (a) => this._cover(t, a),
+      `Rollladen ${e.name}`
+    )}
     `;
   }
   // =========================================================================
@@ -6055,7 +6115,7 @@ const ps = 12, Yt = 4, _s = 3, Zt = "Rollläden", Xt = 6, gs = 300, fs = 8e3, ms
         this._writeTimers.delete(e), this._holdOptimistic(e, () => this._clearPosLocal(e)), this._write(Br(this.hass, e, r), () => {
           this._clearSettle(e), this._clearPosLocal(e);
         });
-      }, gs)
+      }, ms)
     );
   }
   _cover(e, t) {
@@ -6065,7 +6125,7 @@ const ps = 12, Yt = 4, _s = 3, Zt = "Rollläden", Xt = 6, gs = 300, fs = 8e3, ms
   _onScene(e, t) {
     this._flashScene = t, window.setTimeout(() => {
       this._flashScene === t && (this._flashScene = null);
-    }, ms), this._write(jr(this.hass, e.action), () => {
+    }, ws), this._write(jr(this.hass, e.action), () => {
     });
   }
   _holdOptimistic(e, t) {
@@ -6073,7 +6133,7 @@ const ps = 12, Yt = 4, _s = 3, Zt = "Rollläden", Xt = 6, gs = 300, fs = 8e3, ms
       e,
       window.setTimeout(() => {
         this._settleTimers.delete(e), t();
-      }, fs)
+      }, vs)
     );
   }
   _clearSettle(e) {
@@ -6098,6 +6158,7 @@ Ce.properties = {
   he,
   le,
   ce,
+  ps,
   L`
       :host {
         display: block;
@@ -6263,61 +6324,7 @@ Ce.properties = {
         flex-shrink: 0;
       }
 
-      /* --- ▲ ■ ▼ buttons (segmented look) --- */
-
-      .pos-btns {
-        display: inline-flex;
-        flex-shrink: 0;
-      }
-
-      .pos-btns button {
-        width: 24px;
-        height: 22px;
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        padding: 0;
-        background: none;
-        border: 1px solid var(--divider-color, rgba(127, 127, 127, 0.28));
-        border-left: none;
-        color: var(--secondary-text-color);
-        cursor: pointer;
-      }
-
-      .pos-btns button:first-child {
-        border-left: 1px solid var(--divider-color, rgba(127, 127, 127, 0.28));
-        border-radius: 5px 0 0 5px;
-      }
-
-      .pos-btns button:last-child {
-        border-radius: 0 5px 5px 0;
-      }
-
-      .pos-btns button:hover {
-        color: var(--primary-text-color);
-      }
-
-      .pos-btns button:disabled {
-        opacity: 0.4;
-        cursor: not-allowed;
-      }
-
-      /* Stop button while the cover is moving: blue outline + glyph. */
-      .pos-btns .stop.active {
-        color: var(--primary-color, #03a9f4);
-        border-color: var(--primary-color, #03a9f4);
-      }
-
-      .pos-btns button:focus-visible {
-        outline: 2px solid var(--primary-color, #03a9f4);
-        outline-offset: -2px;
-      }
-
-      .pos-btns ha-icon {
-        --mdc-icon-size: 18px;
-        width: 18px;
-        height: 18px;
-      }
+      /* The ▼ ■ ▲ buttons come from the shared icon-buttons module. */
 
       /* --- scene tiles --- */
 
@@ -6409,7 +6416,7 @@ Ce.properties = {
     `
 ];
 let rt = Ce;
-const ws = "0.12.0", bs = [
+const ys = "0.12.1", xs = [
   {
     type: "des-storage-card",
     element: Ye,
@@ -6454,7 +6461,7 @@ const ws = "0.12.0", bs = [
   }
 ];
 window.customCards = window.customCards ?? [];
-for (const s of bs)
+for (const s of xs)
   customElements.get(s.type) || customElements.define(s.type, s.element), window.customCards.some((e) => e.type === s.type) || window.customCards.push({
     type: s.type,
     name: s.name,
@@ -6462,7 +6469,7 @@ for (const s of bs)
     preview: !1
   });
 console.info(
-  `%c DANIELS-HOME-ASSISTANT-CARDS %c v${ws} `,
+  `%c DANIELS-HOME-ASSISTANT-CARDS %c v${ys} `,
   "background:#03a9f4;color:#fff;font-weight:700;border-radius:3px 0 0 3px;padding:2px 4px",
   "background:#555;color:#fff;border-radius:0 3px 3px 0;padding:2px 4px"
 );
