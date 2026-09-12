@@ -1,6 +1,6 @@
 # docs/logik.md — Wie welche Werte berechnet werden
 
-Stand 06.09.2026, 11:45. Nummeriert, damit man sich in Prompts darauf beziehen
+Stand 12.09.2026. Nummeriert, damit man sich in Prompts darauf beziehen
 kann („Regel L3"). Spalte „Vorgabe Daniel" = die ursprüngliche Anforderung;
 „Abweichung" = wo die Umsetzung anders ist und warum. Vorzeichen siehe
 `docs/anlage.md`.
@@ -9,13 +9,13 @@ kann („Regel L3"). Spalte „Vorgabe Daniel" = die ursprüngliche Anforderung;
 
 | Nr | Wert | Berechnung | Datei |
 | --- | --- | --- | --- |
-| A1 | Überschuss (für Zendure-Laden) `pv_helper_uberschuss_leistung` | Einspeisung − Hausakku-Entladung = −Netz − max(0, Akku). Laden der Hausakkus zählt **nicht** als Überschuss. | pv_helper_laden |
+| A1 | Überschuss (für Zendure-Laden) `pv_helper_uberschuss_leistung` | Einspeisung + Auto-Heizerleistung − Hausakku-Entnahme + Teilungsanteil = −Netz + Heizer − max(0, Akku) + Teilung (12.09.). Heizer = `pv_helper_heizer_leistung` (Summe der Aquarienheizer, deren Modus-Helfer auf 2/Auto steht). Teilung = hausakku_ladung − Ziel, wenn hausakku_ladung ≥ Stopp, sonst 0; hausakku_ladung = max(0, −Akku). Ziel/Stopp = Ladeteilung-Helfer (Auslieferung 1000/500). | pv_helper_laden |
 | A2 | Zendure-Ladesollwert `pv_helper_zendure_ladeleistung_soll` | aktuelle Aufnahme + A1 − 50 W, begrenzt auf 0 … Ladeleistung-Maximum (2400). Unter 400 = Stoppzone. | pv_helper_laden |
 | A3 | Zendure-Entladesollwert `pv_helper_zendure_entladeleistung_soll` | aktuelle Abgabe + Netz + Akku − 50 W, begrenzt 0 … Entladeleistung-Maximum (2400 seit 06.09., vorher 800). Hausakku-Entnahme erhöht, Hausakku-Ladung und Einspeisung senken. Unter Minimum (400) = Stoppzone. | pv_helper_laden |
 | A4 | Hausakkus laden `pv_helper_hausakku_laedt` | Akku < −100 W | pv_helper_laden |
 | A5 | Zendure voll `pv_helper_zendure_voll` | SoC ≥ Ladegrenze **oder** Quick Charge nimmt 2 min < 100 W an | pv_helper_laden |
-| A6 | Ladestopp `pv_helper_zendure_ladestopp` | Quick Charge **und** (A2 < 400 **oder** (A4 an **und** A1 < 100 W)), 1 min lang — Hausakkus laden und keine Einspeisung mehr → Strom gehört den Hausakkus (06.09. nachmittags) | pv_helper_laden |
-| A7 | Entladestopp `pv_helper_zendure_entladestopp` | Quick Discharge **und** A3 < Minimum, 1 min lang | pv_helper_laden |
+| A6 | Ladestopp `pv_helper_zendure_ladestopp` | Quick Charge **und** hausakku_ladung < Stopp (500) **und** (A2 < 400 **oder** (hausakku_ladung > 100 **und** A1 < 100 W)), 30 s lang (12.09.). Solange die Hausakkus ≥ Stopp laden, bleibt der Zendure mind. auf 400 W (Hysterese Stopp/Start 500/1400), statt zu takten. | pv_helper_laden |
+| A7 | Entladestopp `pv_helper_zendure_entladestopp` | Quick Discharge **und** A3 < Minimum, 30 s lang (12.09.) | pv_helper_laden |
 | A8 | Speicher gesamt `pv_helper_speicher_leistung` | Akku + Zendure-Abgabe − Zendure-Aufnahme (positiv = liefert ins Haus) | pv_helper_speicher |
 | A9 | Hausverbrauch `pv_helper_haus_leistung` | Deye-AC-Ausgang + Netz + Zendure-Abgabe − Zendure-Aufnahme, ≥ 0 | pv_helper_haus |
 | A10 | Solar direkt `pv_helper_solar_direkt_leistung` | PV − Einspeisung − Hausakku-Ladung − Zendure-Aufnahme, ≥ 0 | pv_helper_charts |
@@ -24,12 +24,12 @@ kann („Regel L3"). Spalte „Vorgabe Daniel" = die ursprüngliche Anforderung;
 
 | Nr | Regel | Umsetzung | Vorgabe Daniel | Abweichung |
 | --- | --- | --- | --- | --- |
-| B1 | Laden starten | Standby **und** nicht voll (A5) **und** A1 > 450 W → Quick Charge mit A2; auch parallel zu ladenden Hausakkus, da A1 nur Einspeisung zählt (06.09. nachmittags) | „Erst Hausakkus, dann ab > 100 W Überschuss Zendure mit Überschuss − 50 W" | Schwelle 450 statt 100, Minimum 400 W: Gerätegrenze `max_charge_power` ≥ 400 (Daniel akzeptiert 05.09.). |
+| B1 | Laden starten | Standby **und** nicht voll (A5) **und** (A1 > 450 W **oder** hausakku_ladung > Start (1400)) → Quick Charge mit A2 (clamp 400…Maximum, Totband 20 W); auch parallel zu ladenden Hausakkus (12.09.) | „Ladung ab 1400 W Hausakku-Ladung auf beide verteilen, Ziel Hausakku ~1000 W, Zendure erst unter 500 W Hausakku-Ladung wieder aus; Zendure vor Aquarienheizern; Zendure entlädt nie in die Hausakkus; Zendure-Takt 30 s" | Schwelle 450 statt 100, Minimum 400 W (Gerätegrenze `max_charge_power` ≥ 400). |
 | B2 | Laden regeln | jede 30 s Ladeleistung = A2, Totband 20 W, hoch **und** runter sofort | „Ladeleistung = Überschuss − 50 W, max. 2400" | keine |
-| B3 | Laden beenden | A6 (1 min < 400 W oder Hausakkus laden) **oder** A5 → Standby | „< 50 W → kein Laden" / „Hausakkus zuerst" | Stoppgrenze 400 W statt 50 W (Gerätegrenze) |
+| B3 | Laden beenden | A6 (30 s: Hausakku-Ladung < Stopp **und** (Soll < 400 **oder** Hausakkus laden ohne Einspeisung)) **oder** A5 → Standby (12.09.) | „Zendure erst unter 500 W Hausakku-Ladung wieder aus; Zendure vor Aquarienheizern; Zendure entlädt nie in die Hausakkus; Zendure-Takt 30 s" | Stoppgrenze 400 W statt 50 W (Gerätegrenze); Hysterese Stopp/Start 500/1400 |
 | B4 | Entladen starten | Standby **und** SoC > Minimum-SoC **und** Hausakku-Entnahme > Entlademinimum + 50 W (aktuell 450 W) → Quick Discharge mit A3 | „Sobald > 100 W aus den Hausakkus kommen, regelt der Zendure gegen" | Start bei 450 statt 100 W, weil das Gerät nicht unter 400 W entlädt; mit 100 W Start würde er das Haus überversorgen und die Hausakkus laden. Unter 400 W nur mit Modus Manual (offen). |
 | B5 | Entladen regeln | jede 30 s Entladeleistung = A3, Totband 30 W | „Delta unter 100 W drücken, Totband ±30 W" | Ziel ist Hausakku-Entnahme ≈ 50 W (Reserve), Totband 30 W |
-| B6 | Entladen beenden | A7 **oder** SoC ≤ Minimum-SoC → Standby; Neustart erst ab SoC ≥ Minimum-SoC + 5 % (Hysterese, 06.09.) | „bis zum SoC-Limit" | keine |
+| B6 | Entladen beenden | **sofort** (ohne Verzögerung), sobald Quick Discharge **und** hausakku_ladung > 100 W → Standby (Zendure entlädt nie in die Hausakkus, 12.09.); sonst A7 (30 s) **oder** SoC ≤ Minimum-SoC → Standby; Neustart erst ab SoC ≥ Minimum-SoC + 5 % | „Zendure entlädt nie in die Hausakkus; Zendure-Takt 30 s" | keine |
 | B7 | Karten-Schalter | Laden → Quick Charge 2400 W bis Ladegrenze; Auto → Standby, dann B1–B6 | „Laden = hart laden, Auto = Regel" | keine |
 
 ## C. Regeln Hausakkus (Deye)
@@ -71,6 +71,9 @@ Balkenanfang sitzen und Reihen bündig übereinanderliegen.
 ## F. Bekannte Lücken
 
 - B1/B4: 100–400 W Bereich nicht nutzbar (Gerätegrenze) — Manual-Modus prüfen.
+- A1/D1: Beim Übernehmen der Auto-Heizerleistung in den Überschuss entsteht für
+  höchstens einen 30-s-Takt Netzbezug, bis die Heizer-Automation die Heizer
+  abschaltet (Zendure zieht die Heizerleistung, Heizer laufen noch kurz weiter).
 - C2: Programm-SoC 13 % noch nicht gesetzt.
 - C3: ungetestet.
 - E4: erledigt 10.09. (Deye-Verbrauchszähler ersetzt durch Integral der Hausleistung).

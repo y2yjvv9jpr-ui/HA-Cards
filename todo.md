@@ -1,7 +1,20 @@
-# todo.md — offene Punkte (Stand 11.09.2026)
+# todo.md — offene Punkte (Stand 12.09.2026)
 
 Reihenfolge = Vorschlag. Jeder Punkt wird erst abgestimmt, dann freigegeben,
 dann umgesetzt (siehe claude.md).
+
+## 12.09. — im Repo, in HA einzuspielen
+
+- [ ] 12.09. **pv_helper_laden** Ladeteilung/Entladestopp/30 s → in HA einspielen,
+      **Neustart nötig** (neue `input_number`: `pv_helper_ladeteilung_start`/
+      `_ziel`/`_stopp`), Helferwerte **1400/1000/500** setzen. Inhalt: Überschuss =
+      Einspeisung + Auto-Heizerleistung − Hausakku-Entnahme + Teilungsanteil (ab
+      1400 W Hausakku-Ladung anteilig, Ziel ~1000 W, aus unter 500 W); neuer
+      Template-Sensor `pv_helper_heizer_leistung`; alle Stopp-Binärsensoren
+      30 s statt 1 min; Bedarfsentladen stoppt sofort, sobald der Zendure entlädt
+      und die Hausakkus laden (> 100 W).
+- [ ] 12.09. **Hausverbrauchs-Differenz** (L3): Zählerstand-Vergleich Bezug vs.
+      Deye-Import ausstehend.
 
 ## Karten-Konvention
 
