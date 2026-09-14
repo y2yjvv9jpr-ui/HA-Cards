@@ -9,13 +9,12 @@ kann („Regel L3"). Spalte „Vorgabe Daniel" = die ursprüngliche Anforderung;
 
 | Nr | Wert | Berechnung | Datei |
 | --- | --- | --- | --- |
-| A1 | Einspeisungspfad E `pv_helper_uberschuss_leistung` | Einspeisung + Auto-Heizerleistung − Hausakku-Entnahme = −Netz + Heizer − max(0, Akku). Heizer = `pv_helper_heizer_leistung` (Summe der Aquarienheizer, deren Modus-Helfer auf 2/Auto steht). Das ist der Teil des Überschusses, der ohne Umverteilung „übrig" ist (Einspeisung/Auto-Heizer). | pv_helper_laden |
-| A1b | Gesamtüberschuss G `pv_helper_gesamtueberschuss_leistung` | ladung + ist + E (14.09. v3). ladung = max(0, −Akku); ist = aktuelle Zendure-Aufnahme. Alles, was gerade gespeichert werden kann, unabhängig davon, wer es nimmt (Hausakku-Ladung + Zendure-Aufnahme + Einspeisung + Auto-Heizer − Hausakku-Entnahme). Grundlage der Aufteilung in A2. | pv_helper_laden |
-| A2 | Zendure-Ladesollwert `pv_helper_zendure_ladeleistung_soll` | Fallauswahl (v3.1, 14.09.), Sensor begrenzt 0 … Ladeleistung-Maximum (2400); Werte < 400 = Stoppzone. **Z_teilung** = (G − Vorzug) / 2 (über dem Hausakku-Vorzug halbe-halbe). **Z_einspeisung** = ist + E − 50, wenn E > 0, sonst ist + E. **Ladesoll** = Z_einspeisung, wenn Einspeisung > 50 W **oder** hausakku_soc ≥ 90 % **oder** ladung < 100 W (Hausakkus nehmen ohnehin nicht mehr); sonst Z_teilung (Hausakkus laden, kein Export, nicht voll → Wettbewerb um G). hausakku_soc = `sensor.inverter_battery`; Vorzug = `input_number.pv_helper_ladeteilung_ziel` (1000). **Kein max() mehr** — das klemmte den Soll bei E ≈ 0 auf dem aktuellen Wert fest (14.09. 08:20: Soll blieb 2.200–2.400). Kein Schrittlimit: ein verzögert nachgeführter Wert geht nur halb in Z_teilung ein und halbiert sich je Takt. Beispiele: 08:20 (Hausakku 356 W, Zendure 2.212 W, Netz +9 W, SoC 17 %) → G = 2.559 → Soll = 780, Hausakkus danach ≈ 1.780. G = 2150 → 575 (Hausakku 1575); G = 1400 → 200, Regel-Clamp 400 (Hausakku 1000). Der ans Gerät geschriebene Wert wird in B2 auf 400 … Maximum geklemmt (Gerätegrenze). | pv_helper_laden |
+| A1 | Überschuss Ü_L `pv_helper_uberschuss_leistung` | PV − Hausverbrauch = `sensor.inverter_pv_power` − A9 (v4, 14.09.). Das ist, was gerade gespeichert werden kann — unabhängig davon, wer es nimmt. Nur aus PV und Hausverbrauch, keine Ladeleistung/Einspeisung/Heizer. | pv_helper_laden |
+| A2 | Zendure-Ladesollwert Ü_Z `pv_helper_zendure_ladeleistung_soll` | voll ? Ü_L − 50 : (Ü_L − Vorzug) / 2 (v4, 14.09.), Sensor begrenzt 0 … Ladeleistung-Maximum (2400); Werte < 400 = Stoppzone. **voll** = hausakku_soc ≥ voll_soc (SoC unavailable → nicht voll). Unter voll_soc haben die Hausakkus den Vorzug (1000 W), darüber teilt sich Ü_L halbe-halbe; ab voll_soc gehen die Hausakkus als voll durch und der Zendure nimmt alles (− 50 W Reserve). hausakku_soc = `sensor.inverter_battery` (nur Umschalter — der Sensor hängt NICHT an dessen Verfügbarkeit); Vorzug = `input_number.pv_helper_ladeteilung_ziel` (1000); voll_soc = `input_number.pv_helper_hausakku_voll_soc` (90). Beispiele: PV 3000/Haus 500 → Ü_L 2500 → Ü_Z 750 (Hausakku 1750); ab SoC 90 % → Ü_Z 2450→Clamp 2400. Der ans Gerät geschriebene Wert wird in B2 auf 400 … Maximum geklemmt. | pv_helper_laden |
 | A3 | Zendure-Entladesollwert `pv_helper_zendure_entladeleistung_soll` | aktuelle Abgabe + Netz + Akku − 50 W, begrenzt 0 … Entladeleistung-Maximum (2400 seit 06.09., vorher 800). Hausakku-Entnahme erhöht, Hausakku-Ladung und Einspeisung senken. Unter Minimum (400) = Stoppzone. | pv_helper_laden |
 | A4 | Hausakkus laden `pv_helper_hausakku_laedt` | Akku < −100 W | pv_helper_laden |
 | A5 | Zendure voll `pv_helper_zendure_voll` | SoC ≥ Ladegrenze **oder** Quick Charge nimmt 2 min < 100 W an | pv_helper_laden |
-| A6 | Ladestopp `pv_helper_zendure_ladestopp` | Quick Charge **und** G < Stopp (1200) **und** Z_einspeisung < 400, 30 s lang (v3, 14.09.). Solange genug Gesamtüberschuss (G ≥ Stopp) oder echter Einspeisungs-Überschuss (Z_einspeisung ≥ 400) da ist, regelt der Zendure runter statt zu stoppen. | pv_helper_laden |
+| A6 | Ladestopp `pv_helper_zendure_ladestopp` | Quick Charge **und** Ü_L < Stopp (800), 30 s lang (v4, 14.09.). | pv_helper_laden |
 | A7 | Entladestopp `pv_helper_zendure_entladestopp` | Quick Discharge **und** A3 < Minimum, 30 s lang (12.09.) | pv_helper_laden |
 | A8 | Speicher gesamt `pv_helper_speicher_leistung` | Akku + Zendure-Abgabe − Zendure-Aufnahme (positiv = liefert ins Haus) | pv_helper_speicher |
 | A9 | Hausverbrauch `pv_helper_haus_leistung` | Deye-AC-Ausgang + Netz + Zendure-Abgabe − Zendure-Aufnahme, ≥ 0 | pv_helper_haus |
@@ -25,9 +24,9 @@ kann („Regel L3"). Spalte „Vorgabe Daniel" = die ursprüngliche Anforderung;
 
 | Nr | Regel | Umsetzung | Vorgabe Daniel | Abweichung |
 | --- | --- | --- | --- | --- |
-| B1 | Laden starten | Standby **und** nicht voll (A5) **und** (G > Start (1400) **oder** A1 > 450 W) → Quick Charge mit clamp(A2, 400, Maximum), Totband 20 W; auch parallel zu ladenden Hausakkus (v3, 14.09.) | „Mindestens 1000 W in die Hausakkus, ab 1400 W auch in den Zendure. Ab 1400 werden die Überschüsse zu gleichen Teilen zwischen Hausakkus und Zendure aufgeteilt, die Hausakkus haben einen 1000-W-Vorzug. Hysterese, aber nicht besonders groß." | Start am Gesamtüberschuss G (1400) statt an der Hausakku-Ladung; Minimum 400 W (Gerätegrenze `max_charge_power` ≥ 400). |
-| B2 | Laden regeln | jede 30 s Ladeleistung = clamp(A2, 400, Maximum), Totband 20 W, hoch **und** runter sofort. A2 teilt den Gesamtüberschuss G selbstkonsistent (kein Schrittlimit nötig — ein verzögert nachgeführter Wert geht nur halb ein und halbiert sich je Takt). | (wie B1) | Ladesoll ab 14.09. (v3) als max(Z_teilung, Z_einspeisung) über G statt Schrittregelung |
-| B3 | Laden beenden | A6 (30 s: G < Stopp (1200) **und** Z_einspeisung < 400) **oder** A5 → Standby (v3, 14.09.) | „Hausakku-Vorzug 1000 W, darüber halbe-halbe; Hysterese, aber nicht besonders groß." | Stopp am Gesamtüberschuss (G < 1200) mit Einspeisungs-Ausnahme statt an der Hausakku-Ladung; Hysterese Stopp/Start 1200/1400 |
+| B1 | Laden starten | Standby **und** nicht voll (A5) **und** Ü_L > Start (1400) → Quick Charge mit clamp(A2, 400, Maximum), Totband 20 W (v4, 14.09.) | „Regelung nur aus PV und Hausverbrauch; 1000 W Vorzug Hausakkus, darüber halbe-halbe; ab 90 % Hausakku-SoC alles in den Zendure; Start 1400 / Stopp 800 auf Ü_L." | Start am Überschuss Ü_L (1400); Minimum 400 W (Gerätegrenze `max_charge_power` ≥ 400). |
+| B2 | Laden regeln | jede 30 s Ladeleistung = clamp(A2, 400, Maximum), Totband 20 W, hoch **und** runter sofort. | (wie B1) | keine |
+| B3 | Laden beenden | A6 (30 s: Ü_L < Stopp (800)) **oder** A5 → Standby (v4, 14.09.) | (wie B1) | Stopp am Überschuss Ü_L (< 800); Hysterese Stopp/Start 800/1400 auf Ü_L. |
 | B4 | Entladen starten | Standby **und** SoC > Minimum-SoC **und** Hausakku-Entnahme > Entlademinimum + 50 W (aktuell 450 W) → Quick Discharge mit A3 | „Sobald > 100 W aus den Hausakkus kommen, regelt der Zendure gegen" | Start bei 450 statt 100 W, weil das Gerät nicht unter 400 W entlädt; mit 100 W Start würde er das Haus überversorgen und die Hausakkus laden. Unter 400 W nur mit Modus Manual (offen). |
 | B5 | Entladen regeln | jede 30 s Entladeleistung = A3, Totband 30 W | „Delta unter 100 W drücken, Totband ±30 W" | Ziel ist Hausakku-Entnahme ≈ 50 W (Reserve), Totband 30 W |
 | B6 | Entladen beenden | **sofort** (ohne Verzögerung), sobald Quick Discharge **und** hausakku_ladung > 100 W → Standby (Zendure entlädt nie in die Hausakkus, 12.09.); sonst A7 (30 s) **oder** SoC ≤ Minimum-SoC → Standby; Neustart erst ab SoC ≥ Minimum-SoC + 5 % | „Zendure entlädt nie in die Hausakkus; Zendure-Takt 30 s" | keine |
@@ -71,25 +70,24 @@ Balkenanfang sitzen und Reihen bündig übereinanderliegen.
 
 ## F. Bekannte Lücken / Erkenntnisse
 
-- **14.09.: Deye führt die Akkuladung erst einige Sekunden nach einer
-  Laständerung nach.** Deshalb dürfen keine inkrementellen Sollwerte aus zwei
-  Quellen ohne Schrittbegrenzung gebildet werden: die erste Ladeteilung (v1/v2,
-  „Aufnahme + (Hausakku-Ladung − Ziel)") zählte die noch nicht nachgeführte
-  Akkuladung doppelt → Überschwingen auf ~1.750 W, dazu Oszillation am Stopp.
-  **Lösung v3 (14.09.):** nicht mehr inkrementell, sondern den Gesamtüberschuss
-  G = ladung + ist + E (A1b) aufteilen — Hausakku-Vorzug, darüber halbe-halbe
-  (A2). Ein verzögert nachgeführter Wert geht nur halb in Z_teilung ein und
-  halbiert sich je Takt, konvergiert also ohne Schrittlimit. Stopp am
-  Gesamtüberschuss (A6/B3) statt an der Hausakku-Ladung.
-- **14.09. (v3.1): Pendeln möglich zwischen SoC 90 % und dem Deye-Abregeln.**
-  Über SoC 90 % wählt A2 den Einspeisungspfad, obwohl der Deye die Hausakku-
-  Ladung erst kurz vor 100 % zurücknimmt — in diesem Fenster kann der Zendure
-  im 30-s-Takt zwischen Teilungs- und Einspeisungspfad springen. Beobachten, ob
-  das in der Praxis stört (ggf. SoC-Schwelle anheben oder Hysterese ergänzen).
+- **14.09. (v4): Ladeleistungen taugen nicht als Regelgröße.** v1–v3.1
+  scheiterten, weil sie Ladeleistungen (Hausakku-Ladung, Zendure-Aufnahme,
+  Einspeisung) in die Regel nahmen — die hängen über den Deye vom eigenen
+  Sollwert ab (Bilanz Ü_L − L = Z + E + V, wobei die verzögerte Nachführung des
+  Deye die Werte kurzzeitig doppelt zählt) und trieben die Regel gegen Min/Max
+  (Überschwingen ~1.750 W, festgeklemmter Soll 2.200–2.400, Oszillation).
+  **Lösung v4:** Regelgrößen sind nur PV und Hausverbrauch (Ü_L = PV − Haus,
+  A1); daraus Ü_Z (A2) mit Hausakku-Vorzug bzw. — ab voll_soc — allem für den
+  Zendure. Der SoC ist nur Umschalter.
+- **14.09. (v4): Pendeln möglich zwischen voll_soc (90 %) und dem Deye-Abregeln.**
+  Ab voll_soc gilt der Hausakku als voll und Ü_Z springt auf Ü_L − 50, obwohl
+  der Deye die Hausakku-Ladung erst kurz vor 100 % zurücknimmt. Beobachten;
+  ggf. voll_soc anheben oder Hysterese ergänzen.
 - B1/B4: 100–400 W Bereich nicht nutzbar (Gerätegrenze) — Manual-Modus prüfen.
-- A1/D1: Beim Übernehmen der Auto-Heizerleistung in den Überschuss entsteht für
-  höchstens einen 30-s-Takt Netzbezug, bis die Heizer-Automation die Heizer
-  abschaltet (Zendure zieht die Heizerleistung, Heizer laufen noch kurz weiter).
+- v4: Der Heizer-Term ist aus dem Überschuss entfernt (`pv_helper_heizer_leistung`
+  gelöscht). Die Heizer-Priorität liegt weiter allein in der Heizer-Automation
+  (D2, Bedingung `zendure_frei`); PV − Haus (A1) bildet die Heizerlast ab, sobald
+  sie läuft.
 - C2: Programm-SoC 13 % noch nicht gesetzt.
 - C3: ungetestet.
 - E4: erledigt 10.09. (Deye-Verbrauchszähler ersetzt durch Integral der Hausleistung).
