@@ -93,9 +93,10 @@ wird hier nur zum Nachschlagen abgelegt — **nicht ändern**.
 
 ## Fachliche Vorgaben (Daniel, verbindlich)
 
-- Ladepriorität: Hausakkus → Zendure → Aquarien-Heizer. Zendure lädt aus
-  Einspeisung, aus Auto-Heizerleistung und ab 1400 W Hausakku-Ladung anteilig
-  (Ziel Hausakku ~1000 W, Hysterese 500/1400).
+- Ladepriorität: Hausakkus → Zendure → Aquarien-Heizer. Ladeteilung (v3):
+  1000 W Vorzug Hausakkus, darüber halbe-halbe mit dem Zendure (über den
+  Gesamtüberschuss G = Hausakku-Ladung + Zendure-Aufnahme + Einspeisung +
+  Auto-Heizer − Hausakku-Entnahme); Start G > 1400, Stopp G < 1200.
 - Entladepriorität: Zendure vor Hausakkus; Ziel Hausakku-Entnahme ≤ 50 W.
 - Netzladen nie automatisch; nur über den Karten-Schalter „Laden" der Hausakkus.
 - Karten-Schalter Laden|Auto ist der einzige Schalter für den jeweiligen Speicher.
