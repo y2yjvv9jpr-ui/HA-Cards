@@ -90,6 +90,10 @@ wird hier nur zum Nachschlagen abgelegt — **nicht ändern**.
   meldet das nicht). Registerliste in `yaml/packages/pv_helper_hausakku.yaml`.
 - Time Of Use am Deye bleibt dauerhaft „Week" (Register 146 = 255); ohne TOU
   entlädt der Deye nicht ins Haus.
+- **des-chart-card:** neue Karten nutzen `views` (frei benennbare Ansichten mit
+  `key`/`label`/`title`/`subtitle`/`chart`), nicht mehr `periods`. `periods`
+  bleibt abwärtskompatibel (wird intern auf Views abgebildet) und muss nicht
+  umgestellt werden. `subtitle` darf `<entity_id>`-Platzhalter enthalten.
 
 ## Fachliche Vorgaben (Daniel, verbindlich)
 

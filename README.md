@@ -1147,7 +1147,7 @@ Verbrauch-Balken bei 100 % und die Produktion bei 86 %.
 
 **Eine** Karte: Kopfzeile wie bei der Statistikkarte (Titel links, segmentierter
 Umschalter rechts, gedämpfte Metazeile darunter), darunter ein **eingebettetes
-ApexCharts-Chart**. Je Zeitraum liegt eine vollständige
+ApexCharts-Chart**. Je Ansicht (bzw. Zeitraum) liegt eine vollständige
 [`apexcharts-card`](https://github.com/RomRider/apexcharts-card)-Konfiguration in
 der Card-Config; die Karte erzeugt das Chart-Element über die offiziellen
 HA-Card-Helper (`window.loadCardHelpers()` → `helpers.createCardElement()`).
@@ -1155,28 +1155,56 @@ HA-Card-Helper (`window.loadCardHelpers()` → `helpers.createCardElement()`).
 `apexcharts-card` muss separat installiert sein (HACS).
 
 Der Umschalter ist **lokaler Component-State** (kein `input_select`): beim Wechsel
-wird das Chart des gewählten Zeitraums neu erzeugt und mit `hass` versorgt.
+wird das Chart der gewählten Ansicht neu erzeugt und mit `hass` versorgt.
 
 Im Sections-View belegt die Karte 24 von 36 Spalten und standardmäßig
 **4 Zeilen**, mindestens 3 (`min_rows`). Über `grid_options.rows` lässt sich die
 Höhe frei wählen — das Chart wächst mit.
 
+**Zwei Config-Formen.** Neu und empfohlen ist `views` — **frei benennbare
+Ansichten**, deren `key` nicht an Tag/Woche/Monat/Jahr gebunden ist (so lassen
+sich z. B. „Tag“, „Woche“ und „Solar“ nebeneinander zeigen). Titel und
+Untertitel der Karte **wechseln mit der Ansicht**. Die ältere Form `periods`
+(day/week/month/year) bleibt voll unterstützt: ist kein `views` gesetzt, werden
+die vorhandenen Perioden intern auf Ansichten mit den Labels Tag/Woche/Monat/Jahr
+abgebildet. `views` gewinnt, wenn beides gesetzt ist.
+
 | Option           | Typ                            | Beschreibung                                                        |
 | ---------------- | ------------------------------ | ------------------------------------------------------------------ |
-| `name`           | string                         | **Pflicht.** Titel links.                                          |
-| `default_period` | `day` \| `week` \| `month` \| `year` | Zeitraum beim Laden; fällt auf den ersten verfügbaren zurück. Standard `day`. |
-| `periods`        | Objekt (siehe unten)           | Je Zeitraum `label`, `meta` und `chart`.                            |
+| `name`           | string                         | **Pflicht.** Titel links, sofern die aktive Ansicht keinen eigenen `title` hat. |
+| `views`          | Liste (siehe unten)            | Frei benennbare Ansichten. Vorrang vor `periods`.                  |
+| `default_view`   | string (`key`)                 | Ansicht beim Laden; fällt auf die erste zurück.                    |
+| `default_period` | `day` \| `week` \| `month` \| `year` | Nur `periods`-Form: Zeitraum beim Laden; fällt auf den ersten zurück. Standard `day`. |
+| `periods`        | Objekt (siehe unten)           | Je Zeitraum `label`, `meta` und `chart` (ältere Form).             |
 
-Je Zeitraum unter `periods.<day\|week\|month\|year>`:
+Je Ansicht unter `views[]`:
+
+| Feld       | Typ                          | Beschreibung                                                              |
+| ---------- | ---------------------------- | ------------------------------------------------------------------------ |
+| `key`      | string                       | **Pflicht.** Segmentwert und Schlüssel der gemerkten Auswahl.            |
+| `label`    | string                       | Segment-Beschriftung. Standard: der `key`.                               |
+| `title`    | string                       | Kartentitel, solange diese Ansicht aktiv ist. Standard: `name`.          |
+| `subtitle` | string                       | Gedämpfte Metazeile. Darf `<entity_id>`-Platzhalter enthalten (siehe unten). |
+| `chart`    | `apexcharts-card`-Config **ohne `type`** | Wird eingebettet; die Karte ergänzt `type`, erzwingt `header.show: false` und setzt die Chart-Höhe (siehe unten). |
+
+**Untertitel-Platzhalter.** In `subtitle` wird jedes `<entity_id>` durch den
+aktuellen Zustand der Entität ersetzt (z. B. `heute · <sensor.pv_heute> kWh` →
+`heute · 12,3 kWh`); eine nicht verfügbare Entität ergibt „–“, sonstiger Text
+bleibt unverändert. So kann eine Ansicht einen Live-Wert in die Metazeile
+schreiben. Die `periods`-Form nutzt weiterhin `meta` als Untertitel (reiner Text,
+Platzhalter greifen dort ebenfalls).
+
+Je Zeitraum unter `periods.<day\|week\|month\|year>` (ältere Form):
 
 | Feld    | Typ                          | Beschreibung                                                              |
 | ------- | ---------------------------- | ------------------------------------------------------------------------ |
 | `label` | string                       | Segment-Beschriftung. Standard `Tag`/`Woche`/`Monat`/`Jahr`.              |
 | `meta`  | string                       | Gedämpfte Metazeile für diesen Zeitraum.                                  |
-| `chart` | `apexcharts-card`-Config **ohne `type`** | Wird eingebettet; die Karte ergänzt `type`, erzwingt `header.show: false` und setzt die Chart-Höhe (siehe unten). |
+| `chart` | `apexcharts-card`-Config **ohne `type`** | Wie bei `views[].chart`.                                     |
 
-Ein Zeitraum **ohne `chart`** erscheint nicht im Umschalter; die Reihenfolge ist
-fest `day → week → month → year`.
+Eine Ansicht/ein Zeitraum **ohne `chart`** erscheint nicht im Umschalter; bei
+`periods` ist die Reihenfolge fest `day → week → month → year`, bei `views` die
+Listenreihenfolge.
 
 **Darstellung**
 
@@ -1204,10 +1232,42 @@ fest `day → week → month → year`.
 - Ist `apexcharts-card` **nicht** installiert (Element nicht registriert), zeigt
   die Karte statt des Charts die gedämpfte Zeile „apexcharts-card nicht
   installiert“.
-- **Ohne `periods`** läuft die Karte im Demo-Modus: Kopfzeile mit vier Segmenten
-  und der Hinweiszeile „Keine Chart-Config“.
+- **Ohne `views` und ohne `periods`** läuft die Karte im Demo-Modus: Kopfzeile
+  mit vier Segmenten und der Hinweiszeile „Keine Chart-Config“.
 
-**Beispiel-YAML** — Verbrauch nach Quelle, ein Chart je Zeitraum:
+**Beispiel-YAML (views)** — zwei gleichartige Ansichten und eine dritte mit
+eigenem Titel und Live-Untertitel:
+
+```yaml
+type: custom:des-chart-card
+name: Speicher-Füllstand
+default_view: tag
+views:
+  - key: tag
+    label: Tag
+    title: Speicher-Füllstand
+    subtitle: gespeicherte Energie in kWh
+    chart:
+      graph_span: 24h
+      span:
+        start: day
+      series:
+        - entity: sensor.speicher_kwh
+          type: line
+  - key: solar
+    label: Solar
+    title: Solarertrag
+    subtitle: "heute · <sensor.inverter_today_production> kWh"
+    chart:
+      graph_span: 24h
+      span:
+        start: day
+      series:
+        - entity: sensor.inverter_pv_power
+          type: line
+```
+
+**Beispiel-YAML (periods)** — Verbrauch nach Quelle, ein Chart je Zeitraum:
 
 ```yaml
 type: custom:des-chart-card

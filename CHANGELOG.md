@@ -4,6 +4,25 @@ Alle nennenswerten Änderungen an diesem Projekt werden hier festgehalten.
 Format grob nach [Keep a Changelog](https://keepachangelog.com/de/1.1.0/),
 Versionierung nach [SemVer](https://semver.org/lang/de/).
 
+## [0.19.0]
+
+### Hinzugefügt
+
+- **des-chart-card:** Frei benennbare **Ansichten** (`views: [{ key, label,
+  title, subtitle, chart }]`) neben den bisherigen `periods`. Der Umschalter
+  zeigt die `label` in Listenreihenfolge; `title`/`subtitle` der Karte wechseln
+  mit der Ansicht. `subtitle` darf `<entity_id>`-Platzhalter enthalten, die durch
+  den aktuellen Zustand der Entität ersetzt werden (nicht verfügbar → „–“).
+  `default_view` wählt die Startansicht. Die gewählte Ansicht lebt wie bisher im
+  Component-State.
+
+### Geändert
+
+- **des-chart-card:** `periods` (day/week/month/year) bleibt voll kompatibel und
+  wird intern auf Ansichten mit den Labels Tag/Woche/Monat/Jahr abgebildet;
+  bestehende Chart-Karten laufen unverändert weiter. Neue Karten sollten `views`
+  nutzen.
+
 ## [0.18.2]
 
 ### Behoben

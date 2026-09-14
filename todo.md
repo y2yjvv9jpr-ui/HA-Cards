@@ -1,6 +1,16 @@
-# todo.md — offene Punkte (Stand 14.09.2026, gestapelte Charts auf gemeinsames Raster)
+# todo.md — offene Punkte (Stand 14.09.2026, des-chart-card views + Ansicht Solarertrag)
 
-## 14.09. — gestapelte Charts überall (Repo, in HA einzuspielen)
+## 14.09. — des-chart-card views (Repo, in HA einzuspielen)
+
+- [x] 14.09. **des-chart-card (v0.19.0): frei benennbare Ansichten (`views`).**
+      Neue Config-Form `views: [{ key, label, title, subtitle, chart }]`; der
+      Umschalter zeigt die `label`, `title`/`subtitle` wechseln mit der Ansicht,
+      `subtitle` darf `<entity_id>`-Platzhalter enthalten (→ aktueller State, „–“
+      wenn unavailable). `default_view` wählt die Startansicht. `periods`
+      (day/week/month/year) bleibt abwärtskompatibel (intern auf Views
+      abgebildet) — die übrigen Chart-Karten laufen unverändert. README +
+      claude.md-Konvention „views statt periods für neue Karten" nachgezogen.
+      → **per HACS auf 0.19.0**, Browser-Cache leeren.
 
 - [x] 14.09. **des-house-card (v0.18.2): gestapelter Verbrauchs-Chart stapelt.**
       Aufgeklappter Woche/Monat-Chart bekommt `group_by` (func sum, duration 1d,

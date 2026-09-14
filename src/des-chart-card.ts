@@ -1,5 +1,6 @@
 import { LitElement, html, css, nothing, type TemplateResult } from 'lit';
 import { renderSegmented, segmentedStyles } from './segmented';
+import { entityState, isEntityId } from './resolve';
 import type {
   DesChartCardConfig,
   HomeAssistant,
@@ -7,7 +8,6 @@ import type {
 } from './types';
 
 const PERIOD_ORDER: ReadonlyArray<StatsPeriod> = ['day', 'week', 'month', 'year'];
-const PERIOD_SET: ReadonlySet<StatsPeriod> = new Set(PERIOD_ORDER);
 const DEFAULT_LABEL: Record<StatsPeriod, string> = {
   day: 'Tag',
   week: 'Woche',
@@ -57,21 +57,36 @@ interface CardHelpers {
   createCardElement(config: Record<string, unknown>): EmbeddedCard;
 }
 
+/**
+ * One switcher entry after both config forms (`views` and `periods`) are
+ * normalised to the same shape. `key` is the segment value and what a
+ * remembered selection is keyed on.
+ */
+interface ChartView {
+  key: string;
+  label: string;
+  /** Overrides the card `name` in the header while this view is active. */
+  title?: string;
+  /** Muted line under the header; may embed `<entity_id>` placeholders. */
+  subtitle?: string;
+  chart: Record<string, unknown>;
+}
+
 export class DesChartCard extends LitElement {
   static override properties = {
     hass: { attribute: false },
     _config: { state: true },
-    _period: { state: true },
+    _viewKey: { state: true },
   };
 
   declare hass?: HomeAssistant;
   declare _config?: DesChartCardConfig;
-  /** The user's period pick, or `null` to follow `default_period`. */
-  declare _period: StatsPeriod | null;
+  /** The user's view pick (its `key`), or `null` to follow the default. */
+  declare _viewKey: string | null;
 
-  /** The embedded apexcharts-card element and which period it belongs to. */
+  /** The embedded apexcharts-card element and which view it belongs to. */
   private _chartEl?: EmbeddedCard;
-  private _chartPeriod?: StatsPeriod;
+  private _chartViewKey?: string;
   /** Bumped on every (re)mount/teardown so a stale async mount can bail out. */
   private _mountToken = 0;
   private _helpersPromise?: Promise<CardHelpers | null>;
@@ -84,7 +99,7 @@ export class DesChartCard extends LitElement {
 
   constructor() {
     super();
-    this._period = null;
+    this._viewKey = null;
   }
 
   setConfig(config: DesChartCardConfig): void {
@@ -94,7 +109,22 @@ export class DesChartCard extends LitElement {
     if (!config.name) {
       throw new Error('des-chart-card: "name" ist erforderlich');
     }
-    if (config.default_period && !PERIOD_SET.has(config.default_period)) {
+    if (config.views !== undefined) {
+      if (!Array.isArray(config.views)) {
+        throw new Error('des-chart-card: "views" muss eine Liste sein');
+      }
+      for (const view of config.views) {
+        if (
+          !view ||
+          typeof view !== 'object' ||
+          typeof view.key !== 'string' ||
+          view.key.trim().length === 0
+        ) {
+          throw new Error('des-chart-card: jede "view" braucht einen "key"');
+        }
+      }
+    }
+    if (config.default_period && !PERIOD_ORDER.includes(config.default_period)) {
       throw new Error(
         'des-chart-card: "default_period" muss "day", "week", "month" oder "year" sein',
       );
@@ -104,8 +134,8 @@ export class DesChartCard extends LitElement {
       throw new Error('des-chart-card: "periods" muss ein Objekt sein');
     }
     this._config = config;
-    this._period = null;
-    // A changed config can drop the mounted chart's period; rebuild on update.
+    this._viewKey = null;
+    // A changed config can drop the mounted chart's view; rebuild on update.
     this._teardownChart();
   }
 
@@ -159,45 +189,93 @@ export class DesChartCard extends LitElement {
   }
 
   // =========================================================================
-  // period model
+  // view model
   // =========================================================================
 
   private _apexAvailable(): boolean {
     return customElements.get('apexcharts-card') !== undefined;
   }
 
-  private _chartConfig(period: StatsPeriod): Record<string, unknown> | null {
-    const chart = this._config?.periods?.[period]?.chart;
-    return chart && typeof chart === 'object' ? chart : null;
+  /**
+   * The views to show, taken from `views` when present, otherwise mapped from
+   * the older `periods` form (day/week/month/year, in that fixed order). A view
+   * or period without a `chart` is dropped. Empty means "demo".
+   */
+  private _views(): ChartView[] {
+    const cfg = this._config;
+    if (!cfg) return [];
+
+    if (Array.isArray(cfg.views)) {
+      const views: ChartView[] = [];
+      for (const view of cfg.views) {
+        const chart = view?.chart;
+        if (!chart || typeof chart !== 'object') continue;
+        const key = String(view.key);
+        views.push({
+          key,
+          label:
+            typeof view.label === 'string' && view.label.trim().length > 0
+              ? view.label
+              : key,
+          title: typeof view.title === 'string' ? view.title : undefined,
+          subtitle: typeof view.subtitle === 'string' ? view.subtitle : undefined,
+          chart: chart as Record<string, unknown>,
+        });
+      }
+      return views;
+    }
+
+    const periods = cfg.periods;
+    if (!periods || typeof periods !== 'object') return [];
+    const views: ChartView[] = [];
+    for (const period of PERIOD_ORDER) {
+      const block = periods[period];
+      const chart = block?.chart;
+      if (!chart || typeof chart !== 'object') continue;
+      views.push({
+        key: period,
+        label:
+          typeof block?.label === 'string' && block.label.trim().length > 0
+            ? block.label
+            : DEFAULT_LABEL[period],
+        subtitle: typeof block?.meta === 'string' ? block.meta : undefined,
+        chart: chart as Record<string, unknown>,
+      });
+    }
+    return views;
   }
 
-  private _label(period: StatsPeriod): string {
-    const label = this._config?.periods?.[period]?.label;
-    return typeof label === 'string' && label.trim().length > 0
-      ? label
-      : DEFAULT_LABEL[period];
+  /** The active view: the user's pick if still present, else default, else first. */
+  private _activeView(views: ChartView[]): ChartView {
+    if (this._viewKey) {
+      const picked = views.find((v) => v.key === this._viewKey);
+      if (picked) return picked;
+    }
+    const preferredKey = this._config?.default_view ?? this._config?.default_period;
+    if (preferredKey) {
+      const preferred = views.find((v) => v.key === preferredKey);
+      if (preferred) return preferred;
+    }
+    return views[0];
   }
 
-  /** Periods that carry a chart; empty means "demo" (no periods configured). */
-  private _realPeriods(): StatsPeriod[] {
-    return PERIOD_ORDER.filter((p) => this._chartConfig(p) !== null);
+  private _setView(key: string): void {
+    this._viewKey = key;
   }
 
-  private get _isDemo(): boolean {
-    return this._realPeriods().length === 0;
-  }
-
-  private _available(): StatsPeriod[] {
-    const real = this._realPeriods();
-    return real.length > 0 ? real : [...PERIOD_ORDER];
-  }
-
-  /** The user's pick if still available, else `default_period`, else the first. */
-  private _effectivePeriod(available: StatsPeriod[]): StatsPeriod {
-    if (this._period && available.includes(this._period)) return this._period;
-    const preferred = this._config?.default_period;
-    if (preferred && available.includes(preferred)) return preferred;
-    return available[0];
+  /**
+   * Renders a subtitle, substituting `<entity_id>` placeholders with the
+   * entity's current state (an unavailable entity becomes the muted "–").
+   * Non-entity text in brackets is left as-is; a plain subtitle with no
+   * placeholder passes through unchanged, which is how the periods form's `meta`
+   * keeps working.
+   */
+  private _renderSubtitle(subtitle: string): string {
+    return subtitle.replace(/<([^<>]+)>/g, (whole, ref: string) => {
+      const id = ref.trim();
+      if (!isEntityId(id)) return whole;
+      return entityState(id, this.hass) ?? '–';
+    });
   }
 
   // =========================================================================
@@ -208,42 +286,58 @@ export class DesChartCard extends LitElement {
     const config = this._config;
     if (!config) return nothing;
 
-    const available = this._available();
-    const period = this._effectivePeriod(available);
-    const meta = this._isDemo ? null : this._config?.periods?.[period]?.meta;
+    const views = this._views();
+
+    if (views.length === 0) {
+      // Demo: no chart configured. Header with default segments and a hint.
+      return html`
+        <ha-card>
+          <div class="card">
+            <div class="header">
+              <span class="name">${config.name}</span>
+              ${renderSegmented(
+                PERIOD_ORDER.map((p) => ({ value: p, label: DEFAULT_LABEL[p] })),
+                'day',
+                () => undefined,
+                'Ansicht',
+              )}
+            </div>
+            <div class="hint">Keine Chart-Config</div>
+          </div>
+        </ha-card>
+      `;
+    }
+
+    const active = this._activeView(views);
+    const title =
+      active.title && active.title.trim().length > 0 ? active.title : config.name;
+    const subtitle = active.subtitle ? this._renderSubtitle(active.subtitle) : '';
 
     return html`
       <ha-card>
         <div class="card">
           <div class="header">
-            <span class="name">${config.name}</span>
+            <span class="name">${title}</span>
             ${renderSegmented(
-              available.map((p) => ({ value: p, label: this._label(p) })),
-              period,
-              (value) => this._setPeriod(value),
-              'Zeitraum',
+              views.map((v) => ({ value: v.key, label: v.label })),
+              active.key,
+              (value) => this._setView(value),
+              'Ansicht',
             )}
           </div>
-          ${meta ? html`<div class="meta">${meta}</div>` : nothing}
-          ${this._renderChartArea(period)}
+          ${subtitle ? html`<div class="meta">${subtitle}</div>` : nothing}
+          ${this._renderChartArea()}
         </div>
       </ha-card>
     `;
   }
 
-  private _renderChartArea(period: StatsPeriod): TemplateResult {
-    if (this._isDemo || this._chartConfig(period) === null) {
-      return html`<div class="hint">Keine Chart-Config</div>`;
-    }
+  private _renderChartArea(): TemplateResult {
     if (!this._apexAvailable()) {
       return html`<div class="hint">apexcharts-card nicht installiert</div>`;
     }
     // Populated imperatively in `updated()` via the HA card helpers.
     return html`<div class="chart" id="chart"></div>`;
-  }
-
-  private _setPeriod(period: StatsPeriod): void {
-    this._period = period;
   }
 
   // =========================================================================
@@ -313,29 +407,30 @@ export class DesChartCard extends LitElement {
   }
 
   private _syncChart(): void {
-    const period = this._effectivePeriod(this._available());
-    const cfg = this._isDemo ? null : this._chartConfig(period);
+    const views = this._views();
     const container = this.renderRoot?.querySelector('#chart') as HTMLElement | null;
 
-    if (!cfg || !this._apexAvailable() || !container) {
+    if (views.length === 0 || !this._apexAvailable() || !container) {
       this._teardownChart();
       return;
     }
 
-    // Same period: keep the element, just push the latest hass through.
-    if (this._chartEl && this._chartPeriod === period) {
+    const active = this._activeView(views);
+
+    // Same view: keep the element, just push the latest hass through.
+    if (this._chartEl && this._chartViewKey === active.key) {
       if (!this._chartEl.isConnected) container.replaceChildren(this._chartEl);
       this._chartEl.hass = this.hass;
       return;
     }
 
-    void this._mountChart(container, cfg, period);
+    void this._mountChart(container, active.chart, active.key);
   }
 
   private async _mountChart(
     container: HTMLElement,
     cfg: Record<string, unknown>,
-    period: StatsPeriod,
+    viewKey: string,
   ): Promise<void> {
     const token = ++this._mountToken;
     this._removeChartEl();
@@ -357,7 +452,7 @@ export class DesChartCard extends LitElement {
     element.hass = this.hass;
     container.replaceChildren(element);
     this._chartEl = element;
-    this._chartPeriod = period;
+    this._chartViewKey = viewKey;
   }
 
   /**
@@ -447,7 +542,7 @@ export class DesChartCard extends LitElement {
       this._chartEl.remove();
       this._chartEl = undefined;
     }
-    this._chartPeriod = undefined;
+    this._chartViewKey = undefined;
   }
 
   private _teardownChart(): void {

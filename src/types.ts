@@ -487,18 +487,51 @@ export interface ChartPeriodConfig {
 }
 
 /**
- * A header with a local (component-state) period switcher over an embedded
- * `apexcharts-card`, one chart config per period. The chart element is built
+ * One freely named view: its switcher label, the header title/subtitle it shows
+ * while active, and its chart. The newer alternative to `periods` - a view's
+ * `key` is arbitrary (not tied to day/week/month/year), so a card can carry
+ * views like "Tag"/"Woche"/"Solar" side by side.
+ */
+export interface ChartViewConfig {
+  /** Stable id: the segment value and what a remembered selection is keyed on. */
+  key: string;
+  /** Segment label in the switcher. Falls back to `key`. */
+  label?: string;
+  /** Header title while this view is active. Falls back to the card `name`. */
+  title?: string;
+  /**
+   * Muted line under the header. May embed `<entity_id>` placeholders, each
+   * replaced with that entity's current state ("–" when unavailable).
+   */
+  subtitle?: string;
+  /**
+   * A full `apexcharts-card` config **without** `type` (as in
+   * `ChartPeriodConfig`). A view without a `chart` is dropped from the switcher.
+   */
+  chart?: Record<string, unknown>;
+}
+
+/**
+ * A header with a local (component-state) view switcher over an embedded
+ * `apexcharts-card`, one chart config per view. The chart element is built
  * through Home Assistant's own card helpers, so no chart library is bundled.
- * Without a `periods` block the card shows a Tag/Woche/Monat/Jahr demo header
- * and a "Keine Chart-Config" hint.
+ *
+ * Two config forms: the newer `views` (freely named), or the original `periods`
+ * (day/week/month/year). `views` wins when present; otherwise `periods` is
+ * mapped internally onto views with the Tag/Woche/Monat/Jahr labels, so older
+ * configs keep working unchanged. Without either the card shows a
+ * Tag/Woche/Monat/Jahr demo header and a "Keine Chart-Config" hint.
  */
 export interface DesChartCardConfig {
   type: string;
   name: string;
-  /** Period selected on load; falls back to the first available one. Default `day`. */
+  /** Period selected on load (periods form); falls back to the first. Default `day`. */
   default_period?: StatsPeriod;
   periods?: Partial<Record<StatsPeriod, ChartPeriodConfig>>;
+  /** View selected on load (views form), by `key`; falls back to the first. */
+  default_view?: string;
+  /** Freely named views; when present they replace `periods`. */
+  views?: ChartViewConfig[];
 }
 
 // ===========================================================================
