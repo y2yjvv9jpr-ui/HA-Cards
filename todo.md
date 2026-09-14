@@ -1,10 +1,22 @@
-# todo.md — offene Punkte (Stand 14.09.2026)
+# todo.md — offene Punkte (Stand 14.09.2026, Chart „Verbrauch nach Quelle" gestapelt)
 
 Reihenfolge = Vorschlag. Jeder Punkt wird erst abgestimmt, dann freigegeben,
 dann umgesetzt (siehe claude.md).
 
 ## 14.09. — im Repo, in HA einzuspielen
 
+- [x] 14.09. **Chart „Verbrauch nach Quelle" (Solar Dashboard) stapelt jetzt.**
+      → **in HA einspielen** (Dashboard-YAML im Raw-Editor ersetzen, Seite neu
+      laden). Ursache des Übereinanderliegens: die vier Reihen kommen aus
+      Statistiken verschiedener Sensoren mit unterschiedlichen x-Werten (Solar
+      direkt ab 06.09., einzelne Buckets fehlen); ApexCharts stapelt nur bei
+      identischen x-Werten. Fix day/week/month: `group_by` (func sum, fill zero,
+      duration 1h/1d/1d) zieht die statistics-Reihen auf ein gemeinsames Raster
+      (greift laut apexcharts-card-Quelle graphEntry.ts auch auf statistics,
+      solange func != raw). year: keine Monats-duration in apexcharts-card
+      („Doesn't work for months"), 31d würde von den Kalendermonaten wegdriften
+      → year bleibt bei Monatsstatistik (schon gemeinsames Raster) + `extend_to:
+      false`. Beobachten: liegen die Balken jetzt aufeinander (nicht überlappend)?
 - [ ] 14.09. **Ladelogik v4 einspielen und einen Tag beobachten.**
       `pv_helper_laden` neu einspielen (Package kopieren), **HA-Neustart nötig**
       (neuer Helfer `input_number.pv_helper_hausakku_voll_soc`). Danach in HA:

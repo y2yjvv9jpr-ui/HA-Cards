@@ -198,6 +198,19 @@ sections:
             power_w: sensor.aquarienheizer600l_leistung
             switch_entity: switch.aquarienheizer600l
             mode_entity: input_number.aq_zusatzheizer_mode_600l
+      # 2026-09-14 Verbrauch nach Quelle — Reihen auf gemeinsames Raster (stacked).
+      # Ursache des Übereinanderliegens: die vier Reihen kommen aus Statistiken
+      # verschiedener Sensoren mit unterschiedlichen x-Werten (Solar direkt beginnt
+      # 06.09., einzelne Buckets fehlen). ApexCharts stapelt nur Reihen mit
+      # identischen x-Werten. Fix (day/week/month): group_by sum + fill zero zieht
+      # die statistics-Reihen auf ein gemeinsames Zeitraster (1h/1d/1d) und füllt
+      # Lücken mit 0. group_by greift laut apexcharts-card-Quelle (graphEntry.ts)
+      # auch auf statistics-Daten, solange func != raw.
+      # year: apexcharts-card unterstützt keine Monats-duration ("Doesn't work for
+      # months"); 31d würde von den Kalendermonaten wegdriften und die Punkte falsch
+      # einsortieren. Monatsstatistik (period month, align start) legt ohnehin jeden
+      # Reihenpunkt auf denselben Monatsanfang -> gemeinsames Raster ist schon da.
+      # Deshalb year ohne group_by, nur extend_to false + span (gleich lange Reihen).
       - type: custom:des-chart-card
         grid_options:
           columns: 12
@@ -235,6 +248,10 @@ sections:
                   type: change
                   period: hour
                   align: start
+                group_by:
+                  func: sum
+                  duration: 1h
+                  fill: zero
                 float_precision: 2
                 unit: kWh
               series:
@@ -284,6 +301,10 @@ sections:
                   type: change
                   period: day
                   align: start
+                group_by:
+                  func: sum
+                  duration: 1d
+                  fill: zero
                 float_precision: 1
                 unit: kWh
               series:
@@ -333,6 +354,10 @@ sections:
                   type: change
                   period: day
                   align: start
+                group_by:
+                  func: sum
+                  duration: 1d
+                  fill: zero
                 float_precision: 1
                 unit: kWh
               series:
@@ -382,6 +407,11 @@ sections:
                   type: change
                   period: month
                   align: start
+                # Kein group_by: apexcharts-card kennt keine Monats-duration
+                # ("Doesn't work for months"). Monatsstatistik liegt bereits auf
+                # gemeinsamem Kalendermonats-Raster; extend_to false haelt die
+                # Reihen gleich lang (Fallback statt group_by).
+                extend_to: false
                 float_precision: 0
                 unit: kWh
               series:
