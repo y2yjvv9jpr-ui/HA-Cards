@@ -11,6 +11,17 @@
       abgebildet) — die übrigen Chart-Karten laufen unverändert. README +
       claude.md-Konvention „views statt periods für neue Karten" nachgezogen.
       → **per HACS auf 0.19.0**, Browser-Cache leeren.
+- [x] 14.09. **Solar Dashboard „Speicher-Füllstand" auf `views` + Ansicht
+      „Solarertrag".** Tag/Woche wie bisher (Titel „Speicher-Füllstand"), neue
+      dritte Ansicht „Solarertrag": Tagesverlauf der PV-Leistung, Gesamt
+      (`inverter_pv_power`) als Linie über PV1/PV2 als halbtransparente Flächen;
+      Farben nur aus den etablierten Grüntönen (`var(--success-color)` + `#2e7d32`,
+      keine neuen Hex), y-Achse in kW (EVAL-Formatter), Werte/Tooltip in W,
+      group_by 5 min avg/fill last, extend_to now. Untertitel „heute ·
+      <inverter_today_production> kWh" über den neuen Subtitle-Platzhalter.
+      → **Dashboard-YAML neu einspielen** (Raw-Editor), Seite neu laden. Braucht
+      des-chart-card ≥ 0.19.0 (sonst kein `views`). Live gegenchecken: schaltet
+      der Umschalter Tag/Woche/Solar, stimmen Titel/Untertitel, Farben, kW-Achse?
 
 - [x] 14.09. **des-house-card (v0.18.2): gestapelter Verbrauchs-Chart stapelt.**
       Aufgeklappter Woche/Monat-Chart bekommt `group_by` (func sum, duration 1d,
