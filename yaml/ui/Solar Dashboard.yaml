@@ -211,6 +211,17 @@ sections:
       # einsortieren. Monatsstatistik (period month, align start) legt ohnehin jeden
       # Reihenpunkt auf denselben Monatsanfang -> gemeinsames Raster ist schon da.
       # Deshalb year ohne group_by, nur extend_to false + span (gleich lange Reihen).
+      # 2026-09-14 Balkenversatz Netz: die roten Netz-Balken lagen (v. a. Monat)
+      # ~1 px links neben den anderen. Ursache ist DIESELBE fehlende Stapelung —
+      # ohne group_by hatte die Netz/Import-Reihe Statistik-Buckets (Nacht-Tage
+      # mit Bezug, an denen Solar/Speicher/Einspeisung 0 sind und daher keinen
+      # Bucket haben), die die uebrigen Reihen nicht hatten. ApexCharts zeichnet
+      # eine Reihe mit abweichenden x-Werten seitlich versetzt statt gestapelt.
+      # Das group_by (sum/1d/zero) unten zieht alle vier auf dasselbe Raster
+      # (align start + Bucketgrenzen fallen zusammen) und fuellt fehlende Buckets
+      # mit 0 -> Versatz behoben. KEIN Stroke-Problem: apexcharts-card setzt bei
+      # Balken keinen Default-Stroke, und die Netz-Reihe ist identisch zu
+      # Solar/Speicher konfiguriert (gleiches transform, kein Sonderfall).
       - type: custom:des-chart-card
         grid_options:
           columns: 12

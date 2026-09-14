@@ -10,6 +10,16 @@
       Monats-duration; Monatsstatistik schon auf gemeinsamem Raster, extend_to
       false). → **per HACS auf 0.18.2**, Browser-Cache leeren. Beobachten:
       liegen die Balken aufgeklappt aufeinander?
+- [x] 14.09. **Balkenversatz Netz (Solar Dashboard, „Verbrauch nach Quelle")**
+      untersucht: Ursache ist dieselbe wie die fehlende Stapelung — ohne group_by
+      hatte die Netz/Import-Reihe Statistik-Buckets (Nacht-Tage mit Bezug), die
+      die Tag-Reihen nicht hatten, sodass ApexCharts sie seitlich versetzt statt
+      gestapelt zeichnete. Das group_by (sum/1d/zero, seit Commit 658a56a) zieht
+      alle vier auf ein gemeinsames Raster → Versatz behoben. Kein Stroke-Problem
+      (apexcharts-card setzt bei Balken keinen Default-Stroke; Netz ist identisch
+      zu Solar/Speicher konfiguriert). Ursache im YAML-Kommentar festgehalten.
+      → **Dashboard-YAML neu einspielen** (Raw-Editor), Seite neu laden; live
+      gegenchecken, ob der 1-px-Versatz weg ist.
 
 Reihenfolge = Vorschlag. Jeder Punkt wird erst abgestimmt, dann freigegeben,
 dann umgesetzt (siehe claude.md).
