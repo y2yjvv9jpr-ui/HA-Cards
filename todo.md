@@ -5,25 +5,24 @@ dann umgesetzt (siehe claude.md).
 
 ## 14.09. — im Repo, in HA einzuspielen
 
-- [ ] 14.09. **Ladeteilung v2 einspielen und an einem Tag mit > 1,4 kW
-      Hausakku-Ladung beobachten.** `pv_helper_laden` neu einspielen (Package
-      kopieren), **Template-Entitäten und Automationen neu laden** — keine neuen
-      Helfer, **kein Neustart nötig**. Inhalt: Einspeisungspfad E =
-      Einspeisung + Auto-Heizer − Hausakku-Entnahme (Teilungsanteil aus dem
-      Überschuss-Sensor entfernt); Ladesoll = ist + E_term + T_term (T_term
-      schrittbegrenzt ≤ 300 W/Takt hoch, sofort runter, nur bei SoC < 95 %);
-      Ladestopp erst am Minimum (Ladesoll < 400 oder ist ≤ 450 W an ladenden
-      Hausakkus ohne Einspeisung). Behebt Überschwingen (~1.750 W) und
-      Oszillation vom Test 14.09. Beobachten: kein Überschwingen über Maximum,
-      kein Takten am Stopp, Hausakku-Ladung pendelt sich um Ziel (~1000 W) ein.
-- [~] 12.09. **pv_helper_laden** Ladeteilung v1 (Überschuss inkl. Teilungsanteil,
-      Entladestopp, 30 s) — **durch v2 (14.09.) abgelöst, nicht mehr einzeln
-      einspielen.** Die dort neu eingeführten `input_number`
-      (`pv_helper_ladeteilung_start`/`_ziel`/`_stopp`) und der Template-Sensor
-      `pv_helper_heizer_leistung` bleiben Teil von v2. **Falls v1 noch nie in HA
-      war: mit v2 ist ein Neustart nötig** (die drei neuen `input_number`),
-      Helferwerte **1400/1000/500** setzen; war v1 schon eingespielt, reicht für
-      v2 Template-/Automationen-Reload.
+- [ ] 14.09. **Ladeteilung v3 einspielen und einen Tag beobachten.**
+      `pv_helper_laden` neu einspielen (Package kopieren), **Template-Entitäten
+      und Automationen neu laden** — keine neuen Helfer, **kein Neustart nötig**
+      (der neue Sensor `pv_helper_gesamtueberschuss_leistung` kommt über den
+      Template-Reload). **Helfer `input_number.pv_helper_ladeteilung_stopp` auf
+      1200 setzen** (bezieht sich jetzt auf den Gesamtüberschuss G, nicht mehr
+      auf die Hausakku-Ladung); Start bleibt 1400, Ziel/Vorzug bleibt 1000.
+      Inhalt: Aufteilung über G = Hausakku-Ladung + Zendure-Aufnahme + E;
+      1000 W Vorzug Hausakkus, darüber halbe-halbe; Start G > 1400, Stopp G < 1200
+      (mit Einspeisungs-Ausnahme). Ersetzt v2 (Schrittregelung). Beobachten:
+      kein Überschwingen, Hausakkus ~1000 W bevorzugt, Zendure teilt sich den
+      Rest; bei vollen Hausakkus lädt der Zendure weiter aus Einspeisung.
+- [x] 14.09. **pv_helper_laden Ladeteilung v2** (Schrittregelung, Stopp am
+      Minimum) — **durch v3 (14.09.) ersetzt**, nicht mehr einzeln einspielen.
+      Die `input_number` (`pv_helper_ladeteilung_start`/`_ziel`/`_stopp`) und der
+      Sensor `pv_helper_heizer_leistung` bleiben Teil von v3. **Falls die drei
+      `input_number` noch nie in HA angelegt waren: mit v3 ist ein Neustart
+      nötig**; waren sie schon da, reicht Template-/Automationen-Reload.
 - [ ] 12.09. **Hausverbrauchs-Differenz** (L3): Zählerstand-Vergleich Bezug vs.
       Deye-Import ausstehend.
 
