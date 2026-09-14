@@ -5,7 +5,7 @@
 #   Template-Sensoren und Automationen: Entity-ID entsteht aus dem Namen/Alias
 #   → immer „PV Helper …". Umlaute werden zu u/a/o („Überschuss" → uberschuss).
 #
-# Ladeteilung v3, 14.09.2026 (Aufteilung über den Gesamtüberschuss).
+# Ladeteilung v3.1, 14.09.2026 (Aufteilung über den Gesamtüberschuss).
 # Vorgabe Daniel: „Mindestens 1000 W in die Hausakkus, ab 1400 W auch in den
 #   Zendure. Ab 1400 werden die Überschüsse zu gleichen Teilen zwischen
 #   Hausakkus und Zendure aufgeteilt, die Hausakkus haben einen 1000-W-Vorzug.
@@ -13,6 +13,10 @@
 # v2 (Schrittregelung) ersetzt: der inkrementelle Soll aus zwei Quellen zählte
 #   die vom Deye verzögert nachgeführte Akkuladung doppelt und oszillierte am
 #   Stopp. v3 teilt stattdessen den Gesamtüberschuss selbstkonsistent auf.
+# v3.1 (14.09. 08:20): das max(Z_teilung, Z_einspeisung) aus v3 klemmte den Soll
+#   bei 2.200–2.400 fest — bei E ≈ 0 hält Z_einspeisung = ist + E − 50 den
+#   aktuellen Wert und gewann gegen Z_teilung. Statt max() jetzt Fallauswahl:
+#   Einspeisungspfad nur, wenn die Hausakkus ohnehin nicht mehr aufnehmen.
 #
 # Begriffe (W):
 #   ist          = aktuelle Zendure-Aufnahme (sensor.zendure_power_from_home)
@@ -32,13 +36,19 @@
 # Ladesoll (sensor.pv_helper_zendure_ladeleistung_soll):
 #   Z_teilung     = (G − vorzug) / 2
 #   Z_einspeisung = ist + E − 50, wenn E > 0; sonst ist + E
-#   Ladesoll = max(Z_teilung, Z_einspeisung), Sensor 0..Maximum.
-#   Werte < 400 = Stoppzone (macht „Ladesoll < 400"-Logik sichtbar). Der ans
-#   Gerät geschriebene Wert wird in der Lade-Regel auf 400..Maximum geklemmt.
-#   Keine SoC-Abfrage, kein Schrittlimit: ein vom Deye noch nicht nachgeführter
-#   Wert geht nur zur Hälfte in Z_teilung ein und halbiert sich je Takt.
-#   Beispiele: G = 2150 → Zendure ≈ 575, Hausakkus ≈ 1575. G = 1400 → Zendure
-#   400 (Regel-Clamp), Hausakkus 1000. Hausakkus voll → Z_einspeisung greift.
+#   Ladesoll = Z_einspeisung, wenn einspeisung > 50 ODER hausakku_soc ≥ 90 ODER
+#                ladung < 100 (Hausakkus nehmen nicht mehr: Export da, fast voll,
+#                oder sie laden gar nicht);
+#              Z_teilung sonst (Hausakkus laden, kein Export, nicht voll → der
+#                Zendure steht mit ihnen im Wettbewerb und teilt sich G).
+#   hausakku_soc = sensor.inverter_battery. Kein max() mehr — das klemmte den
+#   Soll bei E ≈ 0 auf dem aktuellen Wert fest (v3.1). Sensor 0..Maximum, Werte
+#   < 400 = Stoppzone; der ans Gerät geschriebene Wert wird in der Lade-Regel auf
+#   400..Maximum geklemmt. Kein Schrittlimit: ein vom Deye noch nicht
+#   nachgeführter Wert geht nur zur Hälfte in Z_teilung ein und halbiert sich je
+#   Takt. Beispiele: G = 2150 → Zendure ≈ 575, Hausakkus ≈ 1575. G = 1400 →
+#   Zendure 400 (Regel-Clamp), Hausakkus 1000. Hausakkus voll/Export →
+#   Z_einspeisung greift.
 #
 # Ladestopp (binary_sensor, delay_on 30 s):
 #   Quick Charge UND G < stopp UND Z_einspeisung < 400.
@@ -239,11 +249,14 @@ template:
              and has_value('sensor.zendure_power_from_home')
              and has_value('sensor.pv_helper_uberschuss_leistung') }}
 
-      # Zendure-Ladesoll (v3, 14.09.2026): max(Z_teilung, Z_einspeisung).
+      # Zendure-Ladesoll (v3.1, 14.09.2026): Fallauswahl statt max().
       #   Z_teilung     = (G − vorzug) / 2   (halbe-halbe über dem Hausakku-Vorzug)
       #   Z_einspeisung = ist + E − 50, wenn E > 0; sonst ist + E
-      # Sensor 0..Maximum: Werte < 400 markieren die Stoppzone. Der ans Gerät
-      # geschriebene Wert wird in der Lade-Regel auf 400..Maximum geklemmt.
+      # Einspeisungspfad (Z_einspeisung) nur, wenn die Hausakkus ohnehin nicht
+      # mehr aufnehmen: Einspeisung > 50 W ODER SoC ≥ 90 % ODER Ladung < 100 W.
+      # Sonst Teilungspfad (Z_teilung). Sensor 0..Maximum: Werte < 400 markieren
+      # die Stoppzone. Der ans Gerät geschriebene Wert wird in der Lade-Regel auf
+      # 400..Maximum geklemmt.
       - name: PV Helper Zendure Ladeleistung Soll
         unique_id: pv_helper_zendure_ladeleistung_soll
         unit_of_measurement: W
@@ -255,14 +268,22 @@ template:
           {% set G = states('sensor.pv_helper_gesamtueberschuss_leistung') | float(0) %}
           {% set vorzug = states('input_number.pv_helper_ladeteilung_ziel') | float(1000) %}
           {% set maximum = states('input_number.pv_helper_zendure_ladeleistung_maximum') | float(2400) %}
+          {% set netz = states('sensor.inverter_external_power') | float(0) %}
+          {% set einspeisung = -netz %}
+          {% set akku = states('sensor.inverter_battery_power') | float(0) %}
+          {% set ladung = [0, -akku] | max %}
+          {% set soc = states('sensor.inverter_battery') | float(0) %}
           {% set z_teilung = (G - vorzug) / 2 %}
           {% set z_einspeisung = (ist + E - 50) if E > 0 else (ist + E) %}
-          {% set soll = [z_teilung, z_einspeisung] | max %}
+          {% set soll = z_einspeisung if (einspeisung > 50 or soc >= 90 or ladung < 100) else z_teilung %}
           {{ [0, [soll, maximum] | min] | max | round(0) }}
         availability: >-
           {{ has_value('sensor.pv_helper_gesamtueberschuss_leistung')
              and has_value('sensor.pv_helper_uberschuss_leistung')
              and has_value('sensor.zendure_power_from_home')
+             and has_value('sensor.inverter_external_power')
+             and has_value('sensor.inverter_battery_power')
+             and has_value('sensor.inverter_battery')
              and has_value('input_number.pv_helper_ladeteilung_ziel') }}
 
       - name: PV Helper Zendure Entladeleistung Soll
@@ -419,10 +440,10 @@ automation:
   - id: pv_helper_zendure_ueberschussladen
     alias: PV Helper Zendure Überschussladen
     description: >-
-      Lädt den Zendure nach dem Ladesoll = max(Z_teilung, Z_einspeisung):
-      Z_teilung teilt den Gesamtüberschuss G über dem Hausakku-Vorzug halbe-halbe
-      auf, Z_einspeisung = ist + E − 50 (Reserve nur bei echtem Überschuss) hält
-      das Laden aus Einspeisung/Auto-Heizer, wenn die Hausakkus voll sind. Ziel =
+      Lädt den Zendure nach dem Ladesoll: Teilungspfad Z_teilung = (G − Vorzug)/2
+      (halbe-halbe über dem Hausakku-Vorzug), solange die Hausakkus laden;
+      Einspeisungspfad Z_einspeisung = ist + E − 50 nur, wenn die Hausakkus nicht
+      mehr aufnehmen (Export, SoC ≥ 90 % oder Ladung < 100 W). Ziel =
       clamp(Ladesoll, 400, Maximum), Totband 20 W. Start, sobald G > Start oder
       E > 450 W. Stopp über binary_sensor.pv_helper_zendure_ladestopp (G < Stopp
       und Z_einspeisung < 400). Nur im Lademodus Auto.
