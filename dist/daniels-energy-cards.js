@@ -3676,6 +3676,7 @@ const Ae = class Ae extends O {
         type: "column",
         extend_to: !1,
         statistics: { type: "change", period: e === "year" ? "month" : "day", align: "start" },
+        ...e === "year" ? {} : { group_by: { func: "sum", duration: "1d", fill: "zero" } },
         unit: "kWh",
         float_precision: e === "year" ? 0 : 1,
         show: { legend_value: !1 }
@@ -8371,7 +8372,7 @@ ze.properties = {
     `
 ];
 let _t = ze;
-const go = "0.18.1", fo = [
+const go = "0.18.2", fo = [
   {
     type: "des-storage-card",
     element: st,

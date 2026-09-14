@@ -4,6 +4,21 @@ Alle nennenswerten Änderungen an diesem Projekt werden hier festgehalten.
 Format grob nach [Keep a Changelog](https://keepachangelog.com/de/1.1.0/),
 Versionierung nach [SemVer](https://semver.org/lang/de/).
 
+## [0.18.2]
+
+### Behoben
+
+- **des-house-card:** Der gestapelte Verbrauchs-Chart (aufgeklappt, Woche/Monat)
+  stapelt jetzt zuverlässig. Die Statistik-Reihen (Solar/Speicher/Netz) bekommen
+  in `all_series_config` ein `group_by` (func `sum`, duration `1d`, fill `zero`),
+  das sie über den ganzen Graph-Zeitraum auf ein gemeinsames Raster zieht und
+  leere Buckets mit 0 füllt. Ohne das lagen Reihen mit abweichenden
+  Statistik-Buckets (z. B. Netz mit Nacht-Tagen, die die Tag-Reihen nicht haben)
+  seitlich versetzt statt aufeinander. **Jahr** bleibt ohne `group_by`
+  (apexcharts-card kennt keine Monats-`duration`; Monatsstatistik liegt bereits
+  auf gemeinsamem Kalendermonats-Raster, `extend_to: false`). Reine
+  Darstellungskorrektur, keine Datenänderung.
+
 ## [0.18.1]
 
 ### Geändert

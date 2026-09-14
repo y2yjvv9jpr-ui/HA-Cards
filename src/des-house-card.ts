@@ -533,6 +533,20 @@ export class DesHouseCard extends LitElement {
     const statsPeriod = period === 'year' ? 'month' : 'day';
     const floatPrecision = period === 'year' ? 0 : 1;
 
+    // Stacking needs identical x-values across series, or a series whose
+    // statistics buckets differ (Netz has night-only days the daytime series
+    // lack, or a series that started later) is drawn shifted sideways instead
+    // of stacked. group_by (func sum, fill zero) buckets the statistics onto
+    // one raster across the whole graph span and fills empty buckets with 0, so
+    // Solar/Speicher/Netz line up. apexcharts-card has no month duration
+    // ("Doesn't work for months") and monthly statistics already share the
+    // calendar-month raster, so the year view keeps extend_to:false without
+    // group_by. (2026-09-14)
+    const groupBy =
+      period === 'year'
+        ? {}
+        : { group_by: { func: 'sum', duration: '1d', fill: 'zero' } };
+
     return {
       type: 'custom:apexcharts-card',
       header: { show: false },
@@ -544,6 +558,7 @@ export class DesHouseCard extends LitElement {
         type: 'column',
         extend_to: false,
         statistics: { type: 'change', period: statsPeriod, align: 'start' },
+        ...groupBy,
         unit: 'kWh',
         float_precision: floatPrecision,
         show: { legend_value: false },

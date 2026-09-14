@@ -1,4 +1,15 @@
-# todo.md — offene Punkte (Stand 14.09.2026, Chart „Verbrauch nach Quelle" gestapelt)
+# todo.md — offene Punkte (Stand 14.09.2026, gestapelte Charts auf gemeinsames Raster)
+
+## 14.09. — gestapelte Charts überall (Repo, in HA einzuspielen)
+
+- [x] 14.09. **des-house-card (v0.18.2): gestapelter Verbrauchs-Chart stapelt.**
+      Aufgeklappter Woche/Monat-Chart bekommt `group_by` (func sum, duration 1d,
+      fill zero) neben `statistics`, damit Solar/Speicher/Netz dieselben
+      x-Zeitstempel haben (apexcharts-card bucketet über den ganzen Graph-Zeitraum
+      und füllt leere Buckets mit 0). Jahr bleibt ohne group_by (keine
+      Monats-duration; Monatsstatistik schon auf gemeinsamem Raster, extend_to
+      false). → **per HACS auf 0.18.2**, Browser-Cache leeren. Beobachten:
+      liegen die Balken aufgeklappt aufeinander?
 
 Reihenfolge = Vorschlag. Jeder Punkt wird erst abgestimmt, dann freigegeben,
 dann umgesetzt (siehe claude.md).
