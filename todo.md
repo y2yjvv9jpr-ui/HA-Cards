@@ -1,6 +1,13 @@
-# todo.md — offene Punkte (Stand 15.09.2026, des-chart-card groups: Speicher/Solar × Tag/Woche/Monat)
+# todo.md — offene Punkte (Stand 15.09.2026, des-chart-card 0.20.1: Umschalter-Layout)
 
 ## 15.09. — des-chart-card groups (Repo, in HA einzuspielen)
+
+- [x] 15.09. **des-chart-card (v0.20.1): beide Umschalter in die Kopfzeile,
+      Untertitel links.** Kopf: Titel links (Ellipsis), rechts Gruppen-Umschalter
+      + 12 px + Zeitraum-Umschalter (getrennte Segmented, kein gemeinsamer Rahmen,
+      kein Umbruch). Meta-Zeile: nur der Untertitel der aktiven View, linksbündig
+      (`.meta` wie vor 0.20.0). Karten ohne Gruppen (views/periods) unverändert.
+      → **HACS auf 0.20.1** (Tag v0.20.1), **Strg+F5**. Dashboard-YAML unverändert.
 
 - [x] 15.09. **des-chart-card (v0.20.0): zwei Umschalter (`groups`).**
       Config-Form `groups: [{ key, label, title, views }]`. Kopf: Titel (aus der

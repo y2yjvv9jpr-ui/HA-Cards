@@ -4,6 +4,19 @@ Alle nennenswerten Änderungen an diesem Projekt werden hier festgehalten.
 Format grob nach [Keep a Changelog](https://keepachangelog.com/de/1.1.0/),
 Versionierung nach [SemVer](https://semver.org/lang/de/).
 
+## [0.20.1]
+
+### Geändert
+
+- **des-chart-card:** Layout der Gruppen-Form angeglichen an die übrigen Karten.
+  **Beide** Umschalter stehen jetzt rechts in der **Kopfzeile** — erst der
+  Gruppen-Umschalter (Ansicht), 12 px Abstand, dann der Zeitraum-Umschalter;
+  beide im selben Segmented-Stil als optisch getrennte Elemente. Der **Untertitel**
+  der aktiven View steht wieder **linksbündig** in der Meta-Zeile unter dem Titel
+  (Klasse `.meta` wie vor 0.20.0). Wird es zu schmal, kürzt der Titel per Ellipsis;
+  die Umschalter brechen nicht um. Karten ohne Gruppen (`views`/`periods`) zeigen
+  wie bisher nur den Zeitraum-Umschalter.
+
 ## [0.20.0]
 
 ### Hinzugefügt

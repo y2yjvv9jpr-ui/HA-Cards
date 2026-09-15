@@ -4698,24 +4698,22 @@ const ke = ["day", "week", "month", "year"], tr = {
         <div class="card">
           <div class="header">
             <span class="name">${o}</span>
-            ${L(
-      r.views.map((a) => ({ value: a.key, label: a.label })),
-      i.key,
-      (a) => this._setView(a),
-      "Zeitraum"
-    )}
-          </div>
-          ${c || n ? l`
-                <div class="meta-row">
-                  ${c ? L(
+            <div class="switchers">
+              ${c ? L(
       t.map((a) => ({ value: a.key, label: a.label })),
       r.key,
       (a) => this._setGroup(a),
       "Ansicht"
     ) : d}
-                  ${n ? l`<span class="subtitle">${n}</span>` : d}
-                </div>
-              ` : d}
+              ${L(
+      r.views.map((a) => ({ value: a.key, label: a.label })),
+      i.key,
+      (a) => this._setView(a),
+      "Zeitraum"
+    )}
+            </div>
+          </div>
+          ${n ? l`<div class="meta">${n}</div>` : d}
           ${this._renderChartArea()}
         </div>
       </ha-card>
@@ -4907,6 +4905,9 @@ Oe.properties = {
       }
 
       .name {
+        /* Grows to fill and shrinks with ellipsis, so the switchers on the
+           right keep their width when the header gets narrow. */
+        flex: 1 1 auto;
         font-size: 15px;
         font-weight: 500;
         color: var(--primary-text-color);
@@ -4916,26 +4917,27 @@ Oe.properties = {
         text-overflow: ellipsis;
       }
 
-      /* Second line: group switcher left, active view's subtitle right. With no
-         group switcher (views/periods form) the subtitle is the only child and
-         space-between leaves it at the start - exactly the old single meta line. */
-      .meta-row {
+      /* Both switchers (group + period) sit on the right of the header, 12 px
+         apart. Each renderSegmented brings its own border, so they read as two
+         separate controls. flex:0 0 auto keeps them at full size and stops them
+         wrapping - the title yields via its ellipsis instead. */
+      .switchers {
         flex: 0 0 auto;
-        margin-top: 4px;
         display: flex;
         align-items: center;
-        justify-content: space-between;
-        gap: 10px;
+        gap: 12px;
       }
 
-      .subtitle {
+      /* Subtitle: one muted line under the header, left-aligned, over the full
+         width (as before 0.20.0). */
+      .meta {
+        flex: 0 0 auto;
+        margin-top: 4px;
         font-size: 12px;
         color: var(--secondary-text-color);
         white-space: nowrap;
-        min-width: 0;
         overflow: hidden;
         text-overflow: ellipsis;
-        text-align: right;
       }
 
       /* Takes whatever height is left. The height below is only a start size:
@@ -8507,7 +8509,7 @@ Ie.properties = {
     `
 ];
 let _t = Ie;
-const fo = "0.20.0", mo = [
+const fo = "0.20.1", mo = [
   {
     type: "des-storage-card",
     element: ot,
