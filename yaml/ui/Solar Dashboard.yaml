@@ -447,171 +447,313 @@ sections:
           columns: 12
           rows: 5
         name: Speicher-Füllstand
+        # 2026-09-15 Zwei Umschalter (groups): Ansicht Speicher/Solar (Meta-Zeile
+        # links) × Zeitraum Tag/Woche/Monat (Kopf rechts). Titel kommt aus der
+        # Gruppe, Untertitel aus der aktiven View. Solar-Farben nur aus den
+        # etablierten Gruentoenen (var(--success-color) + #2e7d32), keine neuen
+        # Hex. Wochen-/Monatssumme aus den vorhandenen Utility-Metern
+        # pv_helper_energie_produktion_woche/_monat.
+        default_group: speicher
         default_view: tag
-        views:
-          - key: tag
-            label: Tag
+        groups:
+          - key: speicher
+            label: Speicher
             title: Speicher-Füllstand
-            subtitle: gespeicherte Energie in kWh
-            chart:
-              graph_span: 24h
-              span:
-                start: day
-              apex_config:
-                legend:
-                  position: bottom
-                grid:
-                  borderColor: var(--divider-color)
-                  strokeDashArray: 3
-                yaxis:
-                  min: 0
-                  max: 18.5
-                  tickAmount: 5
-                xaxis:
-                  tooltip:
-                    enabled: false
-                  labels:
-                    datetimeFormatter:
-                      hour: HH
-                stroke:
-                  curve: smooth
-                fill:
-                  opacity: 0.35
-              all_series_config:
-                unit: kWh
-                float_precision: 1
-                extend_to: false
-                group_by:
-                  func: avg
-                  duration: 10min
-              series:
-                - entity: sensor.pv_helper_speicher_energie
-                  name: Gesamt
-                  type: line
-                  stroke_width: 2
-                  color: var(--primary-text-color)
-                - entity: sensor.inverter_battery
-                  name: Hausakkus
-                  type: area
-                  stroke_width: 1
-                  color: '#378ADD'
-                  transform: return x * 13.1 / 100;
-                - entity: sensor.pv_helper_zendure_energie
-                  name: Zendure
-                  type: area
-                  stroke_width: 1
-                  color: '#8FC7F0'
-          - key: woche
-            label: Woche
-            title: Speicher-Füllstand
-            subtitle: gespeicherte Energie in kWh, Wochenverlauf
-            chart:
-              graph_span: 7d
-              span:
-                start: isoWeek
-              apex_config:
-                legend:
-                  position: bottom
-                grid:
-                  borderColor: var(--divider-color)
-                  strokeDashArray: 3
-                yaxis:
-                  min: 0
-                  max: 18.5
-                  tickAmount: 5
-                xaxis:
-                  tooltip:
-                    enabled: false
-                  labels:
-                    datetimeFormatter:
-                      day: dd.MM
-                stroke:
-                  curve: smooth
-                fill:
-                  opacity: 0.35
-              all_series_config:
-                unit: kWh
-                float_precision: 1
-                extend_to: false
-                group_by:
-                  func: avg
-                  duration: 1h
-              series:
-                - entity: sensor.pv_helper_speicher_energie
-                  name: Gesamt
-                  type: line
-                  stroke_width: 2
-                  color: var(--primary-text-color)
-                - entity: sensor.inverter_battery
-                  name: Hausakkus
-                  type: area
-                  stroke_width: 1
-                  color: '#378ADD'
-                  transform: return x * 13.1 / 100;
-                - entity: sensor.pv_helper_zendure_energie
-                  name: Zendure
-                  type: area
-                  stroke_width: 1
-                  color: '#8FC7F0'
-          # 2026-09-14 Ansicht Solarertrag: Tagesverlauf der PV-Leistung, Gesamt
-          # (inverter_pv_power) als Linie ueber PV1/PV2 als halbtransparente
-          # Flaechen. Farben nur aus den etablierten Gruentoenen: var(--success-
-          # color) (Solar wie Hauskarte) und #2e7d32 (fixes Dunkelgruen); keine
-          # neuen Hex. y-Achse in kW (EVAL-Formatter), Werte + Tooltip in W.
+            views:
+              - key: tag
+                label: Tag
+                subtitle: gespeicherte Energie in kWh
+                chart:
+                  graph_span: 24h
+                  span:
+                    start: day
+                  apex_config:
+                    legend:
+                      position: bottom
+                    grid:
+                      borderColor: var(--divider-color)
+                      strokeDashArray: 3
+                    yaxis:
+                      min: 0
+                      max: 18.5
+                      tickAmount: 5
+                    xaxis:
+                      tooltip:
+                        enabled: false
+                      labels:
+                        datetimeFormatter:
+                          hour: HH
+                    stroke:
+                      curve: smooth
+                    fill:
+                      opacity: 0.35
+                  all_series_config:
+                    unit: kWh
+                    float_precision: 1
+                    extend_to: false
+                    group_by:
+                      func: avg
+                      duration: 10min
+                  series:
+                    - entity: sensor.pv_helper_speicher_energie
+                      name: Gesamt
+                      type: line
+                      stroke_width: 2
+                      color: var(--primary-text-color)
+                    - entity: sensor.inverter_battery
+                      name: Hausakkus
+                      type: area
+                      stroke_width: 1
+                      color: '#378ADD'
+                      transform: return x * 13.1 / 100;
+                    - entity: sensor.pv_helper_zendure_energie
+                      name: Zendure
+                      type: area
+                      stroke_width: 1
+                      color: '#8FC7F0'
+              - key: woche
+                label: Woche
+                subtitle: gespeicherte Energie in kWh, Wochenverlauf
+                chart:
+                  graph_span: 7d
+                  span:
+                    start: isoWeek
+                  apex_config:
+                    legend:
+                      position: bottom
+                    grid:
+                      borderColor: var(--divider-color)
+                      strokeDashArray: 3
+                    yaxis:
+                      min: 0
+                      max: 18.5
+                      tickAmount: 5
+                    xaxis:
+                      tooltip:
+                        enabled: false
+                      labels:
+                        datetimeFormatter:
+                          day: dd.MM
+                    stroke:
+                      curve: smooth
+                    fill:
+                      opacity: 0.35
+                  all_series_config:
+                    unit: kWh
+                    float_precision: 1
+                    extend_to: false
+                    group_by:
+                      func: avg
+                      duration: 1h
+                  series:
+                    - entity: sensor.pv_helper_speicher_energie
+                      name: Gesamt
+                      type: line
+                      stroke_width: 2
+                      color: var(--primary-text-color)
+                    - entity: sensor.inverter_battery
+                      name: Hausakkus
+                      type: area
+                      stroke_width: 1
+                      color: '#378ADD'
+                      transform: return x * 13.1 / 100;
+                    - entity: sensor.pv_helper_zendure_energie
+                      name: Zendure
+                      type: area
+                      stroke_width: 1
+                      color: '#8FC7F0'
+              - key: monat
+                label: Monat
+                subtitle: gespeicherte Energie in kWh, Monatsverlauf
+                chart:
+                  graph_span: 31d
+                  span:
+                    start: month
+                  apex_config:
+                    legend:
+                      position: bottom
+                    grid:
+                      borderColor: var(--divider-color)
+                      strokeDashArray: 3
+                    yaxis:
+                      min: 0
+                      max: 18.5
+                      tickAmount: 5
+                    xaxis:
+                      tooltip:
+                        enabled: false
+                      labels:
+                        datetimeFormatter:
+                          day: dd.
+                    stroke:
+                      curve: smooth
+                    fill:
+                      opacity: 0.35
+                  all_series_config:
+                    unit: kWh
+                    float_precision: 1
+                    extend_to: false
+                    group_by:
+                      func: avg
+                      duration: 1h
+                      fill: last
+                  series:
+                    - entity: sensor.pv_helper_speicher_energie
+                      name: Gesamt
+                      type: line
+                      stroke_width: 2
+                      color: var(--primary-text-color)
+                    - entity: sensor.inverter_battery
+                      name: Hausakkus
+                      type: area
+                      stroke_width: 1
+                      color: '#378ADD'
+                      transform: return x * 13.1 / 100;
+                    - entity: sensor.pv_helper_zendure_energie
+                      name: Zendure
+                      type: area
+                      stroke_width: 1
+                      color: '#8FC7F0'
           - key: solar
             label: Solar
             title: Solarertrag
-            subtitle: "heute · <sensor.inverter_today_production> kWh"
-            chart:
-              graph_span: 24h
-              span:
-                start: day
-              apex_config:
-                legend:
-                  position: bottom
-                grid:
-                  borderColor: var(--divider-color)
-                  strokeDashArray: 3
-                yaxis:
-                  min: 0
-                  forceNiceScale: true
-                  labels:
-                    formatter: |
-                      EVAL:function (val) { return val == null ? "" : (val / 1000).toFixed(1) + " kW"; }
-                xaxis:
-                  tooltip:
-                    enabled: false
-                  labels:
-                    datetimeFormatter:
-                      hour: HH
-                stroke:
-                  curve: smooth
-              all_series_config:
-                unit: W
-                float_precision: 0
-                extend_to: now
-                group_by:
-                  func: avg
-                  duration: 5min
-                  fill: last
-              series:
-                - entity: sensor.inverter_pv_power
-                  name: Gesamt
-                  type: line
-                  stroke_width: 2
-                  color: var(--success-color)
-                - entity: sensor.inverter_pv1_power
-                  name: PV1
-                  type: area
-                  stroke_width: 1
-                  color: '#2e7d32'
-                  opacity: 0.45
-                - entity: sensor.inverter_pv2_power
-                  name: PV2
-                  type: area
-                  stroke_width: 1
-                  color: var(--success-color)
-                  opacity: 0.5
+            views:
+              # Tag: Tagesverlauf der PV-Leistung, Gesamt (inverter_pv_power) als
+              # Linie ueber PV1/PV2 als halbtransparente Flaechen. y-Achse kW
+              # (EVAL-Formatter), Werte/Tooltip in W.
+              - key: tag
+                label: Tag
+                subtitle: "heute · <sensor.inverter_today_production> kWh"
+                chart:
+                  graph_span: 24h
+                  span:
+                    start: day
+                  apex_config:
+                    legend:
+                      position: bottom
+                    grid:
+                      borderColor: var(--divider-color)
+                      strokeDashArray: 3
+                    yaxis:
+                      min: 0
+                      forceNiceScale: true
+                      labels:
+                        formatter: |
+                          EVAL:function (val) { return val == null ? "" : (val / 1000).toFixed(1) + " kW"; }
+                    xaxis:
+                      tooltip:
+                        enabled: false
+                      labels:
+                        datetimeFormatter:
+                          hour: HH
+                    stroke:
+                      curve: smooth
+                  all_series_config:
+                    unit: W
+                    float_precision: 0
+                    extend_to: now
+                    group_by:
+                      func: avg
+                      duration: 5min
+                      fill: last
+                  series:
+                    - entity: sensor.inverter_pv_power
+                      name: Gesamt
+                      type: line
+                      stroke_width: 2
+                      color: var(--success-color)
+                    - entity: sensor.inverter_pv1_power
+                      name: PV1
+                      type: area
+                      stroke_width: 1
+                      color: '#2e7d32'
+                      opacity: 0.45
+                    - entity: sensor.inverter_pv2_power
+                      name: PV2
+                      type: area
+                      stroke_width: 1
+                      color: var(--success-color)
+                      opacity: 0.5
+              # Woche: nur Gesamt-Leistung (inverter_pv_power) als Linie, 1-h-Raster.
+              - key: woche
+                label: Woche
+                subtitle: "diese Woche · <sensor.pv_helper_energie_produktion_woche> kWh"
+                chart:
+                  graph_span: 7d
+                  span:
+                    start: isoWeek
+                  apex_config:
+                    legend:
+                      position: bottom
+                    grid:
+                      borderColor: var(--divider-color)
+                      strokeDashArray: 3
+                    yaxis:
+                      min: 0
+                      forceNiceScale: true
+                      labels:
+                        formatter: |
+                          EVAL:function (val) { return val == null ? "" : (val / 1000).toFixed(1) + " kW"; }
+                    xaxis:
+                      tooltip:
+                        enabled: false
+                      labels:
+                        datetimeFormatter:
+                          day: dd.MM
+                    stroke:
+                      curve: smooth
+                  all_series_config:
+                    unit: W
+                    float_precision: 0
+                    extend_to: now
+                    group_by:
+                      func: avg
+                      duration: 1h
+                      fill: last
+                  series:
+                    - entity: sensor.inverter_pv_power
+                      name: Gesamt
+                      type: line
+                      stroke_width: 2
+                      color: var(--success-color)
+              # Monat: Tagesertrag als Balken aus der Langzeitstatistik der
+              # Produktion (change/day/align start), Summe je Tag in kWh.
+              - key: monat
+                label: Monat
+                subtitle: "dieser Monat · <sensor.pv_helper_energie_produktion_monat> kWh"
+                chart:
+                  graph_span: 31d
+                  span:
+                    start: month
+                  apex_config:
+                    legend:
+                      position: bottom
+                    grid:
+                      borderColor: var(--divider-color)
+                      strokeDashArray: 3
+                    xaxis:
+                      tooltip:
+                        enabled: false
+                      labels:
+                        datetimeFormatter:
+                          day: dd.
+                    plotOptions:
+                      bar:
+                        columnWidth: 70%
+                  all_series_config:
+                    type: column
+                    unit: kWh
+                    float_precision: 1
+                    statistics:
+                      type: change
+                      period: day
+                      align: start
+                    show:
+                      legend_value: false
+                  series:
+                    - entity: sensor.inverter_total_production
+                      name: Produktion
+                      color: var(--success-color)
 cards: []
 dense_section_placement: false
 icon: mdi:solar-power-variant

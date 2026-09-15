@@ -17,6 +17,17 @@
       Zeitraum markiert; nicht reproduzierbar — vermutlich alter Cache (kein Tag →
       HACS/Browser lieferte altes Bundle). Falls nach 0.20.0 + Strg+F5 weiter
       „Jahr": Screenshot, dann echte Ursache suchen.
+- [x] 15.09. **Solar Dashboard „Speicher-Füllstand" → Speicher/Solar ×
+      Tag/Woche/Monat.** Gruppe Speicher (Tag/Woche unverändert, Monat neu:
+      graph_span 31d, span month, group_by avg 1h/fill last, x dd.). Gruppe Solar
+      (Tag = bisheriger Solar-Chart; Woche neu: nur Gesamt `inverter_pv_power` als
+      Linie, 1-h-Raster, kW-Achse; Monat neu: Tagesertrag als Balken aus
+      Statistik `inverter_total_production` change/day/align start, kWh). Wochen-/
+      Monatssumme im Untertitel aus den **vorhandenen** Utility-Metern
+      `pv_helper_energie_produktion_woche/_monat` (kein neuer Sensor, **kein
+      HA-Neustart**). → **Dashboard-YAML neu einspielen** (Raw-Editor), Seite neu
+      laden. Braucht des-chart-card ≥ 0.20.0. Live gegenchecken: beide Umschalter,
+      Titel/Untertitel je Kombination, kW-Achsen, Monatsbalken.
 
 ## 14.09. — des-chart-card views (Repo, in HA einzuspielen)
 
