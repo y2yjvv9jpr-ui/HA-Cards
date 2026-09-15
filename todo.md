@@ -1,3 +1,4 @@
+<!-- push-test 2026-09-15 -->
 # todo.md — offene Punkte (Stand 15.09.2026, des-chart-card 0.20.1: Umschalter-Layout)
 
 ## 15.09. — des-chart-card groups (Repo, in HA einzuspielen)
