@@ -4,6 +4,25 @@ Alle nennenswerten Änderungen an diesem Projekt werden hier festgehalten.
 Format grob nach [Keep a Changelog](https://keepachangelog.com/de/1.1.0/),
 Versionierung nach [SemVer](https://semver.org/lang/de/).
 
+## [0.20.0]
+
+### Hinzugefügt
+
+- **des-chart-card:** Zweite Umschalter-Ebene über `groups: [{ key, label,
+  title, views }]`. Kopfzeile: Titel (aus der aktiven Gruppe) links, der
+  Zeitraum-Umschalter (Views der Gruppe) rechts. Meta-Zeile: der
+  Ansicht-Umschalter (Gruppen) links, der Untertitel der aktiven View rechts.
+  `default_group`/`default_view` wählen den Start. Ein Gruppenwechsel behält den
+  Zeitraum-Key, wenn die neue Gruppe ihn hat, sonst deren `default_view`/erste
+  View. `views` (flach) und `periods` bleiben kompatibel und werden intern auf
+  **eine** Gruppe ohne Ansicht-Umschalter abgebildet — die Karte sieht dann aus
+  wie bisher.
+
+### Behoben
+
+- **des-chart-card:** Der Demo-Umschalter („Keine Chart-Config") markiert jetzt
+  explizit den **ersten** Zeitraum (Tag) als aktiv.
+
 ## [0.19.0]
 
 ### Hinzugefügt

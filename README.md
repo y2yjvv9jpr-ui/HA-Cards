@@ -1161,29 +1161,46 @@ Im Sections-View belegt die Karte 24 von 36 Spalten und standardmäßig
 **4 Zeilen**, mindestens 3 (`min_rows`). Über `grid_options.rows` lässt sich die
 Höhe frei wählen — das Chart wächst mit.
 
-**Zwei Config-Formen.** Neu und empfohlen ist `views` — **frei benennbare
-Ansichten**, deren `key` nicht an Tag/Woche/Monat/Jahr gebunden ist (so lassen
-sich z. B. „Tag“, „Woche“ und „Solar“ nebeneinander zeigen). Titel und
-Untertitel der Karte **wechseln mit der Ansicht**. Die ältere Form `periods`
-(day/week/month/year) bleibt voll unterstützt: ist kein `views` gesetzt, werden
-die vorhandenen Perioden intern auf Ansichten mit den Labels Tag/Woche/Monat/Jahr
-abgebildet. `views` gewinnt, wenn beides gesetzt ist.
+**Drei Config-Formen** (spezifischste zuerst, `groups` → `views` → `periods`):
+
+- **`groups`** — **zwei** Umschalter. Der **Ansicht-Umschalter** (Meta-Zeile
+  links) wählt die Gruppe (z. B. Speicher/Solar), der **Zeitraum-Umschalter**
+  (Kopf rechts) die View innerhalb der Gruppe (z. B. Tag/Woche/Monat). Jede
+  Gruppe hat einen eigenen `title`. Ein Gruppenwechsel **behält den
+  Zeitraum-Key**, wenn die neue Gruppe ihn hat, sonst deren erste/`default_view`.
+- **`views`** — **ein** Umschalter, frei benennbare Ansichten ohne Gruppenebene.
+- **`periods`** — die ältere Form (day/week/month/year).
+
+`views` und `periods` werden intern auf **eine** Gruppe ohne Ansicht-Umschalter
+abgebildet — die Karte sieht dann aus wie zuvor. Bestehende Karten laufen
+unverändert weiter.
 
 | Option           | Typ                            | Beschreibung                                                        |
 | ---------------- | ------------------------------ | ------------------------------------------------------------------ |
-| `name`           | string                         | **Pflicht.** Titel links, sofern die aktive Ansicht keinen eigenen `title` hat. |
-| `views`          | Liste (siehe unten)            | Frei benennbare Ansichten. Vorrang vor `periods`.                  |
-| `default_view`   | string (`key`)                 | Ansicht beim Laden; fällt auf die erste zurück.                    |
+| `name`           | string                         | **Pflicht.** Titel links, sofern Gruppe/View keinen eigenen `title` haben. |
+| `groups`         | Liste (siehe unten)            | Gruppen mit je eigenem Ansicht-Umschalter. Vorrang vor `views`.    |
+| `default_group`  | string (`key`)                 | Gruppe beim Laden; fällt auf die erste zurück.                     |
+| `views`          | Liste (siehe unten)            | Frei benennbare Ansichten (Ein-Gruppen-Form). Vorrang vor `periods`. |
+| `default_view`   | string (`key`)                 | View beim Laden; fällt auf die erste (der Gruppe) zurück.          |
 | `default_period` | `day` \| `week` \| `month` \| `year` | Nur `periods`-Form: Zeitraum beim Laden; fällt auf den ersten zurück. Standard `day`. |
 | `periods`        | Objekt (siehe unten)           | Je Zeitraum `label`, `meta` und `chart` (ältere Form).             |
 
-Je Ansicht unter `views[]`:
+Je Gruppe unter `groups[]`:
+
+| Feld    | Typ                | Beschreibung                                                    |
+| ------- | ------------------ | -------------------------------------------------------------- |
+| `key`   | string             | **Pflicht.** Wert des Ansicht-Umschalters.                     |
+| `label` | string             | Beschriftung im Ansicht-Umschalter. Standard: der `key`.       |
+| `title` | string             | Kartentitel, solange diese Gruppe aktiv ist. Standard: `name`. |
+| `views` | Liste (`views[]`)  | Die Views der Gruppe (Felder wie unten).                       |
+
+Je Ansicht unter `views[]` (bzw. `groups[].views[]`):
 
 | Feld       | Typ                          | Beschreibung                                                              |
 | ---------- | ---------------------------- | ------------------------------------------------------------------------ |
 | `key`      | string                       | **Pflicht.** Segmentwert und Schlüssel der gemerkten Auswahl.            |
 | `label`    | string                       | Segment-Beschriftung. Standard: der `key`.                               |
-| `title`    | string                       | Kartentitel, solange diese Ansicht aktiv ist. Standard: `name`.          |
+| `title`    | string                       | Kartentitel, solange diese View aktiv ist. Standard: `title` der Gruppe, sonst `name`. |
 | `subtitle` | string                       | Gedämpfte Metazeile. Darf `<entity_id>`-Platzhalter enthalten (siehe unten). |
 | `chart`    | `apexcharts-card`-Config **ohne `type`** | Wird eingebettet; die Karte ergänzt `type`, erzwingt `header.show: false` und setzt die Chart-Höhe (siehe unten). |
 
@@ -1202,9 +1219,9 @@ Je Zeitraum unter `periods.<day\|week\|month\|year>` (ältere Form):
 | `meta`  | string                       | Gedämpfte Metazeile für diesen Zeitraum.                                  |
 | `chart` | `apexcharts-card`-Config **ohne `type`** | Wie bei `views[].chart`.                                     |
 
-Eine Ansicht/ein Zeitraum **ohne `chart`** erscheint nicht im Umschalter; bei
-`periods` ist die Reihenfolge fest `day → week → month → year`, bei `views` die
-Listenreihenfolge.
+Eine View/ein Zeitraum **ohne `chart`** (bzw. eine Gruppe ohne View) erscheint
+nicht im Umschalter; bei `periods` ist die Reihenfolge fest
+`day → week → month → year`, bei `views`/`groups` die Listenreihenfolge.
 
 **Darstellung**
 
@@ -1232,8 +1249,48 @@ Listenreihenfolge.
 - Ist `apexcharts-card` **nicht** installiert (Element nicht registriert), zeigt
   die Karte statt des Charts die gedämpfte Zeile „apexcharts-card nicht
   installiert“.
-- **Ohne `views` und ohne `periods`** läuft die Karte im Demo-Modus: Kopfzeile
-  mit vier Segmenten und der Hinweiszeile „Keine Chart-Config“.
+- **Ohne `groups`, `views` und `periods`** läuft die Karte im Demo-Modus:
+  Kopfzeile mit vier Segmenten (der **erste**, Tag, ist markiert) und der
+  Hinweiszeile „Keine Chart-Config“.
+
+**Beispiel-YAML (groups)** — zwei Gruppen (Ansicht-Umschalter) mit je eigenen
+Zeiträumen:
+
+```yaml
+type: custom:des-chart-card
+name: Speicher-Füllstand
+default_group: speicher
+default_view: tag
+groups:
+  - key: speicher
+    label: Speicher
+    title: Speicher-Füllstand
+    views:
+      - key: tag
+        label: Tag
+        subtitle: gespeicherte Energie in kWh
+        chart:
+          graph_span: 24h
+          span:
+            start: day
+          series:
+            - entity: sensor.speicher_kwh
+              type: line
+  - key: solar
+    label: Solar
+    title: Solarertrag
+    views:
+      - key: tag
+        label: Tag
+        subtitle: "heute · <sensor.pv_heute> kWh"
+        chart:
+          graph_span: 24h
+          span:
+            start: day
+          series:
+            - entity: sensor.pv_power
+              type: line
+```
 
 **Beispiel-YAML (views)** — zwei gleichartige Ansichten und eine dritte mit
 eigenem Titel und Live-Untertitel:

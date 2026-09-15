@@ -91,9 +91,12 @@ wird hier nur zum Nachschlagen abgelegt — **nicht ändern**.
 - Time Of Use am Deye bleibt dauerhaft „Week" (Register 146 = 255); ohne TOU
   entlädt der Deye nicht ins Haus.
 - **des-chart-card:** neue Karten nutzen `views` (frei benennbare Ansichten mit
-  `key`/`label`/`title`/`subtitle`/`chart`), nicht mehr `periods`. `periods`
-  bleibt abwärtskompatibel (wird intern auf Views abgebildet) und muss nicht
-  umgestellt werden. `subtitle` darf `<entity_id>`-Platzhalter enthalten.
+  `key`/`label`/`title`/`subtitle`/`chart`), nicht mehr `periods`. Für zwei
+  Umschalter-Ebenen `groups: [{ key, label, title, views }]` — Ansicht-Umschalter
+  (Gruppen) in der Meta-Zeile, Zeitraum-Umschalter (Views) im Kopf. `periods` und
+  `views` bleiben abwärtskompatibel (intern auf eine Gruppe abgebildet) und
+  müssen nicht umgestellt werden. `subtitle` darf `<entity_id>`-Platzhalter
+  enthalten.
 
 ## Fachliche Vorgaben (Daniel, verbindlich)
 

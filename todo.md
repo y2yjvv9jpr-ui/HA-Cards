@@ -1,4 +1,22 @@
-# todo.md — offene Punkte (Stand 14.09.2026, des-chart-card views + Ansicht Solarertrag)
+# todo.md — offene Punkte (Stand 15.09.2026, des-chart-card groups: Speicher/Solar × Tag/Woche/Monat)
+
+## 15.09. — des-chart-card groups (Repo, in HA einzuspielen)
+
+- [x] 15.09. **des-chart-card (v0.20.0): zwei Umschalter (`groups`).**
+      Config-Form `groups: [{ key, label, title, views }]`. Kopf: Titel (aus der
+      Gruppe) links, Zeitraum-Umschalter (Views) rechts. Meta-Zeile:
+      Ansicht-Umschalter (Gruppen) links, Untertitel der aktiven View rechts.
+      `default_group`/`default_view`. Gruppenwechsel behält den Zeitraum-Key,
+      wenn die neue Gruppe ihn hat, sonst deren erste/`default_view`. `views` und
+      `periods` bleiben kompatibel (intern eine Gruppe ohne Ansicht-Umschalter).
+      README + claude.md-Konvention nachgezogen. Demo-Umschalter markiert jetzt
+      explizit den ersten Zeitraum. **HACS zieht Releases per Git-Tag** — daher
+      **Tag v0.20.0** angelegt (vorher gab es keine Tags). → **HACS auf 0.20.0**,
+      Ressource/Version prüfen, **Strg+F5**.
+      Hinweis „Jahr statt Tag im Demo": im Quelltext aller Versionen ist der erste
+      Zeitraum markiert; nicht reproduzierbar — vermutlich alter Cache (kein Tag →
+      HACS/Browser lieferte altes Bundle). Falls nach 0.20.0 + Strg+F5 weiter
+      „Jahr": Screenshot, dann echte Ursache suchen.
 
 ## 14.09. — des-chart-card views (Repo, in HA einzuspielen)
 

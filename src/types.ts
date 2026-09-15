@@ -512,15 +512,38 @@ export interface ChartViewConfig {
 }
 
 /**
- * A header with a local (component-state) view switcher over an embedded
+ * One group in the two-switcher form: a named collection of views with its own
+ * header title. The group switcher (Zeile 2) picks the group; the view switcher
+ * (Zeile 1) picks the view within it. Example: a "Speicher" and a "Solar" group,
+ * each with Tag/Woche/Monat views.
+ */
+export interface ChartGroupConfig {
+  /** Stable id: the group segment value and part of a remembered selection. */
+  key: string;
+  /** Group segment label. Falls back to `key`. */
+  label?: string;
+  /** Header title while this group is active. Falls back to the card `name`. */
+  title?: string;
+  /** The views of this group; a group without a view is dropped. */
+  views?: ChartViewConfig[];
+}
+
+/**
+ * A header with local (component-state) switchers over an embedded
  * `apexcharts-card`, one chart config per view. The chart element is built
  * through Home Assistant's own card helpers, so no chart library is bundled.
  *
- * Two config forms: the newer `views` (freely named), or the original `periods`
- * (day/week/month/year). `views` wins when present; otherwise `periods` is
- * mapped internally onto views with the Tag/Woche/Monat/Jahr labels, so older
- * configs keep working unchanged. Without either the card shows a
- * Tag/Woche/Monat/Jahr demo header and a "Keine Chart-Config" hint.
+ * Three config forms, most specific first:
+ * - `groups` — two switchers: a group switcher (Ansicht, e.g. Speicher/Solar)
+ *   and, per group, a view switcher (Zeitraum, e.g. Tag/Woche/Monat). Each group
+ *   carries its own `title`.
+ * - `views` — a single view switcher, no group switcher.
+ * - `periods` — the original day/week/month/year form.
+ *
+ * `groups` wins over `views` wins over `periods`. `views` and `periods` are
+ * mapped internally onto a single group with no group switcher, so the card then
+ * looks exactly as before and older configs keep working. Without any of them the
+ * card shows a Tag/Woche/Monat/Jahr demo header and a "Keine Chart-Config" hint.
  */
 export interface DesChartCardConfig {
   type: string;
@@ -528,10 +551,14 @@ export interface DesChartCardConfig {
   /** Period selected on load (periods form); falls back to the first. Default `day`. */
   default_period?: StatsPeriod;
   periods?: Partial<Record<StatsPeriod, ChartPeriodConfig>>;
-  /** View selected on load (views form), by `key`; falls back to the first. */
+  /** View selected on load, by `key`; falls back to the group's first view. */
   default_view?: string;
-  /** Freely named views; when present they replace `periods`. */
+  /** Freely named views (single-group form); when present they replace `periods`. */
   views?: ChartViewConfig[];
+  /** Group selected on load, by `key`; falls back to the first group. */
+  default_group?: string;
+  /** Named groups, each with its own views; when present they replace `views`. */
+  groups?: ChartGroupConfig[];
 }
 
 // ===========================================================================
