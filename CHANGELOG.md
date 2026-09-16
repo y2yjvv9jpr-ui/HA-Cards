@@ -4,6 +4,15 @@ Alle nennenswerten Änderungen an diesem Projekt werden hier festgehalten.
 Format grob nach [Keep a Changelog](https://keepachangelog.com/de/1.1.0/),
 Versionierung nach [SemVer](https://semver.org/lang/de/).
 
+## [0.20.3]
+
+### Geändert
+
+- **des-cover-card:** Der Chevron sitzt nicht mehr direkt auf der Unterkante —
+  4 px nach oben gerückt (kartenlokal, oben 4 px weniger / unten 4 px mehr, gleiche
+  Gesamthöhe, damit `rows: 3` weiter ohne Abschneiden passt). Betrifft nur die
+  Rollladenkarte, nicht die übrigen Karten mit gemeinsamem Chevron.
+
 ## [0.20.2]
 
 ### Geändert

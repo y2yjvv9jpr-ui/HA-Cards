@@ -1,7 +1,11 @@
 <!-- push-test 2026-09-15 -->
-# todo.md — offene Punkte (Stand 16.09.2026, des-cover-card 0.20.2: Automatik-Zeile aufgeklappt)
+# todo.md — offene Punkte (Stand 16.09.2026, des-cover-card 0.20.3: Chevron-Abstand)
 
 ## 16.09. — des-cover-card (Repo, in HA einzuspielen)
+
+- [x] 16.09. **des-cover-card (v0.20.3): Chevron nicht mehr auf der Unterkante.**
+      4 px nach oben (kartenlokal, oben −4 / unten +4, gleiche Gesamthöhe → rows 3
+      passt weiter). → **HACS auf 0.20.3** (Tag v0.20.3), **Strg+F5**.
 
 - [x] 16.09. **des-cover-card (v0.20.2): Automatik-Zeile in den aufgeklappten
       Bereich.** Umschalter Lüftung/Urlaub sind jetzt die erste Zeile im Overlay

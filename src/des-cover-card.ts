@@ -762,6 +762,15 @@ export class DesCoverCard extends LitElement {
         opacity: 0.7;
       }
 
+      /* Nudge the chevron up so it doesn't sit on the bottom edge. Keeps the
+         row's overall footprint the same (shared default is margin-top: 8px) by
+         trading top margin for bottom margin, so rows:3 still fits without
+         clipping. Card-local override of the shared chevronStyles. */
+      .chevron-row {
+        margin-top: 4px;
+        margin-bottom: 4px;
+      }
+
       /* --- automatic modes row (first row of the expanded panel) --- */
 
       .modes-row {
