@@ -8,10 +8,10 @@
       (Label „Automatik" links, Umschalter rechts, Trennlinie zu den Sektionen).
       Eingeklappt bleiben Kopf (inkl. Automatik-Badge), Statuszeile, Haus-Slider,
       Szenen-Kacheln, Chevron. → **HACS auf 0.20.2** (Tag v0.20.2), **Strg+F5**.
-      Hinweis: die Rollladenkarte im **Haus-Dashboard** steht noch auf `rows: 4`
-      (wegen der früheren Automatik-Zeile). Eingeklappt ist die Karte jetzt kürzer
-      → optional `rows: 3` im Haus-Dashboard (separate Dashboard-Änderung, hier
-      bewusst nicht angefasst).
+- [x] 16.09. **Haus-Dashboard: Rollladenkarte `rows: 4` → `rows: 3`.** Nach dem
+      Verschieben der Automatik-Zeile in den Overlay war die eingeklappte Karte
+      unnötig hoch (Leerraum unter dem Chevron). → **Haus-Dashboard-YAML neu
+      einspielen** (Raw-Editor). Reine Dashboard-Änderung, keine neue Kartenversion.
 
 ## 15.09. — des-chart-card groups (Repo, in HA einzuspielen)
 
