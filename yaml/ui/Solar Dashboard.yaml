@@ -754,6 +754,44 @@ sections:
                     - entity: sensor.inverter_total_production
                       name: Produktion
                       color: var(--success-color)
+              # Jahr: Monatsertrag als Balken aus der Langzeitstatistik der
+              # Produktion (change/month/align start), Summe je Monat in kWh.
+              - key: jahr
+                label: Jahr
+                subtitle: "dieses Jahr · <sensor.pv_helper_energie_produktion_jahr> kWh"
+                chart:
+                  graph_span: 366d
+                  span:
+                    start: year
+                  apex_config:
+                    legend:
+                      position: bottom
+                    grid:
+                      borderColor: var(--divider-color)
+                      strokeDashArray: 3
+                    xaxis:
+                      tooltip:
+                        enabled: false
+                      labels:
+                        datetimeFormatter:
+                          month: MMM
+                    plotOptions:
+                      bar:
+                        columnWidth: 60%
+                  all_series_config:
+                    type: column
+                    unit: kWh
+                    float_precision: 1
+                    statistics:
+                      type: change
+                      period: month
+                      align: start
+                    show:
+                      legend_value: false
+                  series:
+                    - entity: sensor.inverter_total_production
+                      name: Produktion
+                      color: var(--success-color)
 cards: []
 dense_section_placement: false
 icon: mdi:solar-power-variant

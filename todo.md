@@ -1,6 +1,16 @@
 <!-- push-test 2026-09-15 -->
 # todo.md — offene Punkte (Stand 16.09.2026, des-cover-card 0.20.3: Chevron-Abstand)
 
+## 16.09. — Solar Dashboard (Repo, in HA einzuspielen)
+
+- [x] 16.09. **Speicher-Füllstand, Gruppe Solar: Ansicht „Jahr" ergänzt.**
+      Monatsertrag als Balken aus der Produktions-Statistik
+      (`inverter_total_production`, change/month/align start), span year,
+      x-Labels MMM; Untertitel „dieses Jahr · <produktion_jahr> kWh". Gruppe
+      Speicher bleibt Tag/Woche/Monat. → **Dashboard-YAML neu einspielen**
+      (Raw-Editor). Reine Dashboard-Änderung (Karte kann beliebig viele Views),
+      keine neue Kartenversion.
+
 ## 16.09. — des-cover-card (Repo, in HA einzuspielen)
 
 - [x] 16.09. **des-cover-card (v0.20.3): Chevron nicht mehr auf der Unterkante.**
