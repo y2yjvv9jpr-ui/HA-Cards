@@ -4,6 +4,18 @@ Alle nennenswerten Änderungen an diesem Projekt werden hier festgehalten.
 Format grob nach [Keep a Changelog](https://keepachangelog.com/de/1.1.0/),
 Versionierung nach [SemVer](https://semver.org/lang/de/).
 
+## [0.20.2]
+
+### Geändert
+
+- **des-cover-card:** Die **Automatik-Zeile** (Umschalter Lüftung/Urlaub) ist aus
+  dem eingeklappten Bereich in den **aufgeklappten** gewandert — dort jetzt die
+  **erste Zeile** (Label „Automatik" links, die Modus-Umschalter rechts, gleiche
+  Segmented-Optik), mit Trennlinie zu den darunterliegenden Rollladen-Sektionen.
+  Eingeklappt bleiben Kopfzeile (inkl. Automatik-Badge), Statuszeile, Haus-Slider,
+  die fünf Szenen-Kacheln und der Chevron. Das Badge zeigt den aktiven
+  Automatik-Zustand weiterhin ohne Aufklappen.
+
 ## [0.20.1]
 
 ### Geändert

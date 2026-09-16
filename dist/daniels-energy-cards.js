@@ -6222,8 +6222,6 @@ const Hs = {
                 ${n.map((h, u) => this._renderScene(h, u))}
               </div>` : d}
 
-          ${c.length > 0 ? this._renderModes(c) : d}
-
           <div
             class="chevron-row clickable"
             role="button"
@@ -6239,7 +6237,10 @@ const Hs = {
             ></ha-icon>
           </div>
         </div>
-        ${this._expanded ? l`<div class="overlay">${this._renderSections(t)}</div>` : d}
+        ${this._expanded ? l`<div class="overlay">
+              ${c.length > 0 ? this._renderModes(c) : d}
+              ${this._renderSections(t)}
+            </div>` : d}
       </ha-card>
     `;
   }
@@ -6253,7 +6254,7 @@ const Hs = {
     const r = E(e, this.hass);
     return r === null ? null : r.toLowerCase() === "on";
   }
-  /** The "Automatik" row under the scene tiles: label + a segmented per mode. */
+  /** The "Automatik" row - first row of the expanded panel: label + a segmented per mode. */
   _renderModes(e) {
     return l`
       <div class="modes-row">
@@ -6549,15 +6550,17 @@ Re.properties = {
         opacity: 0.7;
       }
 
-      /* --- automatic modes row --- */
+      /* --- automatic modes row (first row of the expanded panel) --- */
 
       .modes-row {
         display: flex;
         align-items: center;
         gap: 16px;
-        margin-top: 12px;
-        padding-top: 10px;
-        border-top: 1px solid var(--divider-color, rgba(127, 127, 127, 0.18));
+        /* Sits flush at the top of the overlay (the card seam is the divider
+           above it); a bottom border separates it from the sections below. */
+        padding-bottom: 12px;
+        margin-bottom: 12px;
+        border-bottom: 1px solid var(--divider-color, rgba(127, 127, 127, 0.18));
       }
 
       .modes-title {
@@ -8509,7 +8512,7 @@ Ie.properties = {
     `
 ];
 let _t = Ie;
-const fo = "0.20.1", mo = [
+const fo = "0.20.2", mo = [
   {
     type: "des-storage-card",
     element: ot,

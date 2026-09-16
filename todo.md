@@ -1,5 +1,17 @@
 <!-- push-test 2026-09-15 -->
-# todo.md — offene Punkte (Stand 15.09.2026, des-chart-card 0.20.1: Umschalter-Layout)
+# todo.md — offene Punkte (Stand 16.09.2026, des-cover-card 0.20.2: Automatik-Zeile aufgeklappt)
+
+## 16.09. — des-cover-card (Repo, in HA einzuspielen)
+
+- [x] 16.09. **des-cover-card (v0.20.2): Automatik-Zeile in den aufgeklappten
+      Bereich.** Umschalter Lüftung/Urlaub sind jetzt die erste Zeile im Overlay
+      (Label „Automatik" links, Umschalter rechts, Trennlinie zu den Sektionen).
+      Eingeklappt bleiben Kopf (inkl. Automatik-Badge), Statuszeile, Haus-Slider,
+      Szenen-Kacheln, Chevron. → **HACS auf 0.20.2** (Tag v0.20.2), **Strg+F5**.
+      Hinweis: die Rollladenkarte im **Haus-Dashboard** steht noch auf `rows: 4`
+      (wegen der früheren Automatik-Zeile). Eingeklappt ist die Karte jetzt kürzer
+      → optional `rows: 3` im Haus-Dashboard (separate Dashboard-Änderung, hier
+      bewusst nicht angefasst).
 
 ## 15.09. — des-chart-card groups (Repo, in HA einzuspielen)
 

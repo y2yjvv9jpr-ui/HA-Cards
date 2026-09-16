@@ -386,8 +386,6 @@ export class DesCoverCard extends LitElement {
               </div>`
             : nothing}
 
-          ${modes.length > 0 ? this._renderModes(modes) : nothing}
-
           <div
             class="chevron-row clickable"
             role="button"
@@ -404,7 +402,10 @@ export class DesCoverCard extends LitElement {
           </div>
         </div>
         ${this._expanded
-          ? html`<div class="overlay">${this._renderSections(sections)}</div>`
+          ? html`<div class="overlay">
+              ${modes.length > 0 ? this._renderModes(modes) : nothing}
+              ${this._renderSections(sections)}
+            </div>`
           : nothing}
       </ha-card>
     `;
@@ -422,7 +423,7 @@ export class DesCoverCard extends LitElement {
     return state === null ? null : state.toLowerCase() === 'on';
   }
 
-  /** The "Automatik" row under the scene tiles: label + a segmented per mode. */
+  /** The "Automatik" row - first row of the expanded panel: label + a segmented per mode. */
   private _renderModes(modes: CoverModeConfig[]): TemplateResult {
     return html`
       <div class="modes-row">
@@ -761,15 +762,17 @@ export class DesCoverCard extends LitElement {
         opacity: 0.7;
       }
 
-      /* --- automatic modes row --- */
+      /* --- automatic modes row (first row of the expanded panel) --- */
 
       .modes-row {
         display: flex;
         align-items: center;
         gap: 16px;
-        margin-top: 12px;
-        padding-top: 10px;
-        border-top: 1px solid var(--divider-color, rgba(127, 127, 127, 0.18));
+        /* Sits flush at the top of the overlay (the card seam is the divider
+           above it); a bottom border separates it from the sections below. */
+        padding-bottom: 12px;
+        margin-bottom: 12px;
+        border-bottom: 1px solid var(--divider-color, rgba(127, 127, 127, 0.18));
       }
 
       .modes-title {
